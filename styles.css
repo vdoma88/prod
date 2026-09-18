@@ -359,3 +359,126 @@ a{color:inherit;text-decoration:none}
   .footer-brand{min-width:0}
   .footer-bottom{display:block;text-align:center;line-height:1.8}
 }
+
+
+/* Service details + readability pass */
+body,
+.service-meta,
+.service-facts,
+.service-more,
+.detail-cta,
+.hero-footnote,
+.section-kicker,
+.desktop-nav a,
+.footer-nav a{
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.service-meta,
+.service-facts,
+.service-more,
+.detail-cta{
+  font-family:"Manrope",system-ui,sans-serif;
+}
+
+.service-facts{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:18px;
+  max-width:92%;
+}
+
+.service-facts span{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:7px 9px;
+  border-radius:999px;
+  border:1px solid rgba(180,126,57,.14);
+  background:rgba(255,250,244,.72);
+  color:#735943;
+  font-size:9px;
+  line-height:1;
+  letter-spacing:.01em;
+}
+
+.service-facts b{
+  color:#9b642f;
+  font-weight:600;
+}
+
+.service-more{
+  width:max-content;
+  margin-top:auto;
+  padding:18px 0 0;
+  border:0;
+  background:transparent;
+  color:#8f5b2d;
+  font-size:9px;
+  letter-spacing:.13em;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.service-more b{
+  font-size:15px;
+  margin-left:7px;
+  font-weight:400;
+}
+
+.service-details{
+  margin-top:15px;
+  padding:15px 0 2px;
+  border-top:1px solid rgba(151,100,43,.13);
+  animation:serviceDetailsIn .28s ease both;
+}
+
+.service-details p{
+  margin:0 0 10px;
+  max-width:92%;
+  font:400 14px/1.48 "Cormorant Garamond",serif;
+  color:#5e4938;
+}
+
+.service-details .detail-accent{
+  color:#8a5a31;
+}
+
+.detail-cta{
+  display:inline-flex;
+  align-items:center;
+  margin-top:3px;
+  color:#8f5b2d;
+  font-size:9px;
+  letter-spacing:.12em;
+  font-weight:600;
+}
+
+.service-card.is-open{
+  border-color:rgba(183,122,42,.30);
+  box-shadow:0 22px 55px rgba(78,46,19,.11);
+}
+
+@keyframes serviceDetailsIn{
+  from{opacity:0;transform:translateY(-5px)}
+  to{opacity:1;transform:none}
+}
+
+/* Keep decorative serif type, but use a highly legible sans for small numbers. */
+.service-card .service-meta,
+.format-chips span,
+.hero-footnote{
+  font-family:"Manrope",system-ui,sans-serif;
+}
+
+.format-chips span{
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing:.08em;
+}
+
+@media (max-width:640px){
+  .service-facts{gap:5px;margin-top:14px}
+  .service-facts span{font-size:8.5px;padding:6px 8px}
+  .service-details p{font-size:13px}
+}
