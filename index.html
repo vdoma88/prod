@@ -271,7 +271,7 @@
     </section>
   </main>
 
-  <footer class="site-footer">
+  <a class="mobile-sticky-cta" href="#services">ВЫБРАТЬ УСЛУГУ <span>→</span></a>\n\n  <footer class="site-footer">
     <div class="footer-inner">
       <a class="brand footer-brand" href="#top">
         <span class="brand-mark"><img src="assets/logo-tree.webp" alt="" /></span>
@@ -324,10 +324,29 @@
         if (!details) return;
 
         const open = button.getAttribute('aria-expanded') === 'true';
+
+        if (!open) {
+          document.querySelectorAll('.service-card.is-open').forEach(openCard => {
+            if (openCard === card) return;
+            openCard.classList.remove('is-open');
+            const openButton = openCard.querySelector('.service-more');
+            const openDetails = openCard.querySelector('.service-details');
+            if (openButton) {
+              openButton.setAttribute('aria-expanded', 'false');
+              openButton.innerHTML = 'ПОДРОБНЕЕ <b>＋</b>';
+            }
+            if (openDetails) openDetails.hidden = true;
+          });
+        }
+
         button.setAttribute('aria-expanded', String(!open));
         details.hidden = open;
         button.innerHTML = open ? 'ПОДРОБНЕЕ <b>＋</b>' : 'СВЕРНУТЬ <b>−</b>';
         card?.classList.toggle('is-open', !open);
+
+        if (!open && window.matchMedia('(max-width: 640px)').matches) {
+          setTimeout(() => card?.scrollIntoView({behavior:'smooth', block:'start'}), 80);
+        }
       });
     });
 
