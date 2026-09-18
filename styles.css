@@ -482,3 +482,453 @@ body,
   .service-facts span{font-size:8.5px;padding:6px 8px}
   .service-details p{font-size:13px}
 }
+
+
+/* ===== iPhone / mobile readability pass ===== */
+html{
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+}
+
+.mobile-sticky-cta{
+  display:none;
+}
+
+@media (max-width:640px){
+  body{
+    padding-bottom:calc(74px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .site-header{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    padding:8px 10px;
+  }
+
+  .nav-shell{
+    height:60px;
+    border-radius:16px;
+    box-shadow:0 8px 30px rgba(76,43,16,.09);
+  }
+
+  .brand-copy strong{
+    font-size:18px;
+    line-height:1;
+  }
+
+  .brand-copy small{
+    font-family:"Manrope",system-ui,sans-serif;
+    font-size:6.5px;
+    letter-spacing:.17em;
+  }
+
+  .mobile-nav{
+    position:fixed;
+    top:76px;
+    left:10px;
+    right:10px;
+    padding:8px 14px;
+  }
+
+  .mobile-nav a{
+    min-height:46px;
+    display:flex;
+    align-items:center;
+    font-size:12px;
+    line-height:1.2;
+  }
+
+  .hero{
+    min-height:760px;
+    padding:94px 16px 0;
+  }
+
+  .hero-copy{
+    width:100%;
+    margin-top:20px;
+  }
+
+  .eyebrow{
+    max-width:290px;
+    margin:0 auto 13px;
+    font-family:"Manrope",system-ui,sans-serif;
+    font-size:8.5px;
+    line-height:1.55;
+    letter-spacing:.18em;
+  }
+
+  .hero h1{
+    font-size:50px;
+    line-height:.86;
+    letter-spacing:-.03em;
+  }
+
+  .hero h1 em{
+    font-size:.67em;
+    line-height:1.04;
+    margin-top:8px;
+  }
+
+  .hero-lead{
+    max-width:340px;
+    margin:18px auto 16px;
+    padding:0;
+    font-family:"Manrope",system-ui,sans-serif;
+    font-size:13.5px;
+    line-height:1.58;
+    color:#4b392c;
+  }
+
+  .hero-values{
+    width:min(290px,100%);
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px 22px;
+    margin:18px auto 20px;
+  }
+
+  .hero-values div{
+    gap:5px;
+  }
+
+  .hero-values b{
+    font-family:"Manrope",system-ui,sans-serif;
+    font-size:8px;
+    line-height:1.25;
+    letter-spacing:.08em;
+  }
+
+  .mini-icon{
+    font-size:26px;
+  }
+
+  .hero .primary-btn{
+    width:min(340px,100%);
+    min-height:52px;
+    padding:14px 18px;
+    font-size:16px;
+  }
+
+  .hero-footnote{
+    max-width:300px;
+    margin:12px auto 0;
+    font-size:7.5px;
+    line-height:1.55;
+    letter-spacing:.10em;
+  }
+
+  .hero-visual-left{
+    width:112%;
+    height:38%;
+    left:-34%;
+    bottom:0;
+    opacity:.76;
+  }
+
+  .hero-tree-photo{
+    width:72%;
+    height:41%;
+    right:-28%;
+    top:315px;
+    opacity:.32;
+  }
+
+  .tree-stage{
+    width:78%;
+    height:40%;
+    right:-31%;
+    top:308px;
+    opacity:.48;
+  }
+
+  .side-script-left,
+  .side-script-right,
+  .side-note{
+    display:none;
+  }
+
+  .content-wrap{
+    padding:0 12px 22px;
+    margin-top:-14px;
+  }
+
+  .panel{
+    border-radius:20px;
+  }
+
+  .about-panel{
+    padding:22px 20px;
+  }
+
+  .about-photo-mark{
+    width:62px;
+    height:62px;
+    margin:0 13px 4px 0;
+  }
+
+  .about-panel h2{
+    font-size:35px;
+    line-height:1;
+  }
+
+  .about-panel p{
+    clear:both;
+    padding-top:8px;
+    font-family:"Manrope",system-ui,sans-serif;
+    font-size:13.5px;
+    line-height:1.6;
+    color:#4f3c2f;
+  }
+
+  .section-kicker{
+    font-family:"Manrope",system-ui,sans-serif;
+    font-size:8.5px;
+    letter-spacing:.18em;
+  }
+
+  .services-section{
+    padding-top:28px;
+  }
+
+  .section-head{
+    margin:0 2px 15px;
+  }
+
+  .section-head h2{
+    font-size:38px;
+    line-height:1;
+  }
+
+  .section-head p{
+    margin-top:8px;
+    font-family:"Manrope",system-ui,sans-serif;
+    font-size:13px;
+    line-height:1.55;
+  }
+
+  .services-grid{
+    gap:12px;
+  }
+
+  .service-card{
+    min-height:0;
+    padding:22px 20px 18px;
+    border-radius:20px;
+    scroll-margin-top:84px;
+  }
+
+  .service-icon{
+    right:18px;
+    top:18px;
+    font-size:34px;
+  }
+
+  .service-meta{
+    max-width:76%;
+    margin-bottom:12px;
+    font-size:9px;
+    line-height:1.35;
+    letter-spacing:.12em;
+    font-feature-settings:"lnum" 1,"tnum" 1;
+    font-variant-numeric:lining-nums tabular-nums;
+  }
+
+  .service-card strong{
+    max-width:90%;
+    font-size:29px;
+    line-height:1.01;
+  }
+
+  .service-card > small{
+    max-width:96%;
+    margin-top:12px;
+    font-family:"Manrope",system-ui,sans-serif;
+    font-size:13px;
+    line-height:1.55;
+    color:#5d493a;
+  }
+
+  .service-facts{
+    max-width:100%;
+    gap:6px;
+    margin-top:15px;
+  }
+
+  .service-facts span{
+    min-height:30px;
+    padding:7px 9px;
+    font-size:10px;
+    line-height:1.15;
+    font-feature-settings:"lnum" 1,"tnum" 1;
+    font-variant-numeric:lining-nums tabular-nums;
+  }
+
+  .service-more{
+    width:100%;
+    min-height:46px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-top:13px;
+    padding:10px 2px 4px;
+    font-size:10.5px;
+    line-height:1.2;
+    letter-spacing:.10em;
+    text-align:left;
+    touch-action:manipulation;
+  }
+
+  .service-more b{
+    font-size:19px;
+    margin-left:12px;
+  }
+
+  .service-details{
+    margin-top:8px;
+    padding-top:15px;
+  }
+
+  .service-details p{
+    max-width:100%;
+    font-family:"Manrope",system-ui,sans-serif;
+    font-size:13px;
+    line-height:1.58;
+    color:#554235;
+  }
+
+  .detail-cta{
+    width:100%;
+    min-height:48px;
+    margin-top:6px;
+    padding:12px 14px;
+    justify-content:center;
+    border:1px solid rgba(171,109,38,.24);
+    border-radius:999px;
+    background:rgba(255,250,244,.82);
+    font-size:9.5px;
+    line-height:1.2;
+    letter-spacing:.09em;
+    text-align:center;
+  }
+
+  .formats-panel{
+    padding:20px 14px 16px;
+  }
+
+  .formats-panel h2{
+    font-size:35px;
+  }
+
+  .format-chips{
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+
+  .format-chips div{
+    min-height:110px;
+    padding:15px 13px;
+  }
+
+  .format-chips span{
+    font-family:"Manrope",system-ui,sans-serif;
+    font-size:11px;
+    line-height:1;
+    letter-spacing:.05em;
+    font-feature-settings:"lnum" 1,"tnum" 1;
+    font-variant-numeric:lining-nums tabular-nums;
+  }
+
+  .format-chips b{
+    margin-top:14px;
+    font-size:22px;
+    line-height:1;
+  }
+
+  .format-chips small{
+    margin-top:7px;
+    font-family:"Manrope",system-ui,sans-serif;
+    font-size:11.5px;
+    line-height:1.4;
+  }
+
+  .final-cta{
+    min-height:300px;
+  }
+
+  .final-content{
+    width:100%;
+    padding:38px 18px 42px;
+  }
+
+  .final-content h3{
+    font-size:35px;
+    line-height:1;
+  }
+
+  .final-content p{
+    max-width:330px;
+    margin:10px auto 18px;
+    font-family:"Manrope",system-ui,sans-serif;
+    font-size:13.5px;
+    line-height:1.55;
+  }
+
+  .primary-btn-large{
+    width:min(340px,100%);
+    min-height:52px;
+  }
+
+  .selected-service{
+    font-family:"Manrope",system-ui,sans-serif;
+    font-size:12.5px;
+    line-height:1.45;
+  }
+
+  .site-footer{
+    padding-bottom:18px;
+  }
+
+  .footer-bottom{
+    font-family:"Manrope",system-ui,sans-serif;
+    font-size:8.5px;
+  }
+
+  .mobile-sticky-cta{
+    position:fixed;
+    z-index:80;
+    left:10px;
+    right:10px;
+    bottom:calc(8px + env(safe-area-inset-bottom, 0px));
+    min-height:54px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:14px;
+    border:1px solid #e7c27e;
+    border-radius:999px;
+    background:linear-gradient(180deg,rgba(197,139,56,.98),rgba(169,104,30,.98));
+    color:#fff8eb;
+    box-shadow:0 12px 32px rgba(121,72,20,.28),inset 0 0 0 1px rgba(255,255,255,.20);
+    font-family:"Manrope",system-ui,sans-serif;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.08em;
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+  }
+
+  .mobile-sticky-cta span{
+    font-size:18px;
+    line-height:1;
+  }
+}
+
+@media (max-width:380px){
+  .hero h1{font-size:45px}
+  .hero h1 em{font-size:.68em}
+  .service-card strong{font-size:27px}
+  .format-chips{grid-template-columns:1fr}
+  .format-chips div{min-height:94px}
+}
