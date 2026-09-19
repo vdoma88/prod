@@ -29,6 +29,7 @@
         <a href="#about">ОБО МНЕ</a>
         <a href="#services">УСЛУГИ</a>
         <a href="#formats">ФОРМАТЫ</a>
+        <a href="#faq">ВОПРОСЫ</a>
         <a href="#contact">КОНТАКТ</a>
       </nav>
 
@@ -40,6 +41,7 @@
       <a href="#about">Обо мне</a>
       <a href="#services">Услуги</a>
       <a href="#formats">Форматы</a>
+      <a href="#faq">Вопросы</a>
       <a href="#contact">Контакт</a>
     </div>
   </header>
@@ -110,11 +112,11 @@
               <span><b>Срок</b> 3 месяца</span>
               <span><b>Встречи</b> онлайн / офлайн</span>
             </div>
-            <button class="service-more" type="button" aria-expanded="false">ПОДРОБНЕЕ <b>＋</b></button>
-            <div class="service-details" hidden>
+            <button class="service-more" type="button" aria-expanded="false" aria-controls="service-details-1">ПОДРОБНЕЕ <b>＋</b></button>
+            <div class="service-details" id="service-details-1" hidden>
               <p>Подходит тем, кто хочет не разовую встречу, а последовательное сопровождение с возвращением к теме между сессиями.</p>
               <p class="detail-accent">Фокус: повторяющиеся сценарии · внутренняя опора · контакт с родовой историей.</p>
-              <a class="detail-cta" href="#contact">ОБСУДИТЬ ФОРМАТ →</a>
+              <button class="detail-cta request-open" type="button">ОБСУДИТЬ ФОРМАТ →</button>
             </div>
           </article>
 
@@ -128,11 +130,11 @@
               <span><b>Время</b> 120 минут</span>
               <span><b>Группа</b> до 15 участниц</span>
             </div>
-            <button class="service-more" type="button" aria-expanded="false">ПОДРОБНЕЕ <b>＋</b></button>
-            <div class="service-details" hidden>
+            <button class="service-more" type="button" aria-expanded="false" aria-controls="service-details-2">ПОДРОБНЕЕ <b>＋</b></button>
+            <div class="service-details" id="service-details-2" hidden>
               <p>Путь от намерения и очищения к восковой отливке, образу Древа Рода и символическому закреплению результата.</p>
               <p class="detail-accent">Каждая участница уносит с собой личную свечу, отливку и артефакт.</p>
-              <a class="detail-cta" href="#contact">УЗНАТЬ БЛИЖАЙШУЮ ДАТУ →</a>
+              <button class="detail-cta request-open" type="button">УЗНАТЬ БЛИЖАЙШУЮ ДАТУ →</button>
             </div>
           </article>
 
@@ -146,10 +148,10 @@
               <span><b>Тема</b> родовые сценарии</span>
               <span><b>Результат</b> ясность и шаг</span>
             </div>
-            <button class="service-more" type="button" aria-expanded="false">ПОДРОБНЕЕ <b>＋</b></button>
-            <div class="service-details" hidden>
+            <button class="service-more" type="button" aria-expanded="false" aria-controls="service-details-3">ПОДРОБНЕЕ <b>＋</b></button>
+            <div class="service-details" id="service-details-3" hidden>
               <p>Через игровой маршрут участник рассматривает ситуацию с разных сторон, замечает привычные паттерны и формулирует собственный следующий шаг.</p>
-              <a class="detail-cta" href="#contact">ЗАПРОСИТЬ УСЛОВИЯ →</a>
+              <button class="detail-cta request-open" type="button">ЗАПРОСИТЬ УСЛОВИЯ →</button>
             </div>
           </article>
 
@@ -163,10 +165,10 @@
               <span><b>Участие</b> индивидуально</span>
               <span><b>Место</b> согласуется</span>
             </div>
-            <button class="service-more" type="button" aria-expanded="false">ПОДРОБНЕЕ <b>＋</b></button>
-            <div class="service-details" hidden>
+            <button class="service-more" type="button" aria-expanded="false" aria-controls="service-details-4">ПОДРОБНЕЕ <b>＋</b></button>
+            <div class="service-details" id="service-details-4" hidden>
               <p>Формат предварительно обсуждается лично: цель, контекст, место проведения и границы участия.</p>
-              <a class="detail-cta" href="#contact">ОБСУДИТЬ ЗАПРОС →</a>
+              <button class="detail-cta request-open" type="button">ОБСУДИТЬ ЗАПРОС →</button>
             </div>
           </article>
 
@@ -180,10 +182,10 @@
               <span><b>Материалы</b> уроки и практика</span>
               <span><b>Доступ</b> уточняется</span>
             </div>
-            <button class="service-more" type="button" aria-expanded="false">ПОДРОБНЕЕ <b>＋</b></button>
-            <div class="service-details" hidden>
+            <button class="service-more" type="button" aria-expanded="false" aria-controls="service-details-5">ПОДРОБНЕЕ <b>＋</b></button>
+            <div class="service-details" id="service-details-5" hidden>
               <p>Авторские материалы о свечной работе: виды свечей, воск, фитили, формы, безопасность, символика и практические задания.</p>
-              <a class="detail-cta" href="#contact">ПОЛУЧИТЬ ПРОГРАММУ →</a>
+              <button class="detail-cta request-open" type="button">ПОЛУЧИТЬ ПРОГРАММУ →</button>
             </div>
           </article>
 
@@ -197,10 +199,10 @@
               <span><b>Уровень</b> с основы</span>
               <span><b>Практика</b> расклады</span>
             </div>
-            <button class="service-more" type="button" aria-expanded="false">ПОДРОБНЕЕ <b>＋</b></button>
-            <div class="service-details" hidden>
+            <button class="service-more" type="button" aria-expanded="false" aria-controls="service-details-6">ПОДРОБНЕЕ <b>＋</b></button>
+            <div class="service-details" id="service-details-6" hidden>
               <p>Подходит для знакомства с системой Таро и последовательного развития навыка чтения карт и раскладов.</p>
-              <a class="detail-cta" href="#contact">ПОЛУЧИТЬ ПРОГРАММУ →</a>
+              <button class="detail-cta request-open" type="button">ПОЛУЧИТЬ ПРОГРАММУ →</button>
             </div>
           </article>
 
@@ -214,10 +216,10 @@
               <span><b>Участие</b> индивидуально</span>
               <span><b>Допуск</b> предварительно</span>
             </div>
-            <button class="service-more" type="button" aria-expanded="false">ПОДРОБНЕЕ <b>＋</b></button>
-            <div class="service-details" hidden>
+            <button class="service-more" type="button" aria-expanded="false" aria-controls="service-details-7">ПОДРОБНЕЕ <b>＋</b></button>
+            <div class="service-details" id="service-details-7" hidden>
               <p>Перед записью обязательно обсуждаются формат, противопоказания и условия проведения. Групповой формат не используется.</p>
-              <a class="detail-cta" href="#contact">УТОЧНИТЬ УСЛОВИЯ →</a>
+              <button class="detail-cta request-open" type="button">УТОЧНИТЬ УСЛОВИЯ →</button>
             </div>
           </article>
 
@@ -231,10 +233,10 @@
               <span><b>Связь</b> онлайн / офлайн</span>
               <span><b>Тема</b> ваш запрос</span>
             </div>
-            <button class="service-more" type="button" aria-expanded="false">ПОДРОБНЕЕ <b>＋</b></button>
-            <div class="service-details" hidden>
+            <button class="service-more" type="button" aria-expanded="false" aria-controls="service-details-8">ПОДРОБНЕЕ <b>＋</b></button>
+            <div class="service-details" id="service-details-8" hidden>
               <p>Подходит, если важно сначала спокойно разобрать ситуацию и понять, нужен ли разовый разговор, длительное сопровождение или другой формат.</p>
-              <a class="detail-cta" href="#contact">ЗАПИСАТЬСЯ НА КОНСУЛЬТАЦИЮ →</a>
+              <button class="detail-cta request-open" type="button">ЗАПИСАТЬСЯ НА КОНСУЛЬТАЦИЮ →</button>
             </div>
           </article>
         </div>
@@ -258,20 +260,88 @@
       </section>
     </div>
 
+      <section class="faq-section reveal" id="faq">
+        <div class="section-head faq-head">
+          <div>
+            <div class="section-kicker">КОРОТКО О ГЛАВНОМ</div>
+            <h2>Вопросы и ответы</h2>
+          </div>
+          <p>Если вашего вопроса здесь нет — оставьте запрос, и формат можно обсудить лично.</p>
+        </div>
+
+        <div class="faq-list">
+          <details>
+            <summary>Как понять, какой формат мне подходит?</summary>
+            <p>Можно начать с индивидуальной консультации или сразу выбрать направление, которое откликается. Если сомневаетесь, в запросе достаточно написать «нужна помощь с выбором».</p>
+          </details>
+          <details>
+            <summary>Есть онлайн и офлайн форматы?</summary>
+            <p>Да. На сайте отдельно отмечены онлайн, офлайн, индивидуальные и групповые варианты. Конкретные условия зависят от выбранной услуги.</p>
+          </details>
+          <details>
+            <summary>Можно прийти без опыта подобных практик?</summary>
+            <p>Для большинства форматов специальная подготовка не требуется. Для отдельных практик условия и допуск обсуждаются заранее.</p>
+          </details>
+          <details>
+            <summary>Где узнать даты и стоимость?</summary>
+            <p>Даты, стоимость и доступность зависят от направления. Выберите услугу и отправьте запрос — в нём уже будет указано, что вас заинтересовало.</p>
+          </details>
+          <details>
+            <summary>Можно сначала просто обсудить мой запрос?</summary>
+            <p>Да. Выберите «Индивидуальные консультации» или отправьте общий запрос на подбор формата.</p>
+          </details>
+        </div>
+      </section>
+
     <section class="final-cta" id="contact">
       <div class="final-overlay"></div>
       <div class="final-content reveal">
         <div class="section-kicker">ЛИЧНЫЙ ЗАПРОС</div>
         <h3>Не знаете, с чего начать?</h3>
         <p>Выберите интересующую услугу — и мы определим подходящий формат.</p>
-        <a class="primary-btn primary-btn-large" href="#services">ВЫБРАТЬ УСЛУГУ <span>→</span></a>
+        <button class="primary-btn primary-btn-large request-open" type="button" data-service="Подбор подходящего формата">ОСТАВИТЬ ЗАПРОС <span>→</span></button>
         <div class="selected-service" aria-live="polite"></div>
       </div>
       <div class="final-script">С вниманием<br>к вашей истории ♡</div>
     </section>
   </main>
 
-  <a class="mobile-sticky-cta" href="#services">ВЫБРАТЬ УСЛУГУ <span>→</span></a>\n\n  <footer class="site-footer">
+  <button class="mobile-sticky-cta request-open" type="button" data-service="Подбор подходящего формата">ОСТАВИТЬ ЗАПРОС <span>→</span></button>
+
+
+  <dialog class="request-dialog" id="request-dialog" aria-labelledby="request-title">
+    <div class="request-dialog-inner">
+      <button class="request-close" type="button" aria-label="Закрыть">×</button>
+      <div class="section-kicker">ЗАПРОС</div>
+      <h2 id="request-title">Связаться по выбранному формату</h2>
+      <p class="request-intro">Мы подготовили короткий текст. Его можно скопировать или отправить через меню «Поделиться» на телефоне.</p>
+
+      <label class="request-label" for="request-service">Интересует</label>
+      <select id="request-service">
+        <option>Подбор подходящего формата</option>
+        <option>Трёхмесячная терапия «Связь с Родом»</option>
+        <option>Мистерия «Сила Рода»</option>
+        <option>Трансформационная игра «Сила Рода»</option>
+        <option>Шаманские подношения духам предков</option>
+        <option>Курс свечной магии</option>
+        <option>Курс «Карты Таро»</option>
+        <option>Огненный массаж</option>
+        <option>Онлайн и офлайн консультации</option>
+      </select>
+
+      <label class="request-label" for="request-message">Сообщение</label>
+      <textarea id="request-message" rows="5">Здравствуйте, Екатерина! Хочу узнать подробнее об услуге.</textarea>
+
+      <div class="request-actions">
+        <button class="request-action primary" id="request-share" type="button">ПОДЕЛИТЬСЯ <span>↗</span></button>
+        <button class="request-action" id="request-copy" type="button">СКОПИРОВАТЬ</button>
+      </div>
+      <div class="request-status" id="request-status" role="status" aria-live="polite"></div>
+      <p class="request-note">Контактную ссылку Telegram / WhatsApp можно добавить позже — без переделки дизайна.</p>
+    </div>
+  </dialog>
+
+  <footer class="site-footer">
     <div class="footer-inner">
       <a class="brand footer-brand" href="#top">
         <span class="brand-mark"><img src="assets/logo-tree.webp" alt="" /></span>
@@ -281,6 +351,7 @@
         <a href="#about">ОБО МНЕ</a>
         <a href="#services">УСЛУГИ</a>
         <a href="#formats">ФОРМАТЫ</a>
+        <a href="#faq">ВОПРОСЫ</a>
         <a href="#contact">КОНТАКТ</a>
       </nav>
     </div>
@@ -350,15 +421,68 @@
       });
     });
 
-    document.querySelectorAll('.detail-cta').forEach(link => {
-      link.addEventListener('click', () => {
-        const card = link.closest('.service-card');
-        const service = card?.dataset.service;
-        if (selectedService && service) {
-          selectedService.textContent = 'Вы выбрали: ' + service;
-        }
+    const requestDialog = document.getElementById('request-dialog');
+    const requestService = document.getElementById('request-service');
+    const requestMessage = document.getElementById('request-message');
+    const requestStatus = document.getElementById('request-status');
+
+    function buildRequestText() {
+      const service = requestService?.value || 'Подбор подходящего формата';
+      const message = requestMessage?.value?.trim() || '';
+      return `Здравствуйте, Екатерина!\nИнтересует: ${service}.\n${message}`;
+    }
+
+    function openRequest(service) {
+      if (requestService && service) requestService.value = service;
+      if (selectedService && service) selectedService.textContent = 'Вы выбрали: ' + service;
+      requestStatus.textContent = '';
+      if (requestDialog?.showModal) requestDialog.showModal();
+    }
+
+    document.querySelectorAll('.service-card').forEach(card => {
+      const service = card.dataset.service;
+      card.querySelectorAll('.request-open').forEach(button => {
+        button.dataset.service = service || 'Подбор подходящего формата';
       });
     });
+
+    document.querySelectorAll('.request-open').forEach(button => {
+      button.addEventListener('click', () => openRequest(button.dataset.service || 'Подбор подходящего формата'));
+    });
+
+    document.querySelector('.request-close')?.addEventListener('click', () => requestDialog?.close());
+    requestDialog?.addEventListener('click', event => {
+      if (event.target === requestDialog) requestDialog.close();
+    });
+
+    document.getElementById('request-copy')?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(buildRequestText());
+        requestStatus.textContent = 'Текст запроса скопирован.';
+      } catch {
+        requestStatus.textContent = 'Не удалось скопировать автоматически. Выделите текст сообщения вручную.';
+      }
+    });
+
+    document.getElementById('request-share')?.addEventListener('click', async () => {
+      const text = buildRequestText();
+      if (navigator.share) {
+        try {
+          await navigator.share({title:'Запрос Екатерине Белой', text});
+          requestStatus.textContent = 'Запрос передан в меню «Поделиться».';
+        } catch (error) {
+          if (error?.name !== 'AbortError') requestStatus.textContent = 'Не удалось открыть меню «Поделиться».';
+        }
+      } else {
+        try {
+          await navigator.clipboard.writeText(text);
+          requestStatus.textContent = 'На этом устройстве нет системного меню «Поделиться». Текст скопирован.';
+        } catch {
+          requestStatus.textContent = 'Скопируйте текст сообщения вручную.';
+        }
+      }
+    });
+
   </script>
 </body>
 </html>
