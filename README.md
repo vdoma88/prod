@@ -25,7 +25,7 @@
 
 
 ## Telegram
-Сайт работает без WhatsApp. В `app.js` есть одна настройка:
+Для заявок используется только Telegram. В `app.js` есть одна настройка:
 
 ```js
 const SITE_CONFIG = { telegramUsername: "" };
