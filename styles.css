@@ -932,3 +932,190 @@ html{
   .format-chips{grid-template-columns:1fr}
   .format-chips div{min-height:94px}
 }
+
+
+/* ===== Conversion + FAQ + request dialog ===== */
+button.primary-btn{
+  cursor:pointer;
+  font-family:"Cormorant Garamond",serif;
+}
+button.detail-cta{
+  border:0;
+  cursor:pointer;
+}
+button.mobile-sticky-cta{
+  cursor:pointer;
+}
+
+.faq-section{
+  max-width:1220px;
+  margin:0 auto;
+  padding:22px 24px 42px;
+}
+.faq-head{margin-bottom:18px}
+.faq-list{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.faq-list details{
+  border:1px solid rgba(180,126,57,.14);
+  border-radius:20px;
+  background:linear-gradient(145deg,rgba(255,252,248,.95),rgba(248,240,230,.88));
+  box-shadow:0 12px 34px rgba(78,46,19,.06);
+  overflow:hidden;
+}
+.faq-list summary{
+  list-style:none;
+  cursor:pointer;
+  min-height:66px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  padding:18px 22px;
+  font:600 22px/1.05 "Cormorant Garamond",serif;
+  color:#392419;
+}
+.faq-list summary::-webkit-details-marker{display:none}
+.faq-list summary::after{
+  content:"+";
+  flex:0 0 auto;
+  font:400 25px/1 "Manrope",sans-serif;
+  color:#a76d2d;
+}
+.faq-list details[open] summary::after{content:"−"}
+.faq-list details p{
+  margin:0;
+  padding:0 22px 20px;
+  font:400 14px/1.55 "Manrope",system-ui,sans-serif;
+  color:#604c3c;
+}
+
+.request-dialog{
+  width:min(560px,calc(100vw - 28px));
+  max-height:min(760px,calc(100vh - 28px));
+  padding:0;
+  border:1px solid rgba(180,126,57,.18);
+  border-radius:28px;
+  background:#fffaf3;
+  color:var(--ink);
+  box-shadow:0 30px 90px rgba(62,36,17,.28);
+}
+.request-dialog::backdrop{
+  background:rgba(45,26,17,.34);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+.request-dialog-inner{
+  position:relative;
+  padding:34px;
+}
+.request-close{
+  position:absolute;
+  top:14px;
+  right:16px;
+  width:40px;
+  height:40px;
+  border:0;
+  border-radius:50%;
+  background:#f4e9dc;
+  color:#694526;
+  font:300 25px/1 "Manrope",sans-serif;
+  cursor:pointer;
+}
+.request-dialog h2{
+  margin:2px 46px 9px 0;
+  font:600 38px/1 "Cormorant Garamond",serif;
+}
+.request-intro{
+  margin:0 0 22px;
+  font:400 14px/1.55 "Manrope",system-ui,sans-serif;
+  color:#655042;
+}
+.request-label{
+  display:block;
+  margin:14px 0 7px;
+  font:600 9px/1 "Manrope",system-ui,sans-serif;
+  letter-spacing:.14em;
+  color:#916439;
+}
+.request-dialog select,
+.request-dialog textarea{
+  width:100%;
+  border:1px solid rgba(160,104,43,.20);
+  border-radius:15px;
+  background:#fffdfa;
+  color:#3d2a1e;
+  padding:13px 14px;
+  outline:none;
+  font:400 14px/1.45 "Manrope",system-ui,sans-serif;
+}
+.request-dialog textarea{resize:vertical;min-height:118px}
+.request-dialog select:focus,
+.request-dialog textarea:focus{
+  border-color:rgba(169,104,30,.55);
+  box-shadow:0 0 0 3px rgba(190,130,48,.10);
+}
+.request-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  margin-top:18px;
+}
+.request-action{
+  min-height:48px;
+  border:1px solid rgba(171,109,38,.22);
+  border-radius:999px;
+  background:#fffaf3;
+  color:#8b592e;
+  font:600 10px/1 "Manrope",system-ui,sans-serif;
+  letter-spacing:.09em;
+  cursor:pointer;
+}
+.request-action.primary{
+  background:linear-gradient(180deg,#c58b38,#a9681e);
+  color:#fff8eb;
+  border-color:#e7c27e;
+}
+.request-status{
+  min-height:20px;
+  margin-top:12px;
+  font:500 11px/1.4 "Manrope",system-ui,sans-serif;
+  color:#8a633d;
+  text-align:center;
+}
+.request-note{
+  margin:7px 0 0;
+  font:400 10px/1.45 "Manrope",system-ui,sans-serif;
+  color:#a48a72;
+  text-align:center;
+}
+
+@media(max-width:740px){
+  .faq-section{padding:16px 12px 30px}
+  .faq-list{grid-template-columns:1fr}
+  .faq-list summary{
+    min-height:60px;
+    padding:16px 18px;
+    font-size:20px;
+    line-height:1.08;
+  }
+  .faq-list details p{
+    padding:0 18px 18px;
+    font-size:13px;
+  }
+  .request-dialog-inner{padding:28px 20px 22px}
+  .request-dialog h2{font-size:32px}
+  .request-actions{grid-template-columns:1fr}
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+  }
+  .tree-stage{display:none}
+}
