@@ -21,4 +21,17 @@
 Откройте `index.html` в браузере.
 
 ## Для публикации
-Подключить реальные Telegram / WhatsApp ссылки, актуальные цены и контакты.
+Подключить реальный Telegram username, актуальные цены и контакты.
+
+
+## Telegram
+Сайт работает без WhatsApp. В `app.js` есть одна настройка:
+
+```js
+const SITE_CONFIG = { telegramUsername: "" };
+```
+
+Укажите username Telegram без символа `@`. Пока поле пустое, кнопка открывает стандартное окно Telegram Share с уже подготовленным текстом заявки.
+
+## SEO / публикация
+Добавлены уникальные title/description, Open Graph и Twitter meta, JSON-LD, favicon, webmanifest, robots.txt и отдельная 404-страница. Canonical URL и sitemap стоит добавлять после выбора постоянного домена.
