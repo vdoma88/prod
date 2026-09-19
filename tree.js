@@ -1,14 +1,28 @@
 (() => {
   const canvas = document.getElementById('tree-canvas');
   if (!canvas || !window.THREE) return;
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
 
   const stage = canvas.parentElement;
+  const isCompact = window.matchMedia?.('(max-width: 640px)').matches;
+  const lowMemory = Number(navigator.deviceMemory || 8) <= 4;
   const scene = new THREE.Scene();
   const camera = new THREE.OrthographicCamera(-5.3, 5.3, 6.0, -6.0, 0.1, 100);
   camera.position.z = 10;
 
-  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.8));
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({
+      canvas,
+      alpha: true,
+      antialias: !isCompact,
+      powerPreference: isCompact ? 'low-power' : 'high-performance'
+    });
+  } catch {
+    stage.style.display = 'none';
+    return;
+  }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isCompact ? 1.25 : 1.6));
   renderer.setClearColor(0x000000, 0);
 
   const group = new THREE.Group();
@@ -68,7 +82,7 @@
   glow.scale.set(1.025,1.025,1);
   group.add(glow);
 
-  const particleCount = 520;
+  const particleCount = isCompact || lowMemory ? 220 : 420;
   const p = new Float32Array(particleCount * 3);
   const base = glowPositions.length/3;
   for (let i=0;i<particleCount;i++) {
@@ -87,7 +101,7 @@
   const points = new THREE.Points(pg, pm);
   group.add(points);
 
-  const dustCount=160;
+  const dustCount=isCompact || lowMemory ? 70 : 120;
   const dustPos=new Float32Array(dustCount*3);
   for(let i=0;i<dustCount;i++){
     dustPos[i*3]=(Math.random()-.5)*10;
@@ -108,9 +122,13 @@
     const r=stage.getBoundingClientRect();
     renderer.setSize(Math.max(1,r.width),Math.max(1,r.height),false);
   }
-  new ResizeObserver(resize).observe(stage); resize();
+  if ('ResizeObserver' in window) new ResizeObserver(resize).observe(stage);
+  else window.addEventListener('resize', resize, { passive: true });
+  resize();
 
   const clock = new THREE.Clock();
+  let rafId = 0;
+  let running = true;
   function animate(){
     const t=clock.getElapsedTime();
     pointerX += (targetX-pointerX)*.035;
@@ -121,7 +139,17 @@
     dust.rotation.z = t*.008;
     dust.position.y = Math.sin(t*.18)*.12;
     renderer.render(scene,camera);
-    requestAnimationFrame(animate);
+    if (running) rafId = requestAnimationFrame(animate);
   }
+
+  document.addEventListener('visibilitychange', () => {
+    running = !document.hidden;
+    if (running && !rafId) animate();
+    if (!running && rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    }
+  });
+
   animate();
 })();
