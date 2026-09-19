@@ -43,18 +43,16 @@
     if (depth > 4) branch(nx, ny, len * 0.60, angle + drift * 2, depth - 2, spreadSeed + 3.1);
   }
 
-  // trunk and major branches
   segPositions.push(0,-4.2,0, 0,-0.7,0);
   branch(0, -0.75, 1.42, Math.PI/2, 7, .5);
   branch(-0.05,-1.25,1.28,2.05,6,1.5);
   branch(0.05,-1.25,1.28,1.09,6,2.5);
 
-  // roots
   for (let i=0;i<26;i++) {
     const a = Math.PI + (i/25)*Math.PI;
     const len = 2.0 + (i%4)*0.35;
     const x2 = Math.cos(a)*len;
-    const y2 = -4.2 + Math.sin(a)*0.9 - (i%3)*0.12;
+    const y2 = -4.2 + Math.sin(a)*.9 - (i%3)*0.12;
     segPositions.push(0,-4.15,0, x2,y2,0);
     if (i%2===0) segPositions.push(x2,y2,0,x2*1.18,y2-.18,0);
   }
@@ -65,13 +63,11 @@
   const lines = new THREE.LineSegments(geometry, material);
   group.add(lines);
 
-  // soft duplicate glow
   const glowMat = new THREE.LineBasicMaterial({ color: warm, transparent: true, opacity: .19, blending: THREE.AdditiveBlending });
   const glow = new THREE.LineSegments(geometry.clone(), glowMat);
   glow.scale.set(1.025,1.025,1);
   group.add(glow);
 
-  // leaf/energy particles around branch tips
   const particleCount = 520;
   const p = new Float32Array(particleCount * 3);
   const base = glowPositions.length/3;
@@ -79,11 +75,11 @@
     const idx = (i % Math.max(base,1))*3;
     const bx = glowPositions[idx] || 0;
     const by = glowPositions[idx+1] || 0;
-    const r = 0.10 + Math.random()*0.45;
+    const r = .10 + Math.random()*.45;
     const a = Math.random()*Math.PI*2;
     p[i*3] = bx + Math.cos(a)*r;
     p[i*3+1] = by + Math.sin(a)*r;
-    p[i*3+2] = (Math.random()-.5)*0.5;
+    p[i*3+2] = (Math.random()-.5)*.5;
   }
   const pg = new THREE.BufferGeometry();
   pg.setAttribute('position', new THREE.BufferAttribute(p,3));
@@ -91,7 +87,6 @@
   const points = new THREE.Points(pg, pm);
   group.add(points);
 
-  // floating dust
   const dustCount=160;
   const dustPos=new Float32Array(dustCount*3);
   for(let i=0;i<dustCount;i++){
