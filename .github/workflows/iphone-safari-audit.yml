@@ -105,9 +105,9 @@ jobs:
               }
 
               let dialogOk = null;
-              const request = page.locator('[data-open-request]').first();
+              const request = page.locator('[data-open-request]:visible').first();
               if (await request.count()) {
-                await request.tap();
+                await request.tap({ timeout: 5000 });
                 const dialog = page.locator('#request-dialog');
                 dialogOk = await dialog.isVisible().catch(() => false);
                 await page.locator('.request-close').tap().catch(() => {});
