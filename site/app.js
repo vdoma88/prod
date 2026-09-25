@@ -1,5 +1,24 @@
 (() => {
-  const SITE_CONFIG = { telegramUsername: "" };
+  const SITE_CONFIG = { telegramUsername: "", schoolUrl: "https://plamya.belayarod.ru/" };
+
+  // До объединения по адресу belayarod.ru жила школа «Язык Пламени», и у
+  // учениц на экране телефона осталась её иконка: она открывает корень сайта
+  // в режиме приложения. Теперь в корне лендинг, поэтому такой запуск
+  // переводим в школу. Своя иконка лендинга стартует с ?app=hub
+  // (site.webmanifest) — это запоминаем на сессию, чтобы переходы внутри
+  // установленного лендинга не уводили в школу.
+  const standalone = window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true;
+  if (standalone) {
+    let hubApp = new URLSearchParams(location.search).get('app') === 'hub';
+    try {
+      if (hubApp) sessionStorage.setItem('sr_hub_app', '1');
+      else hubApp = sessionStorage.getItem('sr_hub_app') === '1';
+    } catch { /* без sessionStorage просто не запоминаем */ }
+    if (!hubApp && /^\/(index\.html)?$/.test(location.pathname)) {
+      location.replace(SITE_CONFIG.schoolUrl);
+      return;
+    }
+  }
 
   const menuBtn = document.querySelector('.menu-btn');
   const mobileNav = document.querySelector('.mobile-nav');

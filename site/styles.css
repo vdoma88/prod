@@ -227,3 +227,36 @@ body.menu-open{overflow:hidden}
   .svc-hero h1{line-height:.94;hyphens:auto}
   .service-card h3{line-height:1.02}
 }
+
+/* ---------- Общий проект belayarod.ru: руны, «Мои курсы» ---------- */
+.error-main{min-height:100svh;display:grid;place-items:center}
+.desktop-nav a[aria-current=page]{color:var(--gold)}
+.start-card--request{grid-column:1/-1}
+.svc-runes .svc-hero{background:#1c1318}
+.svc-runes .svc-hero-media{object-position:68% center}
+.svc-runes .svc-hero-shade{background:linear-gradient(90deg,rgba(24,15,20,.82),rgba(24,15,20,.40) 52%,rgba(24,15,20,.18)),linear-gradient(180deg,rgba(0,0,0,0) 50%,rgba(18,11,15,.62))}
+.svc-runes .svc-hero-orbit{border-color:rgba(232,195,140,.22)}
+.svc-runes .svc-quote{background:rgba(40,24,32,.34)}
+
+.courses-page{padding-top:96px}
+.courses-hero h1{margin:3px 0 0;font:500 64px/1 var(--serif);letter-spacing:-.02em}
+.courses-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.course-card{--course:var(--gold);position:relative;display:flex;flex-direction:column;gap:12px;padding:30px 30px 26px;border-top:3px solid var(--course)}
+.course-card--rod{--course:#9a6a3a}
+.course-card--plamya{--course:#c04828}
+.course-card--taro{--course:#76603d}
+.course-card--runes{--course:#744153}
+.course-card-head{display:flex;align-items:center;gap:10px}
+.course-card-head small{font-size:9px;font-weight:600;letter-spacing:.2em;color:var(--muted)}
+.course-dot{width:10px;height:10px;border-radius:50%;background:var(--course);box-shadow:0 0 0 4px rgba(184,122,52,.12)}
+.course-card h2{margin:0;font:500 44px/1 var(--serif);letter-spacing:-.01em}
+.course-card p{margin:0;color:var(--muted);font-size:14px;line-height:1.65}
+.course-card .course-howto{font-size:13px;color:#8a7461}
+.course-actions{display:flex;flex-wrap:wrap;align-items:center;gap:18px;margin-top:auto;padding-top:12px}
+.course-actions .primary-btn{min-height:48px;padding:0 22px;font-size:10px;letter-spacing:.1em;background:var(--course);border-color:transparent;box-shadow:0 8px 24px rgba(60,35,20,.16)}
+.course-link{font-size:10px;letter-spacing:.13em;color:#8e5a2b;min-height:44px;display:inline-flex;align-items:center}
+.course-link:hover{color:var(--ink)}
+.courses-note{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-top:14px;padding:26px 30px}
+.courses-note p{margin:6px 0 0;max-width:640px;color:var(--muted);font-size:14px;line-height:1.65}
+@media(max-width:900px){.courses-grid{grid-template-columns:1fr}.courses-note{display:block}.courses-note .detail-cta{margin-top:16px}}
+@media(max-width:640px){.courses-page{padding-top:78px}.courses-hero h1{font-size:46px}.course-card{padding:24px 20px 20px;border-radius:22px}.course-card h2{font-size:36px}.courses-note{padding:22px 20px}.courses-note .detail-cta{width:100%}}
