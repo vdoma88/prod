@@ -132,7 +132,19 @@ for (const file of jsFiles) {
 }
 
 // --- сборка --- (--sources: только исходники, до сборки)
-if (!process.argv.includes('--sources') && !existsSync(path.join(DIST, 'brand', 'sr-brand.js'))) fail('dist/ не собран или без brand/ — сначала node scripts/build.mjs');
+if (!process.argv.includes('--sources')) {
+  if (!existsSync(path.join(DIST, 'brand', 'sr-brand.js'))) fail('dist/ не собран или без brand/ — сначала node scripts/build.mjs');
+  const versionFile = path.join(DIST, 'version.json');
+  if (!existsSync(versionFile)) fail('dist/version.json отсутствует — сборка не оставила идентификатор версии');
+  else {
+    try {
+      const info = JSON.parse(read(versionFile));
+      if (info.project !== 'sila-roda' || !info.commit || !info.builtAt) fail('dist/version.json: неполные данные версии');
+    } catch {
+      fail('dist/version.json: некорректный JSON');
+    }
+  }
+}
 
 if (errors.length) {
   console.error(`Найдено проблем: ${errors.length}\n` + errors.map(e => `  ✗ ${e}`).join('\n'));
