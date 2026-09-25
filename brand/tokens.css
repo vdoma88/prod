@@ -1,9 +1,10 @@
-/* Сила Рода · общие дизайн-токены v1.0.1
+/* Сила Рода · общие дизайн-токены v1.1.0
    Семейная палитра всех проектов Екатерины Белой. Приложения подключают
    файл и берут отсюда общие цвета и шрифты, а собственный характер
    держат через --sr-accent (свой цвет у каждого курса, см. ниже).
 
    Подключение: <link rel="stylesheet" href="/brand/tokens.css">
+   Шрифты — отдельно: <link rel="stylesheet" href="/brand/fonts.css">
    Затем на <html> или <body>: data-sr-product="runes" — и --sr-accent
    станет цветом курса. Переменные ничего не перекрашивают сами:
    приложение решает, где их использовать. */
@@ -39,6 +40,22 @@
   --sr-serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
   --sr-sans: Manrope, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 
+  /* Фон страницы — единственное, чем курсы отличаются друг от друга
+     внешне. Три точки градиента, как на лендинге:
+     background: var(--sr-page); (или сами --sr-bg-1..3) */
+  --sr-bg-1: #fffdf9;
+  --sr-bg-2: #f7f0e7;
+  --sr-bg-3: #efe2d4;
+  --sr-page: radial-gradient(circle at 50% -10%, var(--sr-bg-1) 0, var(--sr-bg-2) 42%, var(--sr-bg-3) 100%);
+
+  /* Поверхности и кнопки лендинга */
+  --sr-panel: linear-gradient(145deg, rgba(255, 253, 249, .92), rgba(248, 239, 229, .84));
+  --sr-glass: rgba(255, 250, 244, .82);
+  --sr-button: linear-gradient(180deg, #c58b43, #a86427);
+  --sr-button-border: #e1bb7f;
+  --sr-button-ink: #fff9ef;
+  --sr-button-shadow: 0 8px 24px rgba(146, 86, 25, .18);
+
   /* Формы */
   --sr-radius-s: 10px;
   --sr-radius-m: 16px;
@@ -48,7 +65,8 @@
   --sr-touch: 44px;
 }
 
-[data-sr-product="rod"] { --sr-accent: var(--sr-rod); }
-[data-sr-product="plamya"] { --sr-accent: var(--sr-plamya); }
-[data-sr-product="taro"] { --sr-accent: var(--sr-taro); }
-[data-sr-product="runes"] { --sr-accent: var(--sr-runes); }
+/* Цвет курса и тон его фона. Всё остальное у курсов общее. */
+[data-sr-product="rod"] { --sr-accent: var(--sr-rod); --sr-bg-1: #fdf9f2; --sr-bg-2: #f2e7d8; --sr-bg-3: #e6d4bf; }
+[data-sr-product="plamya"] { --sr-accent: var(--sr-plamya); --sr-bg-1: #fffaf6; --sr-bg-2: #f8ece4; --sr-bg-3: #f0ddd0; }
+[data-sr-product="taro"] { --sr-accent: var(--sr-taro); --sr-bg-1: #fcfaf3; --sr-bg-2: #f2ede0; --sr-bg-3: #e6dfca; }
+[data-sr-product="runes"] { --sr-accent: var(--sr-runes); --sr-bg-1: #fdf9fb; --sr-bg-2: #f5ecf0; --sr-bg-3: #eadbe3; }
