@@ -72,6 +72,20 @@ jobs:
               }
               await page.waitForTimeout(600);
 
+              // Прокручиваем всю страницу, чтобы сработали reveal/IntersectionObserver
+              // и браузер реально загрузил lazy-изображения перед аудитом.
+              await page.evaluate(async () => {
+                const step = Math.max(420, Math.floor(innerHeight * 0.72));
+                for (let y = 0; y < document.documentElement.scrollHeight; y += step) {
+                  scrollTo(0, y);
+                  await new Promise(resolve => setTimeout(resolve, 90));
+                }
+                scrollTo(0, document.documentElement.scrollHeight);
+                await new Promise(resolve => setTimeout(resolve, 400));
+                scrollTo(0, 0);
+                await new Promise(resolve => setTimeout(resolve, 250));
+              });
+
               const metrics = await page.evaluate(() => {
                 const brokenImages = [...document.images].filter(img => !img.complete || img.naturalWidth === 0).map(img => img.src);
                 const overflow = document.documentElement.scrollWidth - document.documentElement.clientWidth;
