@@ -214,13 +214,13 @@ body.menu-open{overflow:hidden}
 .hero h1,.section-head h2,.service-card h3,.start-card h3,.svc-hero h1,.svc-intro h2,.svc-result p{
   text-wrap:balance;
 }
-.service-card:nth-child(1) img{object-position:50% 40%}
-.service-card:nth-child(2) img{object-position:50% 42%}
+.service-card:nth-child(1) img{object-position:48% 42%}
+.service-card:nth-child(2) img{object-position:50% 45%}
 .service-card:nth-child(3) img{object-position:50% 55%}
 .service-card:nth-child(4) img{object-position:50% 60%}
 .service-card:nth-child(5) img{object-position:50% 50%}
 .service-card:nth-child(6) img{object-position:50% 50%}
-.service-card:nth-child(7) img{object-position:50% 50%}
+.service-card:nth-child(7) img{object-position:50% 48%}
 .service-card:nth-child(8) img{object-position:68% 44%}
 @media(max-width:640px){
   .hero h1{line-height:.9}
@@ -364,6 +364,237 @@ body.menu-open{overflow:hidden}
   .course-photo--lead{grid-column:1/-1!important;grid-row:span 2!important}
 }
 
+
+/* === Design System 2.0 === */
+:root{
+  --paper-strong:#fffdf9;
+  --olive:#7d8064;
+  --amber:#bd7c32;
+  --plum:#725665;
+  --sage:#869284;
+  --terracotta:#a86f52;
+}
+body{background:linear-gradient(180deg,#fbf7f1 0,#f7efe7 45%,#efe4d8 100%)}
+.panel{box-shadow:0 14px 44px rgba(71,46,25,.07)}
+.eyebrow,.section-kicker{font-size:10px;letter-spacing:.18em}
+.desktop-nav a,.nav-cta,.svc-back,.svc-text-link,.course-link,.detail-cta{font-size:10px}
+.service-meta,.hero-footnote{font-size:9px}
+.brand-monogram{position:relative;font-family:var(--serif);font-size:0;overflow:hidden;background:linear-gradient(145deg,#fffdf7,#f0dfca)}
+.brand-monogram i{position:absolute;font-style:normal;font-size:18px;line-height:1;color:#9a652d}
+.brand-monogram i:first-child{left:9px;top:8px}
+.brand-monogram i:last-child{right:8px;bottom:7px}
+.brand-monogram:after{content:"";position:absolute;left:50%;top:7px;bottom:7px;width:1px;background:#d6b37d;transform:rotate(28deg)}
+.hero-signature{margin:12px auto 0;font:400 24px/1 var(--serif);font-style:italic;color:#a7794d;opacity:.8}
+
+/* Home: stronger editorial hierarchy */
+.about-grid{grid-template-columns:1.04fr .96fr}
+.about-visual{position:relative;min-height:480px;border-radius:28px;overflow:hidden;box-shadow:var(--shadow)}
+.about-visual>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 42%}
+.about-visual:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(35,23,14,.05) 28%,rgba(29,19,12,.74) 100%)}
+.about-visual-copy{position:absolute;z-index:2;left:34px;right:34px;bottom:32px;color:white}
+.about-visual-copy .quote-mark{color:#f1c886}
+.about-visual-copy p{margin:0;font:500 37px/1.04 var(--serif);max-width:420px}
+.about-visual-copy a{display:inline-block;margin-top:18px;color:#f5dfbf;font-size:10px;letter-spacing:.12em}
+.format-rail{padding:18px 0 0}
+.format-rail-inner{display:flex;align-items:center;justify-content:center;gap:18px;min-height:64px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);color:#87684d;font-size:10px;letter-spacing:.14em}
+.format-rail i{width:38px;height:1px;background:linear-gradient(90deg,transparent,#c49a65,transparent)}
+.home-courses{padding-top:80px}
+.home-course-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.home-course{position:relative;min-height:390px;overflow:hidden;border-radius:24px;background:#ddd;isolation:isolate}
+.home-course img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;transition:transform .7s ease}
+.home-course:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(21,14,10,.06),rgba(25,16,11,.72) 84%);z-index:-1}
+.home-course:hover img{transform:scale(1.035)}
+.home-course>div{position:absolute;left:22px;right:22px;bottom:22px;color:white}
+.home-course small{font-size:9px;letter-spacing:.16em;color:#f3dcb8}
+.home-course h3{margin:5px 0 5px;font:500 35px/.96 var(--serif)}
+.home-course span{font-size:11px;color:rgba(255,251,245,.82)}
+.home-course--rod{outline:1px solid rgba(125,128,100,.22)}
+.home-course--fire{outline:1px solid rgba(189,124,50,.22)}
+.home-course--tarot{outline:1px solid rgba(114,86,101,.22)}
+.home-course--runes{outline:1px solid rgba(102,76,62,.22)}
+.home-courses-foot{display:flex;justify-content:flex-end;margin-top:18px}
+.course-link-large{font-size:11px;font-weight:600;letter-spacing:.12em;color:#8f6032}
+
+/* Service architecture: reduce generic card look */
+.service-page-v3 .svc-body{padding-top:82px}
+.service-page-v3 .svc-editorial-grid{gap:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.service-page-v3 .svc-intro,.service-page-v3 .svc-list{border:0;border-radius:0;box-shadow:none;background:transparent}
+.service-page-v3 .svc-intro{padding-left:0}
+.service-page-v3 .svc-list{border-left:1px solid var(--line)}
+.service-page-v3 .svc-list li{border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;padding-left:32px}
+.service-page-v3 .svc-list li:last-child{border-bottom:0}
+.service-page-v3 .svc-list li:before{left:5px}
+.service-page-v3 .svc-result{margin-top:46px;border-radius:24px;box-shadow:none}
+
+.story-module{margin:56px 0 18px;padding:42px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.story-module-head{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(260px,.55fr);gap:24px;align-items:end;margin-bottom:26px}
+.story-module-head .section-kicker{grid-column:1/-1}
+.story-module-head h2{margin:0;font:500 50px/.98 var(--serif);letter-spacing:-.02em}
+.story-module-head p{margin:0;color:var(--muted);font-size:14px;line-height:1.65}
+
+/* Personal path */
+.architecture-personal .svc-body{background:linear-gradient(180deg,#f9f4ed,#f2e9df)}
+.month-line{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--line)}
+.month-line article{position:relative;padding:26px 28px 24px;border-right:1px solid var(--line)}
+.month-line article:last-child{border-right:0}
+.month-line span{display:block;font:500 50px/.8 var(--serif);color:#c29a6a}
+.month-line small{display:block;margin-top:20px;font-size:9px;letter-spacing:.14em;color:#937254}
+.month-line h3{margin:8px 0 6px;font:500 34px/1 var(--serif)}
+.month-line p{margin:0;color:var(--muted);font-size:13px;line-height:1.6}
+.architecture-personal .course-gallery{box-shadow:none;background:transparent;border-radius:0;border-left:0;border-right:0;padding-left:0;padding-right:0}
+
+/* Ritual pages */
+.architecture-ritual .svc-body{background:linear-gradient(180deg,#f6efe6,#ecdfd1)}
+.architecture-ritual .story-module{background:linear-gradient(90deg,rgba(120,79,37,.04),transparent);padding-left:24px;padding-right:24px}
+.ritual-steps{display:grid;grid-template-columns:repeat(6,1fr);border-top:1px solid rgba(120,79,37,.2)}
+.ritual-steps article{padding:22px 14px;border-right:1px solid rgba(120,79,37,.16)}
+.ritual-steps article:last-child{border-right:0}
+.ritual-steps b{font:500 30px/1 var(--serif);color:#be8a4b}
+.ritual-steps span{display:block;margin-top:15px;font:500 24px/1 var(--serif)}
+.ritual-steps p{margin:7px 0 0;font-size:11px;line-height:1.45;color:var(--muted)}
+.ritual-editorial-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line)}
+.ritual-editorial-grid article{padding:26px;background:#f8f0e7}
+.ritual-editorial-grid span{font:500 32px/1 var(--serif);color:#b78246}
+.ritual-editorial-grid h3{margin:18px 0 6px;font:500 30px/1 var(--serif)}
+.ritual-editorial-grid p{margin:0;color:var(--muted);font-size:12px;line-height:1.55}
+
+/* Game page */
+.architecture-game .svc-body{background:radial-gradient(circle at 50% 8%,#fffaf4,#efe5da 68%)}
+.game-board{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:30px 0}
+.game-board>i{font-style:normal;color:#b28a61}
+.game-node{width:116px;aspect-ratio:1;border:1px solid var(--line);border-radius:50%;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#fffaf4}
+.game-node b{font:500 22px/1 var(--serif);color:#b17a43}
+.game-node span{margin-top:6px;font-size:11px;letter-spacing:.08em}
+.game-node--result{background:linear-gradient(145deg,#edd7bb,#fff8ed);border-color:#d2a66f}
+
+/* Course pages */
+.architecture-course .svc-body{background:#f7f1e9}
+.architecture-course .svc-editorial-grid{grid-template-columns:1.2fr .9fr .9fr}
+.architecture-course .course-gallery{box-shadow:none;background:#fffaf4}
+.process-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border:1px solid var(--line)}
+.process-strip article{padding:24px;border-right:1px solid var(--line);background:#fffaf4}
+.process-strip article:last-child{border-right:0}
+.process-strip span{font-size:10px;letter-spacing:.12em;color:#a87745}
+.process-strip h3{margin:20px 0 6px;font:500 30px/1 var(--serif)}
+.process-strip p{margin:0;color:var(--muted);font-size:12px}
+.tarot-sequence{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.tarot-sequence article{text-align:center;padding:26px}
+.tarot-card-ui{width:110px;height:164px;margin:0 auto 18px;display:grid;place-items:center;border:1px solid #bca384;border-radius:12px;background:linear-gradient(160deg,#3f3131,#715766);color:#f5dfbd;font:500 38px/1 var(--serif);box-shadow:0 16px 40px rgba(53,34,31,.16)}
+.tarot-card-ui--spread{transform:rotate(4deg)}
+.tarot-sequence h3{margin:0;font:500 30px/1 var(--serif)}
+.tarot-sequence p{margin:6px 0 0;color:var(--muted);font-size:12px}
+.futhark-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.futhark-grid article{padding:30px;border:1px solid rgba(90,58,42,.14);border-radius:20px;background:linear-gradient(145deg,#fffaf4,#eee2d7)}
+.futhark-grid small{font-size:9px;letter-spacing:.14em;color:#8d6857}
+.futhark-grid h3{margin:8px 0 12px;font:500 38px/1 var(--serif)}
+.rune-line{padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font:500 15px/1.5 var(--sans);letter-spacing:.08em;color:#6f4d56}
+.futhark-grid p{margin:14px 0 0;color:var(--muted);font-size:13px;line-height:1.6}
+
+/* Wellness / consultation */
+.architecture-wellness .svc-body{background:linear-gradient(180deg,#faf5ef,#eee2d6)}
+.architecture-wellness .svc-hero-orbit{display:none}
+.safety-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.safety-grid article{padding:28px;border-radius:20px;background:#fffaf4;border:1px solid rgba(168,111,82,.16)}
+.safety-grid span{font:500 34px/1 var(--serif);color:var(--terracotta)}
+.safety-grid h3{margin:16px 0 6px;font:500 30px/1 var(--serif)}
+.safety-grid p{margin:0;color:var(--muted);font-size:12px}
+.architecture-consult .svc-hero{min-height:680px}
+.architecture-consult .svc-hero-orbit{display:none}
+.architecture-consult .svc-quote{display:none}
+.architecture-consult .svc-hero-inner{grid-template-columns:1fr}
+.architecture-consult .svc-hero-copy{max-width:730px}
+.architecture-consult .svc-facts{max-width:680px}
+.consult-flow{padding-bottom:56px}
+.consult-line{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font:500 22px/1 var(--serif)}
+.consult-line i{font-style:normal;color:#b98b5b}
+
+/* Student dashboard */
+.courses-dashboard{background:linear-gradient(180deg,#faf6f0,#efe4d8)}
+.courses-dashboard .courses-hero{padding-top:100px}
+.courses-status{display:flex;align-items:center;gap:12px;margin-top:14px;color:#927153;font-size:9px;letter-spacing:.13em}
+.courses-status i{width:28px;height:1px;background:#c6a076}
+.courses-dashboard .course-card{border-top:0;padding:0 28px 28px;border-radius:24px;background:#fffaf4;box-shadow:0 12px 38px rgba(60,38,21,.07)}
+.courses-dashboard .course-card-media{height:260px;margin:0 -28px 14px;border-bottom:0}
+.courses-dashboard .course-card-media:after{content:"";position:absolute}
+.course-metrics{display:flex;flex-wrap:wrap;gap:6px;margin-top:-2px}
+.course-metrics span{padding:7px 10px;border:1px solid var(--line);border-radius:999px;font-size:9px;color:#795f4c}
+.courses-dashboard .course-actions .primary-btn{min-width:180px}
+.courses-dashboard .course-link{font-size:10px}
+
+/* Less repetitive service cards */
+.service-card{box-shadow:0 12px 36px rgba(54,35,20,.08)}
+.service-card:after{background:linear-gradient(180deg,rgba(30,19,12,.03),rgba(35,22,14,.62) 72%,rgba(28,18,12,.86))}
+.start-card{box-shadow:none}
+.start-card small{font-size:9px}
+
+@media(max-width:1000px){
+ .home-course-grid{grid-template-columns:repeat(2,1fr)}
+ .ritual-steps{grid-template-columns:repeat(3,1fr)}
+ .ritual-steps article:nth-child(3){border-right:0}
+ .ritual-editorial-grid{grid-template-columns:repeat(2,1fr)}
+ .process-strip{grid-template-columns:repeat(3,1fr)}
+ .process-strip article:nth-child(3){border-right:0}
+ .game-board{flex-wrap:wrap;justify-content:center}
+ .game-board>i{display:none}
+}
+@media(max-width:700px){
+ .eyebrow,.section-kicker{font-size:9px}
+ .about-grid{grid-template-columns:1fr}
+ .about-visual{min-height:420px}
+ .about-visual-copy{left:22px;right:22px;bottom:22px}
+ .about-visual-copy p{font-size:31px}
+ .format-rail-inner{gap:8px;flex-wrap:wrap;padding:16px 6px}
+ .format-rail i{width:14px}
+ .home-course-grid{grid-template-columns:1fr 1fr;gap:8px}
+ .home-course{min-height:300px}
+ .home-course>div{left:16px;right:16px;bottom:16px}
+ .home-course h3{font-size:29px}
+ .story-module{margin-top:36px;padding:30px 0}
+ .story-module-head{grid-template-columns:1fr;gap:10px}
+ .story-module-head .section-kicker{grid-column:auto}
+ .story-module-head h2{font-size:38px}
+ .story-module-head p{font-size:12px}
+ .month-line{grid-template-columns:1fr}
+ .month-line article{border-right:0;border-bottom:1px solid var(--line);padding:22px 0}
+ .ritual-steps{grid-template-columns:1fr 1fr}
+ .ritual-steps article:nth-child(n){border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+ .ritual-steps article:nth-child(even){border-right:0}
+ .ritual-editorial-grid{grid-template-columns:1fr 1fr}
+ .process-strip{grid-template-columns:1fr 1fr}
+ .process-strip article{border-bottom:1px solid var(--line)}
+ .process-strip article:nth-child(even){border-right:0}
+ .tarot-sequence{grid-template-columns:1fr}
+ .futhark-grid{grid-template-columns:1fr}
+ .safety-grid{grid-template-columns:1fr}
+ .consult-line{font-size:18px;flex-wrap:wrap;justify-content:flex-start}
+ .courses-dashboard .course-card-media{height:220px}
+ .service-page-v3 .svc-editorial-grid{border:0}
+ .service-page-v3 .svc-intro{padding:22px 0}
+ .service-page-v3 .svc-list{border-left:0;border-top:1px solid var(--line);padding:22px 0}
+}
+@media(max-width:430px){
+ .home-course-grid{grid-template-columns:1fr}
+ .home-course{min-height:330px}
+ .ritual-editorial-grid{grid-template-columns:1fr}
+ .ritual-steps{grid-template-columns:1fr 1fr}
+ .process-strip{grid-template-columns:1fr}
+ .process-strip article{border-right:0!important}
+ .consult-line{display:grid;grid-template-columns:1fr;gap:7px}
+ .consult-line i{transform:rotate(90deg);width:max-content}
+}
+
+
+/* DS2 gallery rebalance */
+.architecture-personal .course-photo-grid,
+.architecture-course .course-photo-grid{grid-template-columns:repeat(12,1fr)}
+.architecture-personal .course-photo:nth-child(4),
+.architecture-course .course-photo:nth-child(4){grid-column:span 6}
+@media(max-width:900px){
+  .architecture-personal .course-photo:nth-child(4),
+  .architecture-course .course-photo:nth-child(4){grid-column:span 1}
+}
+
+@media(max-width:900px){.architecture-course .svc-editorial-grid{grid-template-columns:1fr;min-width:0}.architecture-course .svc-intro,.architecture-course .svc-list,.architecture-course .story-module,.architecture-course .course-gallery{min-width:0;max-width:100%}}
 /* Шаманский бубен на главном экране (site/drum.js): нажатие — удар, «Ритм» — стук сердца */
 .hero-drum{position:absolute;z-index:5;left:max(28px,6vw);bottom:clamp(40px,9vh,110px);display:flex;flex-direction:column;align-items:center;gap:8px}
 .hero-drum-btn{width:clamp(96px,9vw,132px);aspect-ratio:220/240;padding:0;border:0;background:none;cursor:pointer;border-radius:50%;-webkit-tap-highlight-color:transparent}
