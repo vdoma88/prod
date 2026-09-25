@@ -112,6 +112,19 @@ github_https_url() {
   fi
 }
 
+# github_ssh_ok хост — пускает ли GitHub по ключу этого хоста.
+#
+# GitHub на `ssh -T` всегда отвечает кодом 1, даже когда вход удался, поэтому
+# смотрим только на текст ответа (в конвейере с `set -o pipefail` код 1 от ssh
+# перекрыл бы успех grep). Если вход не удался — показываем, что ответил ssh.
+github_ssh_ok() {
+  local out
+  out="$(ssh -o BatchMode=yes -o ConnectTimeout=15 -T "$1" 2>&1 || true)"
+  case "$out" in *"successfully authenticated"*) return 0 ;; esac
+  printf '  ssh ответил: %s\n' "$(printf '%s' "$out" | tail -n 1)" >&2
+  return 1
+}
+
 # deploy_key_host репозиторий — имя хоста для ssh-доступа по deploy key.
 #
 # Для каждого репозитория свой ключ /root/.ssh/deploy-<repo> и своё имя хоста
@@ -127,7 +140,7 @@ deploy_key_host() {
   fi
   grep -q '^github.com ' /root/.ssh/known_hosts 2>/dev/null ||
     ssh-keyscan -t ed25519 github.com >> /root/.ssh/known_hosts 2>/dev/null
-  until ssh -o BatchMode=yes -T "$host" 2>&1 | grep -q 'successfully authenticated'; do
+  until github_ssh_ok "$host"; do
     printf '\n  Серверу нужен доступ на чтение к %s/%s. Добавьте ключ:\n' "$GITHUB_OWNER" "$repo" >&2
     printf '  GitHub → %s/%s → Settings → Deploy keys → Add deploy key\n' "$GITHUB_OWNER" "$repo" >&2
     printf '  (галочку «Allow write access» не ставить)\n\n' >&2
