@@ -1,5 +1,5 @@
 (() => {
-  const SITE_CONFIG = { telegramUsername: "", schoolUrl: "https://plamya.belayarod.ru/" };
+  const SITE_CONFIG = { telegramUsername: "BelayaKatrin", schoolUrl: "https://plamya.belayarod.ru/" };
 
   // До объединения по адресу belayarod.ru жила школа «Язык Пламени», и у
   // учениц на экране телефона осталась её иконка: она открывает корень сайта
