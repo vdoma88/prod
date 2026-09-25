@@ -216,10 +216,10 @@ body.menu-open{overflow:hidden}
 }
 .service-card:nth-child(1) img{object-position:48% 42%}
 .service-card:nth-child(2) img{object-position:52% 46%}
-.service-card:nth-child(3) img{object-position:36% 50%}
-.service-card:nth-child(4) img{object-position:72% 50%}
-.service-card:nth-child(5) img{object-position:45% 54%}
-.service-card:nth-child(6) img{object-position:74% 50%}
+.service-card:nth-child(3) img{object-position:62% 30%}
+.service-card:nth-child(4) img{object-position:30% 70%}
+.service-card:nth-child(5) img{object-position:30% 22%}
+.service-card:nth-child(6) img{object-position:42% 82%}
 .service-card:nth-child(7) img{object-position:50% 48%}
 .service-card:nth-child(8) img{object-position:68% 44%}
 @media(max-width:640px){
