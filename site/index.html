@@ -19,7 +19,7 @@
 <section class="hero hero-premium" id="hero">
  <div class="hero-orbit"></div><div class="tree-stage" aria-hidden="true"><canvas id="tree-canvas"></canvas></div>
  <div class="hero-drum" role="group" aria-label="Шаманский бубен">
-  <button class="hero-drum-btn" id="hero-drum" type="button" aria-label="Ударить в бубен — прозвучит удар">
+  <button class="hero-drum-btn" id="hero-drum" type="button" aria-pressed="false" aria-label="Шаманский бубен: включить или остановить ритм">
    <svg viewBox="0 0 220 240" aria-hidden="true" focusable="false">
     <defs>
      <radialGradient id="drumSkin" cx="45%" cy="38%" r="70%"><stop offset="0" stop-color="#fbf0dc"/><stop offset=".6" stop-color="#ecd3a8"/><stop offset="1" stop-color="#c99a5e"/></radialGradient>
@@ -50,7 +50,7 @@
     <g class="drum-mallet"><path d="M168 196 L206 146" stroke="#6e4524" stroke-width="6" stroke-linecap="round"/><ellipse cx="208" cy="142" rx="11" ry="9" fill="#d9b889" stroke="#8b5a2e" stroke-width="2" transform="rotate(-52 208 142)"/></g>
    </svg>
   </button>
-  <div class="hero-drum-caption"><span>Нажмите — ударит бубен</span><button class="hero-drum-rhythm" id="hero-drum-rhythm" type="button" aria-pressed="false">Ритм</button></div>
+  <div class="hero-drum-caption"><span id="hero-drum-state" aria-live="polite">Нажмите — зазвучит шаманский ритм</span></div>
  </div>
  <div class="hero-copy reveal is-visible">
   <div class="eyebrow">АВТОРСКОЕ ПРОСТРАНСТВО ЕКАТЕРИНЫ БЕЛОЙ</div>
