@@ -1,7 +1,7 @@
 name: iPhone Safari live audit
 
 on:
-  pull_request:
+  push:
     branches: [main]
   workflow_dispatch:
 
@@ -19,6 +19,21 @@ jobs:
         run: |
           npm i -g playwright@1.56.1
           npx playwright install --with-deps webkit
+
+      - name: Дождаться публикации iOS-версии
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 20); do
+            html="$(curl -fsSL --max-time 20 -H 'Cache-Control: no-cache' "https://belayarod.ru/?iphoneDeploy=$attempt-$(date +%s)" || true)"
+            if printf '%s' "$html" | grep -q 'tree-loader.js'; then
+              echo "✓ iOS hardening опубликован"
+              exit 0
+            fi
+            echo "Попытка $attempt/20: production ещё не обновлён"
+            sleep 30
+          done
+          echo "::error::production не получил iOS hardening за 10 минут"
+          exit 1
 
       - name: Проверить belayarod.ru как iPhone Safari
         run: |
@@ -96,10 +111,10 @@ jobs:
               }
 
               await page.evaluate(async () => {
-                const step = Math.max(360, Math.floor(innerHeight * .68));
+                const step = 220;
                 for (let y = 0; y < document.documentElement.scrollHeight; y += step) {
                   scrollTo(0, y);
-                  await new Promise(r => setTimeout(r, 80));
+                  await new Promise(r => setTimeout(r, 140));
                 }
                 scrollTo(0, 0);
                 await new Promise(r => setTimeout(r, 500));
