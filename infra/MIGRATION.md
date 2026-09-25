@@ -41,46 +41,23 @@
 > Если у вас иконка школы на экране телефона — удалите её и добавьте заново
 > с нового адреса (Safari → «Поделиться» → «На экран „Домой“»).
 
-**Шаги в день переезда** (в спокойное время, когда нет занятий):
+**Шаги в день переезда** (в спокойное время, когда нет занятий) — один скрипт
+из репозитория школы:
 
 ```bash
-# 0. Резервная копия школы
-cd /var/www/flame-app && bash deploy/backup.sh
-
-# 1. Школа начинает отвечать на новом имени. В её nginx-конфиге:
-#    server_name belayarod.ru www.belayarod.ru;  →  server_name plamya.belayarod.ru;
-#    сертификат — тот, что выпущен на все имена (infra/DEPLOY.md)
-nano /etc/nginx/sites-available/<конфиг школы>
-
-# 2. Лендинг занимает belayarod.ru
-cd /var/www/prod && node scripts/build.mjs && node scripts/check.mjs
-install -m 644 infra/nginx/snippets/sila-roda-headers.conf /etc/nginx/snippets/
-install -m 644 infra/nginx/belayarod.ru.conf /etc/nginx/sites-available/belayarod.ru
-ln -s /etc/nginx/sites-available/belayarod.ru /etc/nginx/sites-enabled/belayarod.ru
-nginx -t && systemctl reload nginx
-
-# 3. Вебхук Telegram — на новый адрес (секрет — тот же, что задан сейчас)
-curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
-  -d "url=https://plamya.belayarod.ru/api/telegram/webhook" \
-  -d "secret_token=$TELEGRAM_WEBHOOK_SECRET"
-curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getWebhookInfo"
+cd /var/www/flame-app && bash deploy/update.sh               # свежая школа и скрипт переезда
+sudo bash /var/www/flame-app/deploy/move-to-plamya.sh        # check: план и отличия, ничего не меняет
+sudo bash /var/www/flame-app/deploy/move-to-plamya.sh run    # переезд
 ```
 
-Скрипты школы `deploy/redirect-www.sh` и `deploy/reject-foreign-domains.sh`
-ищут домен в `server_name`. После смены имени их нужно перезапустить
-с `DOMAIN=plamya.belayarod.ru`, иначе `reject-foreign-domains` отбросит новый адрес.
+`run` делает копию `/etc/nginx` и базы, собирает лендинг, одним `reload`
+переключает школу на `plamya.belayarod.ru` (её же конфиг под новым именем —
+лимит загрузки, `/uploads`, правило 444 сохраняются), ставит лендинг на
+`belayarod.ru`, проверяет оба адреса по HTTPS — если что-то не так, сам всё
+возвращает — и переводит вебхук Telegram на новый адрес.
 
-**Проверка сразу после:**
-
-- `https://belayarod.ru` — лендинг; `https://belayarod.ru/courses.html` — «Мои курсы»;
-- `https://plamya.belayarod.ru` — вход в школу, вход работает, уроки открываются;
-- `https://belayarod.ru/uploads/<любое фото>` → 308 на `plamya.belayarod.ru/uploads/…`;
-- `getWebhookInfo` показывает новый URL без `last_error_message`;
-- `pm2 logs flame-school` — без ошибок.
-
-**Откат:** вернуть `server_name` школы, удалить ссылку
-`/etc/nginx/sites-enabled/belayarod.ru`, `nginx -t && systemctl reload nginx`,
-вернуть вебхук на `https://belayarod.ru/api/telegram/webhook`.
+**Откат:** `sudo bash /var/www/flame-app/deploy/move-to-plamya.sh rollback` —
+nginx из копии, вебхук обратно на `belayarod.ru`.
 
 ## Этап 3. Позже (вариант C)
 
