@@ -70,14 +70,25 @@ port_owner() {
   ss -ltnpH "sport = :$1" 2>/dev/null | sed -n 's/.*users:((\"\([^\"]*\)\".*/\1/p' | head -n1
 }
 
-# require_port_free порт [допустимый процесс] — порт свободен или уже занят «своим» процессом.
+# port_pid порт — PID процесса, который слушает порт (пусто — никто).
+port_pid() {
+  ss -ltnpH "sport = :$1" 2>/dev/null | sed -n 's/.*pid=\([0-9]*\).*/\1/p' | head -n1
+}
+
+# require_port_free порт [допустимая программа] — порт свободен или уже занят «своим» процессом.
+#
+# ss показывает имя потока, а не программы: у Node 22+ это «MainThread».
+# Поэтому «свой» процесс узнаём по исполняемому файлу (/proc/PID/exe → node).
 require_port_free() {
-  local port="$1" allowed="${2:-}" owner
+  local port="$1" allowed="${2:-}" owner pid exe=""
   owner="$(port_owner "$port")"
   [ "$owner" != "?" ] || die "нет команды ss (apt-get install -y iproute2) — не проверить, свободен ли порт $port"
-  if [ -n "$owner" ] && [ "$owner" != "$allowed" ]; then
-    die "Порт $port занят процессом «$owner». Школа «Язык Пламени» занимает 3000, остальным нужны свои порты (infra/DOMAINS.md)."
-  fi
+  [ -n "$owner" ] || return 0
+  [ "$owner" = "$allowed" ] && return 0
+  pid="$(port_pid "$port")"
+  [ -n "$pid" ] && exe="$(basename "$(readlink -f "/proc/$pid/exe" 2>/dev/null)" 2>/dev/null)"
+  [ -n "$allowed" ] && [ "$exe" = "$allowed" ] && return 0
+  die "Порт $port занят процессом «$owner»${exe:+ ($exe)}. Школа «Язык Пламени» занимает 3000, остальным нужны свои порты (infra/DOMAINS.md)."
 }
 
 # wait_http url [секунд] — ждёт ответа 2xx/3xx от локального процесса.
