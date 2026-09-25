@@ -1,196 +1,176 @@
-// Шаманский бубен на главной. Нажатие запускает шаманский ритм, повторное
-// нажатие плавно его останавливает. Звук синтезируется Web Audio прямо в
-// браузере: без аудиофайлов и без изменений CSP. Браузеры разрешают звук
-// только после действия человека, поэтому до первого нажатия тишина.
-//
-// Ритм — как у шаманского путешествия:
-//   1. зов: редкие удары, разгоняющиеся до рабочего темпа;
-//   2. путь: ровный монотонный бой около 4 ударов в секунду (~230 в минуту)
-//      с акцентом на каждый четвёртый и живыми неровностями руки;
-//   3. возврат: четыре серии по семь сильных ударов, быстрая дробь
-//      и последний удар.
+// Шаманский бубен на главной: нажатие — медитативный шаманский ритм, повторное
+// нажатие плавно его гасит. Звук и ритм — как у бубна со страницы мистерии
+// «Сталь, Соль и Огонь»: медленный шаг 66 ударов в минуту, рисунок
+// «сильная, эхо, средняя, эхо…», отзвук зала и тихий гул под бубном.
+// Всё синтезируется Web Audio прямо в браузере: без аудиофайлов и без
+// изменений CSP. До первого нажатия тишина — так требуют браузеры.
 (() => {
   const drum = document.getElementById('hero-drum');
   const caption = document.getElementById('hero-drum-state');
-  if (!drum) return;
+  const vol = document.getElementById('hero-drum-vol');
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
-  const LOOKAHEAD = 0.12; // на сколько секунд вперёд ставить удары
+  if (!drum || !AudioCtx) return;
+
+  const BPM = 66;
+  const INT = 60 / BPM; // медленный шаманский шаг
+  const PATTERN = [1, 0.35, 0.8, 0.35, 1, 0.35, 0.8, 0]; // сильная, эхо, средняя, эхо…
   let ctx = null;
-  let noise = null;
   let master = null;
-  let beats = [];
-  let next = 0;
-  let startAt = 0;
+  let verb = null;
+  let noise = null;
+  let playing = false;
+  let nextT = 0;
+  let step = 0;
   let timer = 0;
-  let endTimer = 0;
   const hitTimers = new Set();
 
-  function audio() {
-    if (!AudioCtx) return null;
-    if (!ctx) {
-      ctx = new AudioCtx();
-      // Полсекунды белого шума — для «кожи» и подвесок бубна.
-      noise = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.5), ctx.sampleRate);
-      const data = noise.getChannelData(0);
-      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  // Отзвук зала: затухающий шум 3,2 с как импульс свёртки.
+  function impulse(sec) {
+    const rate = ctx.sampleRate;
+    const len = Math.floor(rate * sec);
+    const buf = ctx.createBuffer(2, len, rate);
+    for (let c = 0; c < 2; c++) {
+      const d = buf.getChannelData(c);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6);
     }
-    if (ctx.state === 'suspended') ctx.resume();
-    return ctx;
+    return buf;
   }
 
-  // Партитура: список ударов { t: секунды от начала, v: сила 0..1 }.
-  function score() {
-    const out = [];
-    const jitter = () => (Math.random() - 0.5) * 0.024;
-    let t = 0;
-    // 1. Зов: 12 ударов, интервал сжимается с 1,1 с до рабочих 0,26 с.
-    for (let i = 0; i < 12; i++) {
-      out.push({ t, v: 1 - i * 0.02 });
-      t += 1.1 * Math.pow(0.26 / 1.1, (i + 1) / 12);
-    }
-    // 2. Путь: ровный бой ~40 секунд.
-    const pulse = 0.26;
-    for (let i = 0; t < 46; i++) {
-      out.push({ t: t + jitter(), v: i % 4 === 0 ? 0.95 : 0.62 + Math.random() * 0.12 });
-      t += pulse;
-    }
-    // 3. Возврат: 4 × 7 сильных ударов, быстрая дробь, последний удар.
-    t += 0.9;
-    for (let set = 0; set < 4; set++) {
-      for (let i = 0; i < 7; i++) { out.push({ t, v: 1 }); t += 0.42; }
-      t += 0.9;
-    }
-    const rollEnd = t + 3.2;
-    for (let i = 0; t < rollEnd; i++) {
-      out.push({ t: t + jitter() / 3, v: 0.45 + 0.35 * (t - rollEnd + 3.2) / 3.2 });
-      t += 0.085;
-    }
-    out.push({ t: t + 0.7, v: 1 });
-    return out;
+  function init() {
+    ctx = new AudioCtx();
+    master = ctx.createGain();
+    master.gain.value = 0;
+    master.connect(ctx.destination);
+    verb = ctx.createConvolver();
+    verb.buffer = impulse(3.2);
+    const wet = ctx.createGain();
+    wet.gain.value = 0.35;
+    verb.connect(wet);
+    wet.connect(master);
+    // Тихий дрон под бубном: две медленно плывущие низкие ноты.
+    const drone = ctx.createGain();
+    drone.gain.value = 0.05;
+    drone.connect(master);
+    [55, 82.5].forEach((f, i) => {
+      const o = ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = f;
+      const lfo = ctx.createOscillator();
+      const lfoGain = ctx.createGain();
+      lfo.frequency.value = 0.07 + i * 0.05;
+      lfoGain.gain.value = 0.6;
+      lfo.connect(lfoGain);
+      lfoGain.connect(o.frequency);
+      o.connect(drone);
+      o.start();
+      lfo.start();
+    });
+    // 0,2 с шума для удара колотушки — один буфер на все удары.
+    noise = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.2), ctx.sampleRate);
+    const d = noise.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
   }
 
-  // Один удар в момент when: низкий гул обечайки с падающим тоном, шлепок
-  // кожи и едва слышный звон подвесок. v 0..1 — сила удара.
-  function hit(when, v) {
-    const ac = ctx;
-    const out = ac.createGain();
-    out.gain.value = 0.85 * v;
+  function hit(t, v) {
+    if (v <= 0) return;
+    const out = ctx.createGain();
     out.connect(master);
-
-    const body = ac.createOscillator();
-    const bodyGain = ac.createGain();
-    body.type = 'sine';
-    body.frequency.setValueAtTime(112 + 10 * v, when);
-    body.frequency.exponentialRampToValueAtTime(52, when + 0.3);
-    bodyGain.gain.setValueAtTime(0.0001, when);
-    bodyGain.gain.exponentialRampToValueAtTime(1, when + 0.004);
-    bodyGain.gain.exponentialRampToValueAtTime(0.0001, when + 0.9);
-    body.connect(bodyGain).connect(out);
-    body.start(when); body.stop(when + 1);
-
-    const over = ac.createOscillator();
-    const overGain = ac.createGain();
-    over.type = 'triangle';
-    over.frequency.setValueAtTime(196, when);
-    over.frequency.exponentialRampToValueAtTime(96, when + 0.18);
-    overGain.gain.setValueAtTime(0.0001, when);
-    overGain.gain.exponentialRampToValueAtTime(0.32, when + 0.003);
-    overGain.gain.exponentialRampToValueAtTime(0.0001, when + 0.35);
-    over.connect(overGain).connect(out);
-    over.start(when); over.stop(when + 0.4);
-
-    const skin = ac.createBufferSource();
-    const skinBand = ac.createBiquadFilter();
-    const skinGain = ac.createGain();
-    skin.buffer = noise;
-    skin.playbackRate.value = 0.9 + Math.random() * 0.2;
-    skinBand.type = 'bandpass';
-    skinBand.frequency.value = 650 + 150 * v;
-    skinBand.Q.value = 0.9;
-    skinGain.gain.setValueAtTime(0.5, when);
-    skinGain.gain.exponentialRampToValueAtTime(0.0001, when + 0.08);
-    skin.connect(skinBand).connect(skinGain).connect(out);
-    skin.start(when); skin.stop(when + 0.1);
-
-    const bells = ac.createBufferSource();
-    const bellsHigh = ac.createBiquadFilter();
-    const bellsGain = ac.createGain();
-    bells.buffer = noise;
-    bellsHigh.type = 'highpass';
-    bellsHigh.frequency.value = 5200;
-    bellsGain.gain.setValueAtTime(0.0001, when + 0.015);
-    bellsGain.gain.exponentialRampToValueAtTime(0.05 * v, when + 0.04);
-    bellsGain.gain.exponentialRampToValueAtTime(0.0001, when + 0.3);
-    bells.connect(bellsHigh).connect(bellsGain).connect(master);
-    bells.start(when); bells.stop(when + 0.35);
-
-    // Анимация удара — в тот же момент, когда прозвучит звук.
-    const id = setTimeout(() => {
-      hitTimers.delete(id);
-      drum.classList.remove('is-hit');
-      void drum.offsetWidth;
-      drum.classList.add('is-hit');
-    }, Math.max(0, (when - ac.currentTime) * 1000));
-    hitTimers.add(id);
-  }
-
-  function schedule() {
-    const horizon = ctx.currentTime + LOOKAHEAD;
-    while (next < beats.length && startAt + beats[next].t < horizon) {
-      hit(Math.max(startAt + beats[next].t, ctx.currentTime), beats[next].v);
-      next++;
-    }
-    if (next >= beats.length) {
-      clearInterval(timer);
-      timer = 0;
-      const left = startAt + beats[beats.length - 1].t + 1.2 - ctx.currentTime;
-      endTimer = setTimeout(() => stop(false), Math.max(0, left * 1000));
+    out.connect(verb);
+    // Тело бубна: низкий тон с падением высоты.
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    const f = 78 + Math.random() * 4;
+    o.frequency.setValueAtTime(f * 1.9, t);
+    o.frequency.exponentialRampToValueAtTime(f, t + 0.09);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.9 * v, t + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 1.3);
+    o.connect(g);
+    g.connect(out);
+    o.start(t);
+    o.stop(t + 1.4);
+    // Обертон кожи.
+    const o2 = ctx.createOscillator();
+    const g2 = ctx.createGain();
+    o2.type = 'triangle';
+    o2.frequency.value = f * 2.7;
+    g2.gain.setValueAtTime(0.12 * v, t);
+    g2.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+    o2.connect(g2);
+    g2.connect(out);
+    o2.start(t);
+    o2.stop(t + 0.4);
+    // Удар колотушки: шум через фильтр.
+    const n = ctx.createBufferSource();
+    n.buffer = noise;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 900;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.35 * v, t);
+    ng.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    n.connect(lp);
+    lp.connect(ng);
+    ng.connect(out);
+    n.start(t);
+    n.stop(t + 0.2);
+    // Сильные и средние удары видны на бубне — в момент звука.
+    if (v >= 0.7) {
+      const id = setTimeout(() => {
+        hitTimers.delete(id);
+        drum.classList.remove('is-hit');
+        void drum.offsetWidth;
+        drum.classList.add('is-hit');
+      }, Math.max(0, (t - ctx.currentTime) * 1000));
+      hitTimers.add(id);
     }
   }
 
-  function setPlaying(on) {
+  function sched() {
+    while (nextT < ctx.currentTime + 0.25) {
+      const v = PATTERN[step % PATTERN.length] * (0.9 + Math.random() * 0.1);
+      hit(nextT, v);
+      nextT += INT / 2;
+      step++;
+    }
+  }
+
+  function volume() {
+    return vol ? Number(vol.value) : 0.6;
+  }
+
+  function setUi(on) {
+    playing = on;
     drum.setAttribute('aria-pressed', String(on));
     drum.classList.toggle('is-playing', on);
-    if (caption) caption.textContent = on ? 'Звучит ритм — нажмите, чтобы остановить' : 'Нажмите — зазвучит шаманский ритм';
+    if (vol) vol.hidden = !on;
+    if (caption) caption.textContent = on ? 'Бубен звучит — нажмите, чтобы остановить' : 'Нажмите — зазвучит шаманский бубен';
   }
 
   function start() {
-    const ac = audio();
-    if (!ac) return;
-    master = ac.createGain();
-    master.gain.value = 1;
-    const tone = ac.createBiquadFilter();
-    tone.type = 'lowpass';
-    tone.frequency.value = 2200;
-    master.connect(tone).connect(ac.destination);
-    beats = score();
-    next = 0;
-    startAt = ac.currentTime + 0.06;
-    schedule();
-    timer = setInterval(schedule, 25);
-    setPlaying(true);
+    if (!ctx) init();
+    ctx.resume();
+    nextT = ctx.currentTime + 0.1;
+    step = 0;
+    master.gain.cancelScheduledValues(ctx.currentTime);
+    master.gain.setTargetAtTime(volume(), ctx.currentTime, 0.8); // плавное нарастание
+    sched();
+    timer = setInterval(sched, 60);
+    setUi(true);
   }
 
-  // fade: плавно увести звук за полсекунды (остановка по нажатию).
-  function stop(fade = true) {
+  function stop() {
+    master.gain.cancelScheduledValues(ctx.currentTime);
+    master.gain.setTargetAtTime(0, ctx.currentTime, 0.5); // плавное затихание
     clearInterval(timer);
-    clearTimeout(endTimer);
-    timer = 0;
     hitTimers.forEach(clearTimeout);
     hitTimers.clear();
-    if (master && ctx) {
-      const m = master;
-      if (fade) {
-        m.gain.setValueAtTime(m.gain.value, ctx.currentTime);
-        m.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
-      }
-      setTimeout(() => m.disconnect(), fade ? 600 : 0);
-      master = null;
-    }
-    setPlaying(false);
+    setUi(false);
   }
 
-  drum.addEventListener('click', () => (drum.getAttribute('aria-pressed') === 'true' ? stop() : start()));
-  // Ушли со страницы — ритм замолкает.
-  document.addEventListener('visibilitychange', () => { if (document.hidden && master) stop(); });
+  drum.addEventListener('click', () => (playing ? stop() : start()));
+  if (vol) vol.addEventListener('input', () => { if (playing) master.gain.setTargetAtTime(volume(), ctx.currentTime, 0.1); });
+  // Ушли со страницы — бубен замолкает.
+  document.addEventListener('visibilitychange', () => { if (document.hidden && playing) stop(); });
 })();
