@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Проверка сервера перед раскладкой проектов «Сила Рода». Ничего не меняет.
 #
-#   sudo bash infra/vps/00-preflight.sh
+#   sudo bash /var/www/flame-app/deploy/sila-roda.sh preflight
+#   (или напрямую: sudo bash infra/vps/00-preflight.sh)
 #
 # Показывает: память и swap, диск, Node.js, nginx/certbot/pm2/PostgreSQL,
 # занятые порты, DNS всех адресов и что уже установлено. В конце — что
@@ -68,7 +69,7 @@ for f in /etc/nginx/sites-enabled/*; do [ -e "$f" ] && printf '  nginx: %s\n' "$
 
 log "Итог"
 if [ "$problems" = 0 ]; then
-  ok "всё готово: 10-runes.sh, 11-taro.sh, 12-rod.sh, 13-plamya-cert.sh"
+  ok "всё готово: шаги runes, taro, rod, plamya-cert"
 else
-  warn "замечаний: $problems. Порядок: 01-swap.sh → 02-packages.sh → DNS → 10/11/12/13 (подробно — infra/vps/README.md)."
+  warn "замечаний: $problems. Порядок шагов: swap → packages → DNS → runes, taro, rod, plamya-cert (infra/vps/README.md)."
 fi
