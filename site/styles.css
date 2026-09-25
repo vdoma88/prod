@@ -582,3 +582,14 @@ body{background:linear-gradient(180deg,#fbf7f1 0,#f7efe7 45%,#efe4d8 100%)}
  .consult-line{display:grid;grid-template-columns:1fr;gap:7px}
  .consult-line i{transform:rotate(90deg);width:max-content}
 }
+
+
+/* DS2 gallery rebalance */
+.architecture-personal .course-photo-grid,
+.architecture-course .course-photo-grid{grid-template-columns:repeat(12,1fr)}
+.architecture-personal .course-photo:nth-child(4),
+.architecture-course .course-photo:nth-child(4){grid-column:span 6}
+@media(max-width:900px){
+  .architecture-personal .course-photo:nth-child(4),
+  .architecture-course .course-photo:nth-child(4){grid-column:span 1}
+}
