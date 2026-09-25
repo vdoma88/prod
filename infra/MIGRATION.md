@@ -7,19 +7,18 @@
 ## Этап 1. Поддомены без риска
 
 Три приложения пока нигде не работают у живых учеников, поэтому их можно
-ставить сразу на новые адреса.
+ставить сразу на новые адреса. Всё делают скрипты `infra/vps/`
+(подробно — [vps/README.md](vps/README.md)):
 
-1. DNS: A-записи `plamya`, `rod`, `taro`, `runes` → IP сервера.
-2. Память: swap или тариф 2 ГБ (`DOMAINS.md`, раздел «Память»).
-3. Руны → `runes.belayarod.ru` по `runes-belaya/docs/DEPLOY_1_0.md`,
-   `RUNE_PUBLIC_ORIGIN=https://runes.belayarod.ru`.
-4. Таро → `taro.belayarod.ru` по `tarot/docs/deploy-beget.md`, **с `PORT=3100`**,
-   `PUBLIC_ORIGIN=https://taro.belayarod.ru`.
-5. terapy → `rod.belayarod.ru` по `terapy/deploy/DEPLOY_BEGET.md`.
-6. В каждое приложение — общий бренд (`docs/integration.md`), отдельным PR в его репозиторий.
+1. `00-preflight.sh` — проверка сервера, ничего не меняет.
+2. DNS: A-записи `plamya`, `rod`, `taro`, `runes` → IP сервера (панель Beget).
+3. Память: тариф 2–4 ГБ (панель Beget) и `01-swap.sh`.
+4. `02-packages.sh` — недостающие пакеты и Node.js 22.
+5. `10-runes.sh`, `11-taro.sh` (порт 3100), `12-rod.sh` — приложения и сертификаты.
+6. `13-plamya-cert.sh` — сертификат для будущего адреса школы; пока адрес ведёт на школу.
 
-Проверка: все три адреса открываются по HTTPS, `pm2 ls` / `systemctl status`
-показывают процессы, в меню «Курсы» каждого приложения — четыре курса.
+Проверка: все три адреса открываются по HTTPS, `systemctl status runes polkas`
+и `pm2 list` показывают процессы, в меню «Курсы» каждого приложения — четыре курса.
 
 ## Этап 2. Переезд школы на plamya.belayarod.ru
 
