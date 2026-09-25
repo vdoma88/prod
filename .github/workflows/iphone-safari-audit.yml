@@ -1,0 +1,185 @@
+name: iPhone Safari live audit
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  iphone-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Установить WebKit
+        run: |
+          npm i -g playwright@1.56.1
+          npx playwright install --with-deps webkit
+
+      - name: Проверить belayarod.ru как iPhone Safari
+        run: |
+          export PLAYWRIGHT_MODULE="$(npm root -g)/playwright/index.mjs"
+          cat > /tmp/iphone-audit.mjs <<'EOF'
+          import { mkdir, writeFile } from 'node:fs/promises';
+          const { webkit } = await import(process.env.PLAYWRIGHT_MODULE);
+
+          const base = 'https://belayarod.ru';
+          const pages = [
+            ['home','/'],
+            ['courses','/courses.html'],
+            ['therapy','/therapy.html'],
+            ['candles','/candle-course.html'],
+            ['tarot','/tarot-course.html'],
+            ['runes','/runes.html'],
+            ['mystery','/mystery.html'],
+            ['game','/game.html'],
+            ['offerings','/offerings.html'],
+            ['massage','/massage.html'],
+            ['consultations','/consultations.html'],
+          ];
+          const profiles = [
+            ['iphone13', {
+              viewport: { width: 390, height: 844 },
+              screen: { width: 390, height: 844 },
+              deviceScaleFactor: 3,
+              isMobile: true,
+              hasTouch: true,
+              userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
+            }],
+            ['iphoneSE', {
+              viewport: { width: 375, height: 667 },
+              screen: { width: 375, height: 667 },
+              deviceScaleFactor: 2,
+              isMobile: true,
+              hasTouch: true,
+              userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.7 Mobile/15E148 Safari/604.1'
+            }]
+          ];
+
+          await mkdir('iphone-audit', { recursive: true });
+          const browser = await webkit.launch();
+          const report = [];
+          let failures = 0;
+
+          for (const [profileName, options] of profiles) {
+            const context = await browser.newContext(options);
+            for (const [name, path] of pages) {
+              const page = await context.newPage();
+              const errors = [];
+              page.on('pageerror', e => errors.push('pageerror: ' + e.message));
+              page.on('console', m => {
+                if (m.type() === 'error' && !/Failed to load resource|ERR_FAILED/.test(m.text())) errors.push('console: ' + m.text());
+              });
+
+              const url = base + path + (path.includes('?') ? '&' : '?') + 'iphoneAudit=' + Date.now();
+              let status = 0;
+              try {
+                const response = await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
+                status = response?.status() || 0;
+              } catch (e) {
+                errors.push('goto: ' + e.message);
+              }
+
+              await page.evaluate(async () => {
+                const step = Math.max(360, Math.floor(innerHeight * .68));
+                for (let y = 0; y < document.documentElement.scrollHeight; y += step) {
+                  scrollTo(0, y);
+                  await new Promise(r => setTimeout(r, 80));
+                }
+                scrollTo(0, 0);
+                await new Promise(r => setTimeout(r, 300));
+              });
+
+              // Реальные touch-сценарии: мобильное меню, заявка, FAQ.
+              let menuOk = null;
+              const menu = page.locator('.menu-btn');
+              if (await menu.count()) {
+                await menu.tap();
+                const mobileNav = page.locator('.mobile-nav');
+                menuOk = await mobileNav.isVisible().catch(() => false);
+                await menu.tap().catch(() => {});
+              }
+
+              let dialogOk = null;
+              const request = page.locator('[data-open-request]').first();
+              if (await request.count()) {
+                await request.tap();
+                const dialog = page.locator('#request-dialog');
+                dialogOk = await dialog.isVisible().catch(() => false);
+                await page.locator('.request-close').tap().catch(() => {});
+              }
+
+              let faqOk = null;
+              if (name === 'home') {
+                const faq = page.locator('.faq-question').first();
+                if (await faq.count()) {
+                  await faq.tap();
+                  faqOk = await page.locator('.faq-answer').first().isVisible().catch(() => false);
+                }
+              }
+
+              const metrics = await page.evaluate(() => {
+                const doc = document.documentElement;
+                const brokenImages = [...document.images]
+                  .filter(img => !img.complete || img.naturalWidth === 0)
+                  .map(img => img.src);
+                const h1 = [...document.querySelectorAll('h1')];
+                const fixedHeader = document.querySelector('.site-header');
+                const heroH1 = h1[0]?.getBoundingClientRect();
+                const headerRect = fixedHeader?.getBoundingClientRect();
+                const primaryControls = [...document.querySelectorAll('button,.primary-btn,.detail-cta,.menu-btn,.mobile-sticky-cta')].filter(el => {
+                  const r = el.getBoundingClientRect();
+                  const cs = getComputedStyle(el);
+                  return r.width > 0 && r.height > 0 && cs.display !== 'none' && cs.visibility !== 'hidden';
+                });
+                const smallPrimaryControls = primaryControls
+                  .map(el => ({ text: (el.textContent || el.getAttribute('aria-label') || '').trim().slice(0,80), w: Math.round(el.getBoundingClientRect().width), h: Math.round(el.getBoundingClientRect().height) }))
+                  .filter(x => x.w < 44 || x.h < 44);
+                return {
+                  title: document.title,
+                  overflow: doc.scrollWidth - doc.clientWidth,
+                  brokenImages,
+                  h1Count: h1.length,
+                  h1Text: h1[0]?.textContent?.trim() || '',
+                  headerHeight: headerRect ? Math.round(headerRect.height) : null,
+                  h1Top: heroH1 ? Math.round(heroH1.top) : null,
+                  smallPrimaryControls,
+                  bodyWidth: document.body.scrollWidth,
+                  viewportWidth: innerWidth,
+                  scrollHeight: doc.scrollHeight,
+                  hasStickyCTA: !!document.querySelector('.mobile-sticky-cta'),
+                  hasMonogram: !!document.querySelector('.brand-monogram'),
+                };
+              });
+
+              const shot = `iphone-audit/${profileName}-${name}.png`;
+              await page.screenshot({ path: shot, fullPage: true });
+
+              const result = { profile: profileName, page: name, status, errors, menuOk, dialogOk, faqOk, ...metrics, screenshot: shot };
+              report.push(result);
+              console.log(JSON.stringify(result));
+
+              if (status !== 200 || errors.length || metrics.overflow > 0 || metrics.brokenImages.length || metrics.h1Count !== 1 || menuOk === false || dialogOk === false || faqOk === false) failures++;
+              await page.close();
+            }
+            await context.close();
+          }
+
+          await browser.close();
+          await writeFile('iphone-audit/report.json', JSON.stringify(report, null, 2));
+          console.log('FAILURES=' + failures);
+          if (failures) process.exit(1);
+          EOF
+          node /tmp/iphone-audit.mjs
+
+      - name: Загрузить скриншоты и отчёт
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: belayarod-iphone-safari-audit
+          path: iphone-audit/
+          retention-days: 7
