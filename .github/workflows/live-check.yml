@@ -1,0 +1,43 @@
+name: Live site freshness
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  verify-live:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Проверить опубликованную версию
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          base="https://belayarod.ru"
+          ok=0
+          for attempt in 1 2 3 4 5 6; do
+            ts="$(date +%s)"
+            echo "Попытка $attempt: $base/?gh=$EXPECTED_SHA-$ts"
+            html="$(curl -fsSL --max-time 20 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "$base/?gh=$EXPECTED_SHA-$ts" || true)"
+            version="$(curl -fsSL --max-time 20 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "$base/version.json?gh=$EXPECTED_SHA-$ts" || true)"
+            live_sha="$(printf '%s' "$version" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(JSON.parse(s).commit||'')}catch{console.log('')}})" 2>/dev/null || true)"
+
+            if printf '%s' "$html" | grep -q 'brand-monogram' &&
+               printf '%s' "$html" | grep -q 'Четыре маршрута для практики' &&
+               [ "$live_sha" = "$EXPECTED_SHA" ]; then
+              echo "✓ belayarod.ru отдаёт текущий commit $EXPECTED_SHA"
+              ok=1
+              break
+            fi
+
+            echo "live commit: ${live_sha:-version.json отсутствует}"
+            echo "monogram: $(printf '%s' "$html" | grep -q 'brand-monogram' && echo yes || echo no)"
+            echo "DS2 home: $(printf '%s' "$html" | grep -q 'Четыре маршрута для практики' && echo yes || echo no)"
+            [ "$attempt" = 6 ] || sleep 20
+          done
+
+          if [ "$ok" != 1 ]; then
+            echo "::error::belayarod.ru не подтверждает текущий commit $EXPECTED_SHA"
+            exit 1
+          fi
