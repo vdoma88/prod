@@ -70,6 +70,17 @@ jobs:
             for (const [name, path] of pages) {
               const page = await context.newPage();
               const errors = [];
+              await page.addInitScript(() => {
+                window.__cspViolations = [];
+                document.addEventListener('securitypolicyviolation', event => {
+                  window.__cspViolations.push({
+                    directive: event.violatedDirective,
+                    blockedURI: event.blockedURI,
+                    sourceFile: event.sourceFile,
+                    lineNumber: event.lineNumber,
+                  });
+                });
+              });
               page.on('pageerror', e => errors.push('pageerror: ' + e.message));
               page.on('console', m => {
                 if (m.type() === 'error' && !/Failed to load resource|ERR_FAILED/.test(m.text())) errors.push('console: ' + m.text());
@@ -91,8 +102,9 @@ jobs:
                   await new Promise(r => setTimeout(r, 80));
                 }
                 scrollTo(0, 0);
-                await new Promise(r => setTimeout(r, 300));
+                await new Promise(r => setTimeout(r, 500));
               });
+              await page.waitForFunction(() => [...document.images].every(img => img.complete), { timeout: 8000 }).catch(() => {});
 
               // Реальные touch-сценарии: мобильное меню, заявка, FAQ.
               let menuOk = null;
@@ -122,6 +134,8 @@ jobs:
                 }
               }
 
+              await page.evaluate(() => scrollTo(0, 0));
+              await page.waitForTimeout(150);
               const metrics = await page.evaluate(() => {
                 const doc = document.documentElement;
                 const brokenImages = [...document.images]
@@ -153,6 +167,7 @@ jobs:
                   scrollHeight: doc.scrollHeight,
                   hasStickyCTA: !!document.querySelector('.mobile-sticky-cta'),
                   hasMonogram: !!document.querySelector('.brand-monogram'),
+                  cspViolations: window.__cspViolations || [],
                 };
               });
 
