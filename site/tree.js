@@ -19,7 +19,7 @@
       powerPreference: isCompact ? 'low-power' : 'high-performance'
     });
   } catch {
-    stage.style.display = 'none';
+    stage.classList.add('is-disabled');
     return;
   }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isCompact ? 1.25 : 1.6));
