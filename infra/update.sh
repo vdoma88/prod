@@ -15,4 +15,15 @@ if [ -e /etc/nginx/sites-enabled/belayarod.ru ]; then
 fi
 nginx -t
 systemctl reload nginx
-echo "belayarod.ru обновлён: $(git log -1 --format='%h %s')"
+
+EXPECTED_COMMIT="$(git rev-parse HEAD)"
+LIVE_VERSION="$(curl -fsS --max-time 20 -H 'Cache-Control: no-cache' "https://belayarod.ru/version.json?ts=$(date +%s)" || true)"
+LIVE_COMMIT="$(printf '%s' "$LIVE_VERSION" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(JSON.parse(s).commit||'')}catch{console.log('')}})" 2>/dev/null)"
+if [ "$LIVE_COMMIT" != "$EXPECTED_COMMIT" ]; then
+  echo "ОШИБКА: live-версия не совпала с git HEAD."
+  echo "ожидали: $EXPECTED_COMMIT"
+  echo "live:     ${LIVE_COMMIT:-нет version.json}"
+  exit 1
+fi
+
+echo "belayarod.ru обновлён и подтверждён: $(git log -1 --format='%h %s')"
