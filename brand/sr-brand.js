@@ -1,4 +1,4 @@
-/*! Сила Рода · общий бренд v1.0.0 · https://github.com/vdoma88/prod/tree/main/brand */
+/*! Сила Рода · общий бренд v1.0.1 · https://github.com/vdoma88/prod/tree/main/brand */
 // Общие элементы для всех проектов Екатерины Белой: лендинга belayarod.ru
 // и четырёх учебных приложений. Подключается одним тегом:
 //
@@ -21,7 +21,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '1.0.0';
+  const VERSION = '1.0.1';
   if (!window.customElements || window.customElements.get('sr-brand-bar')) return;
 
   const script = document.currentScript;
@@ -119,6 +119,13 @@
 
     get product() {
       return (this.getAttribute('product') || '').trim();
+    }
+
+    // React 19 передаёт атрибуты custom element свойствами, если свойство
+    // есть у элемента: без сеттера <sr-courses product="…"> упал бы с TypeError.
+    // Элемент рисуется один раз, поэтому значение пишется только в атрибут.
+    set product(value) {
+      this.setAttribute('product', String(value ?? ''));
     }
   }
 
