@@ -1,0 +1,18 @@
+{
+  "name": "Екатерина Белая — авторские практики",
+  "short_name": "Екатерина Белая",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f0e7",
+  "theme_color": "#f7f0e7",
+  "lang": "ru",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

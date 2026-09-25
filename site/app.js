@@ -1,0 +1,149 @@
+(() => {
+  const SITE_CONFIG = { telegramUsername: "" };
+
+  const menuBtn = document.querySelector('.menu-btn');
+  const mobileNav = document.querySelector('.mobile-nav');
+  const dialog = document.getElementById('request-dialog');
+  const serviceSelect = document.getElementById('request-service');
+  const messageField = document.getElementById('request-message');
+  const requestStatus = document.getElementById('request-status');
+  const selectedService = document.getElementById('selected-service-name');
+  let lastFocus = null;
+
+  function closeMenu() {
+    if (!mobileNav) return;
+    mobileNav.hidden = true;
+    menuBtn?.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('menu-open');
+  }
+
+  menuBtn?.addEventListener('click', () => {
+    const open = menuBtn.getAttribute('aria-expanded') === 'true';
+    menuBtn.setAttribute('aria-expanded', String(!open));
+    if (mobileNav) mobileNav.hidden = open;
+    document.body.classList.toggle('menu-open', !open);
+  });
+
+  mobileNav?.querySelectorAll('a').forEach(a => a.addEventListener('click', closeMenu));
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeMenu();
+  });
+
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  if (!reducedMotion && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver(entries => entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        io.unobserve(entry.target);
+      }
+    }), { threshold: 0.10, rootMargin: '0px 0px -20px 0px' });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  } else {
+    document.querySelectorAll('.reveal').forEach(el => el.classList.add('is-visible'));
+  }
+
+  function buildText() {
+    const service = serviceSelect?.value || 'Подбор формата';
+    const base = `Здравствуйте, Екатерина!
+Меня интересует: ${service}.
+Пожалуйста, пришлите подробности и условия участия.`;
+    const extra = messageField?.value?.trim();
+    return extra ? `${base}\n\n${extra}` : base;
+  }
+
+  function showDialog() {
+    if (!dialog) return false;
+    if (typeof dialog.showModal === 'function') {
+      if (!dialog.open) dialog.showModal();
+      return true;
+    }
+    dialog.setAttribute('open', '');
+    dialog.style.display = 'block';
+    return true;
+  }
+
+  function closeDialog() {
+    if (!dialog) return;
+    if (typeof dialog.close === 'function' && dialog.open) dialog.close();
+    else {
+      dialog.removeAttribute('open');
+      dialog.style.display = '';
+    }
+    lastFocus?.focus?.();
+  }
+
+  function openRequest(service, trigger) {
+    lastFocus = trigger || document.activeElement;
+    if (serviceSelect && service) {
+      const exact = Array.from(serviceSelect.options).some(option => option.value === service);
+      serviceSelect.value = exact ? service : 'Подбор подходящего формата';
+    }
+    if (selectedService) selectedService.textContent = service || 'Подбор формата';
+    if (requestStatus) requestStatus.textContent = '';
+    if (showDialog()) {
+      requestAnimationFrame(() => messageField?.focus({ preventScroll: true }));
+    }
+  }
+
+  document.querySelectorAll('[data-open-request]').forEach(btn => {
+    btn.addEventListener('click', () => openRequest(btn.dataset.service || 'Подбор формата', btn));
+  });
+
+  document.querySelector('.request-close')?.addEventListener('click', closeDialog);
+  dialog?.addEventListener('click', event => {
+    if (event.target === dialog) closeDialog();
+  });
+  dialog?.addEventListener('cancel', event => {
+    event.preventDefault();
+    closeDialog();
+  });
+
+  document.getElementById('copy-request')?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(buildText());
+      if (requestStatus) requestStatus.textContent = 'Текст заявки скопирован.';
+    } catch {
+      if (requestStatus) requestStatus.textContent = 'Не удалось скопировать автоматически. Выделите текст вручную.';
+    }
+  });
+
+  document.getElementById('share-request')?.addEventListener('click', async () => {
+    const text = buildText();
+    const username = SITE_CONFIG.telegramUsername.trim().replace(/^@/, '');
+    const pageUrl = window.location.href;
+
+    if (username) {
+      try {
+        await navigator.clipboard.writeText(text);
+        if (requestStatus) requestStatus.textContent = 'Текст заявки скопирован. Открываю Telegram…';
+      } catch {
+        if (requestStatus) requestStatus.textContent = 'Открываю Telegram. При необходимости скопируйте текст заявки вручную.';
+      }
+      window.location.assign(`https://t.me/${encodeURIComponent(username)}`);
+      return;
+    }
+
+    const share = `https://t.me/share/url?url=${encodeURIComponent(pageUrl)}&text=${encodeURIComponent(text)}`;
+    const opened = window.open(share, '_blank', 'noopener,noreferrer');
+    if (!opened) window.location.assign(share);
+    if (requestStatus) requestStatus.textContent = 'Telegram открыт с подготовленным текстом заявки.';
+  });
+
+  document.querySelectorAll('.faq-item').forEach((item, index) => {
+    const button = item.querySelector('.faq-question');
+    const answer = item.querySelector('.faq-answer');
+    if (!button || !answer) return;
+
+    const answerId = answer.id || `faq-answer-${index + 1}`;
+    answer.id = answerId;
+    button.setAttribute('aria-controls', answerId);
+    button.setAttribute('aria-expanded', 'false');
+
+    button.addEventListener('click', () => {
+      const open = item.classList.toggle('is-open');
+      button.setAttribute('aria-expanded', String(open));
+      const marker = button.querySelector('span');
+      if (marker) marker.textContent = open ? '−' : '+';
+    });
+  });
+})();
