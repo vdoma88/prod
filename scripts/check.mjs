@@ -120,7 +120,7 @@ if (/innerHTML|insertAdjacentHTML|\.style\s*=\s*['"`]|setAttribute\('style'/.tes
 
 // --- синтаксис JS ---
 const jsFiles = [
-  ...['app.js', 'tree.js'].map(n => path.join(SITE, n)),
+  ...['app.js', 'tree.js', 'drum.js'].map(n => path.join(SITE, n)),
   path.join(BRAND, 'sr-brand.js'),
   ...readdirSync(path.join(ROOT, 'scripts')).map(n => path.join(ROOT, 'scripts', n)),
   ...readdirSync(path.join(ROOT, 'tests')).map(n => path.join(ROOT, 'tests', n)),
