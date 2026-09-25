@@ -77,7 +77,7 @@
       return true;
     }
     dialog.setAttribute('open', '');
-    dialog.style.display = 'block';
+    dialog.setAttribute('data-fallback-open', '');
     return true;
   }
 
@@ -86,7 +86,7 @@
     if (typeof dialog.close === 'function' && dialog.open) dialog.close();
     else {
       dialog.removeAttribute('open');
-      dialog.style.display = '';
+      dialog.removeAttribute('data-fallback-open');
     }
     lastFocus?.focus?.();
   }
