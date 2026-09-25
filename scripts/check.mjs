@@ -2,6 +2,7 @@
 //
 //  • у каждого курса из PROJECTS (brand/sr-brand.js) есть страница на лендинге,
 //    ссылка «войти» на ней и карточка на «Моих курсах»;
+//  • ядро перенесённого лендинга (главная + 8 направлений) остаётся на месте;
 //  • все локальные ссылки и картинки страниц ведут на существующие файлы;
 //  • список направлений в окне заявки одинаков на всех страницах и покрывает
 //    все кнопки data-service;
@@ -20,6 +21,37 @@ const read = p => readFileSync(p, 'utf8');
 const { version, projects, source } = readBrand();
 const pages = readdirSync(SITE).filter(name => name.endsWith('.html')).sort();
 const html = Object.fromEntries(pages.map(name => [name, read(path.join(SITE, name))]));
+
+// --- ядро перенесённого лендинга ---
+const requiredLandingPages = [
+  'index.html',
+  'therapy.html',
+  'mystery.html',
+  'game.html',
+  'offerings.html',
+  'candle-course.html',
+  'tarot-course.html',
+  'massage.html',
+  'consultations.html',
+  '404.html',
+];
+for (const name of requiredLandingPages) {
+  if (!html[name]) fail(`site/: после интеграции отсутствует обязательная страница ${name}`);
+}
+for (const asset of ['styles.css', 'app.js', 'tree.js', 'favicon.svg', 'site.webmanifest']) {
+  if (!existsSync(path.join(SITE, asset))) fail(`site/: после интеграции отсутствует обязательный файл ${asset}`);
+}
+const landingHome = html['index.html'] || '';
+for (const id of ['services', 'start', 'faq']) {
+  if (!landingHome.includes(`id="${id}"`)) fail(`site/index.html: после интеграции отсутствует секция #${id}`);
+}
+const appSource = existsSync(path.join(SITE, 'app.js')) ? read(path.join(SITE, 'app.js')) : '';
+if (!/telegramUsername:\s*["']BelayaKatrin["']/.test(appSource)) {
+  fail('site/app.js: прямой Telegram @BelayaKatrin не настроен');
+}
+if (/whatsapp|wa\.me/i.test(Object.values(html).join('\n') + appSource)) {
+  fail('site/: обнаружен WhatsApp — для заявок используется только Telegram');
+}
 
 // --- курсы ---
 const ids = new Set();
