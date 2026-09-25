@@ -618,3 +618,71 @@ body{background:linear-gradient(180deg,#fbf7f1 0,#f7efe7 45%,#efe4d8 100%)}
 @keyframes drum-ripple{0%{opacity:.55;transform:scale(.4)}100%{opacity:0;transform:scale(2.4)}}
 @media(max-width:900px){.hero-drum{left:50%;transform:translateX(-50%);bottom:18px}.hero-drum-btn{width:84px}}
 @media(prefers-reduced-motion:reduce){.hero-drum-btn svg,.drum-tassels,.hero-drum-btn.is-hit .drum-body,.hero-drum-btn.is-hit .drum-mallet,.hero-drum-btn.is-hit .drum-ripple circle{animation:none}}
+
+
+/* Final live visual polish */
+.svc-mystery .svc-hero-media{object-position:center 28%}
+.svc-offerings .svc-hero-media{object-position:center 45%}
+.service-card[href="mystery.html"] img{object-position:center 30%}
+.service-card[href="offerings.html"] img{object-position:center 36%}
+
+.ritual-photo-story{
+  margin:34px 0 18px;
+  padding:34px 0 0;
+  border-top:1px solid var(--line);
+}
+.ritual-photo-copy{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(280px,.58fr);
+  gap:24px;
+  align-items:end;
+  margin-bottom:20px;
+}
+.ritual-photo-copy .section-kicker{grid-column:1/-1}
+.ritual-photo-copy h2{
+  margin:0;
+  font:500 48px/.98 var(--serif);
+  letter-spacing:-.02em;
+  text-wrap:balance;
+}
+.ritual-photo-copy p{
+  margin:0;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.65;
+}
+.ritual-photo-grid{
+  display:grid;
+  grid-template-columns:1.35fr .82fr .82fr;
+  gap:10px;
+}
+.ritual-photo{
+  min-height:390px;
+  margin:0;
+  overflow:hidden;
+  border-radius:20px;
+  background:#dbc7b0;
+}
+.ritual-photo img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  transition:transform .8s cubic-bezier(.2,.7,.2,1),filter .8s;
+}
+.ritual-photo:hover img{transform:scale(1.025);filter:saturate(.98) contrast(1.015)}
+.ritual-photo:nth-child(1) img{object-position:center 45%}
+.ritual-photo:nth-child(2) img{object-position:center 34%}
+.ritual-photo:nth-child(3) img{object-position:center 36%}
+
+@media(max-width:700px){
+  .ritual-photo-copy{grid-template-columns:1fr;gap:10px}
+  .ritual-photo-copy .section-kicker{grid-column:auto}
+  .ritual-photo-copy h2{font-size:38px}
+  .ritual-photo-copy p{font-size:12px}
+  .ritual-photo-grid{grid-template-columns:1fr 1fr;gap:7px}
+  .ritual-photo{min-height:260px;border-radius:15px}
+  .ritual-photo--wide{grid-column:1/-1;min-height:360px}
+  .svc-mystery .svc-hero-media{object-position:center 26%}
+  .svc-offerings .svc-hero-media{object-position:center 42%}
+}
