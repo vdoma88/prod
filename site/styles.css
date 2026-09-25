@@ -261,3 +261,105 @@ body.menu-open{overflow:hidden}
 @media(max-width:900px){.courses-grid{grid-template-columns:1fr}.courses-note{display:block}.courses-note .detail-cta{margin-top:16px}}
 @media(max-width:640px){.courses-page{padding-top:78px}.courses-hero h1{font-size:46px}.course-card{padding:24px 20px 20px;border-radius:22px}.course-card h2{font-size:36px}.courses-note{padding:22px 20px}.courses-note .detail-cta{width:100%}}
 .request-note a{color:#9a642f;text-decoration:underline;text-underline-offset:2px}
+
+
+/* Course thematic photo galleries */
+.course-card{overflow:hidden}
+.course-card-media{
+  height:210px;
+  margin:-30px -30px 10px;
+  overflow:hidden;
+  background:#eadfD2;
+  border-bottom:1px solid var(--line);
+}
+.course-card-media img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  object-position:center 44%;
+  transition:transform .7s cubic-bezier(.2,.7,.2,1),filter .7s;
+}
+.course-card:hover .course-card-media img{transform:scale(1.035);filter:saturate(.98) contrast(1.02)}
+.course-card--rod .course-card-media img{object-position:center 46%}
+.course-card--plamya .course-card-media img{object-position:center 50%}
+.course-card--taro .course-card-media img{object-position:center 48%}
+.course-card--runes .course-card-media img{object-position:center 42%}
+
+.course-gallery{
+  margin:16px 0 14px;
+  padding:34px;
+  border:1px solid var(--line);
+  border-radius:28px;
+  background:linear-gradient(145deg,rgba(255,253,249,.92),rgba(248,239,229,.84));
+  box-shadow:var(--shadow);
+}
+.course-gallery-head{
+  display:grid;
+  grid-template-columns:minmax(0,.8fr) minmax(260px,.55fr);
+  gap:24px;
+  align-items:end;
+  margin-bottom:20px;
+}
+.course-gallery-head .section-kicker{grid-column:1/-1}
+.course-gallery-head h2{
+  margin:0;
+  font:500 45px/1 var(--serif);
+  text-wrap:balance;
+}
+.course-gallery-head p{
+  margin:0;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.65;
+}
+.course-photo-grid{
+  display:grid;
+  grid-template-columns:repeat(12,1fr);
+  grid-auto-rows:180px;
+  gap:10px;
+}
+.course-photo{
+  grid-column:span 3;
+  grid-row:span 2;
+  margin:0;
+  overflow:hidden;
+  border-radius:20px;
+  background:#eadfd2;
+  border:1px solid rgba(120,79,37,.10);
+}
+.course-photo--lead{grid-column:span 6;grid-row:span 4}
+.course-photo:nth-child(2){grid-column:span 3;grid-row:span 2}
+.course-photo:nth-child(3){grid-column:span 3;grid-row:span 2}
+.course-photo:nth-child(4){grid-column:span 3;grid-row:span 2}
+.course-photo:nth-child(5){grid-column:span 3;grid-row:span 2}
+.course-photo img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  transition:transform .8s cubic-bezier(.2,.7,.2,1),filter .8s;
+}
+.course-photo:hover img{transform:scale(1.025);filter:saturate(.98) contrast(1.015)}
+.svc-therapy .course-photo img{object-position:center 46%}
+.svc-candles .course-photo img{object-position:center 48%}
+.svc-tarot .course-photo img{object-position:center 46%}
+.svc-runes .course-photo img{object-position:center 44%}
+
+@media(max-width:900px){
+  .course-gallery-head{grid-template-columns:1fr}
+  .course-gallery-head .section-kicker{grid-column:auto}
+  .course-photo-grid{grid-template-columns:repeat(2,1fr);grid-auto-rows:260px}
+  .course-photo,.course-photo:nth-child(n){grid-column:span 1;grid-row:span 1}
+  .course-photo--lead{grid-column:1/-1!important;grid-row:span 2!important}
+}
+@media(max-width:640px){
+  .course-card-media{height:190px;margin:-24px -20px 8px}
+  .course-gallery{padding:20px;border-radius:22px}
+  .course-gallery-head{gap:10px;margin-bottom:14px}
+  .course-gallery-head h2{font-size:35px}
+  .course-gallery-head p{font-size:12px}
+  .course-photo-grid{grid-template-columns:1fr 1fr;grid-auto-rows:210px;gap:7px}
+  .course-photo{border-radius:15px}
+  .course-photo--lead{grid-column:1/-1!important;grid-row:span 2!important}
+}
