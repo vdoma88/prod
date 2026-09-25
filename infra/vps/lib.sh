@@ -91,39 +91,71 @@ wait_http() {
   die "$url не отвечает (последний код: ${code:-нет}). Смотрите журнал службы."
 }
 
-# clone_or_update репозиторий папка — закрытый репозиторий через deploy key.
+# github_https_url репозиторий — адрес с тем же доступом, что у школы.
+#
+# Школа (/var/www/flame-app) уже клонирована с GitHub по HTTPS. Если её токен
+# даёт доступ и к другим репозиториям vdoma88, берём тот же адрес с другим
+# именем репозитория — тогда deploy key не нужен. Иначе пусто.
+FLAME_DIR="${FLAME_DIR:-/var/www/flame-app}"
+# Токен может лежать и в адресе origin, и в credential.helper репозитория школы.
+# Читается здесь, а не внутри функции: её вызывают в $(…), и присваивание
+# оттуда не вернулось бы.
+FLAME_CRED_HELPER="$(git -C "$FLAME_DIR" config --get credential.helper 2>/dev/null || true)"
+github_https_url() {
+  local origin url
+  origin="$(git -C "$FLAME_DIR" remote get-url origin 2>/dev/null || true)"
+  case "$origin" in https://*github.com/*/flame-app*) ;; *) return 0 ;; esac
+  url="${origin/flame-app/$1}"
+  if GIT_TERMINAL_PROMPT=0 GIT_ASKPASS=/bin/false \
+      git -c credential.helper="$FLAME_CRED_HELPER" ls-remote "$url" HEAD >/dev/null 2>&1; then
+    printf '%s' "$url"
+  fi
+}
+
+# deploy_key_host репозиторий — имя хоста для ssh-доступа по deploy key.
 #
 # Для каждого репозитория свой ключ /root/.ssh/deploy-<repo> и своё имя хоста
 # github-<repo> в /root/.ssh/config: GitHub принимает один deploy key только
 # для одного репозитория, а ключи школы и других проектов не трогаются.
-clone_or_update() {
-  local repo="$1" dir="$2" key="/root/.ssh/deploy-$1" host="github-$1"
+deploy_key_host() {
+  local repo="$1" key="/root/.ssh/deploy-$1" host="github-$1"
   install -d -m 700 /root/.ssh
-  if [ ! -f "$key" ]; then
-    ssh-keygen -t ed25519 -N '' -C "deploy-$repo@$(hostname)" -f "$key" -q
-  fi
+  [ -f "$key" ] || ssh-keygen -t ed25519 -N '' -C "deploy-$repo@$(hostname)" -f "$key" -q
   if ! grep -q "^Host $host\$" /root/.ssh/config 2>/dev/null; then
     printf '\nHost %s\n  HostName github.com\n  User git\n  IdentityFile %s\n  IdentitiesOnly yes\n' "$host" "$key" >> /root/.ssh/config
     chmod 600 /root/.ssh/config
   fi
   grep -q '^github.com ' /root/.ssh/known_hosts 2>/dev/null ||
     ssh-keyscan -t ed25519 github.com >> /root/.ssh/known_hosts 2>/dev/null
-
   until ssh -o BatchMode=yes -T "$host" 2>&1 | grep -q 'successfully authenticated'; do
-    printf '\n  Серверу нужен доступ на чтение к %s/%s. Добавьте ключ:\n' "$GITHUB_OWNER" "$repo"
-    printf '  GitHub → %s/%s → Settings → Deploy keys → Add deploy key\n' "$GITHUB_OWNER" "$repo"
-    printf '  (галочку «Allow write access» не ставить)\n\n'
-    cat "$key.pub"
-    printf '\n'
+    printf '\n  Серверу нужен доступ на чтение к %s/%s. Добавьте ключ:\n' "$GITHUB_OWNER" "$repo" >&2
+    printf '  GitHub → %s/%s → Settings → Deploy keys → Add deploy key\n' "$GITHUB_OWNER" "$repo" >&2
+    printf '  (галочку «Allow write access» не ставить)\n\n' >&2
+    cat "$key.pub" >&2
+    printf '\n' >&2
     read -r -p "  Добавили? Enter — проверить ещё раз, Ctrl+C — выйти. "
   done
-  ok "доступ к $GITHUB_OWNER/$repo есть"
+  printf '%s' "$host"
+}
 
+# clone_or_update репозиторий папка — закрытый репозиторий vdoma88.
+# Сначала пробует доступ школы (github_https_url), потом deploy key.
+clone_or_update() {
+  local repo="$1" dir="$2" url
   if [ -d "$dir/.git" ]; then
     git -C "$dir" pull --ff-only
   else
     [ ! -e "$dir" ] || [ -z "$(ls -A "$dir")" ] || die "$dir уже существует и не пуст — это не git-клон. Разберитесь вручную."
-    git clone "$host:$GITHUB_OWNER/$repo.git" "$dir"
+    url="$(github_https_url "$repo")"
+    if [ -n "$url" ]; then
+      ok "доступ к $GITHUB_OWNER/$repo — тот же, что у школы"
+      git -c credential.helper="$FLAME_CRED_HELPER" clone "$url" "$dir"
+      [ -z "$FLAME_CRED_HELPER" ] || git -C "$dir" config credential.helper "$FLAME_CRED_HELPER"
+    else
+      url="$(deploy_key_host "$repo"):$GITHUB_OWNER/$repo.git"
+      ok "доступ к $GITHUB_OWNER/$repo — по deploy key"
+      git clone "$url" "$dir"
+    fi
   fi
   ok "код: $dir ($(git -C "$dir" log -1 --format='%h %s'))"
 }
