@@ -15,6 +15,8 @@ jobs:
           node-version: 22
       - name: Сборка и проверки
         run: npm test
+      - name: Скрипты VPS (shellcheck)
+        run: shellcheck -x -S warning infra/vps/*.sh
       - name: Браузер
         run: |
           npm i -g playwright@1.56.1

@@ -18,7 +18,9 @@ install -m 644 infra/nginx/belayarod.ru.conf /etc/nginx/sites-available/belayaro
 **Пока школа «Язык Пламени» живёт на belayarod.ru, конфиг лендинга не включать.**
 Он заменяет её в корне домена. Порядок переезда — `infra/MIGRATION.md`.
 
-Сертификат на все имена сразу:
+Сертификаты поддоменов выпускают скрипты `infra/vps/` (каждый — для своего
+приложения). Сертификат самого belayarod.ru уже есть у школы; если нужен
+выпуск вручную — все имена сразу:
 
 ```bash
 certbot certonly --nginx -d belayarod.ru -d www.belayarod.ru \

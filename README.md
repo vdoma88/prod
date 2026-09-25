@@ -21,7 +21,7 @@
 site/     лендинг — статический HTML/CSS/JS (история перенесена из vdoma88/landos)
 brand/    общий бренд: sr-brand.js (+ .css) — элементы <sr-brand-bar>, <sr-courses>,
           <sr-footer>; tokens.css — цвета и шрифты семейства; preview.html — витрина
-infra/    nginx, адреса и порты, деплой, план переезда школы
+infra/    nginx, адреса и порты, деплой, план переезда школы; vps/ — скрипты для сервера
 docs/     встраивание бренда в каждое приложение
 scripts/  build, check, serve, sync-brand — Node без npm-пакетов
 tests/    браузерная проверка (Playwright)
@@ -55,5 +55,6 @@ npm run sync-brand -- ../runes-belaya/src/brand   # раздать бренд п
 - [infra/DOMAINS.md](infra/DOMAINS.md) — адреса, порты, DNS, память сервера
 - [infra/DEPLOY.md](infra/DEPLOY.md) — установка и обновление belayarod.ru
 - [infra/MIGRATION.md](infra/MIGRATION.md) — порядок переезда, включая школу
+- [infra/vps/README.md](infra/vps/README.md) — скрипты для VPS: руны, Таро, terapy на поддоменах, сертификаты, swap
 - [brand/README.md](brand/README.md) — элементы бренда и правила их изменения
 - [site/README.md](site/README.md) — страницы лендинга и заявки через Telegram
