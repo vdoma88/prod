@@ -687,3 +687,11 @@ body{background:linear-gradient(180deg,#fbf7f1 0,#f7efe7 45%,#efe4d8 100%)}
   .svc-mystery .svc-hero-media{object-position:center 26%}
   .svc-offerings .svc-hero-media{object-position:center 42%}
 }
+
+
+/* iPhone Safari hardening */
+.tree-stage.is-disabled{display:none!important}
+.request-dialog[data-fallback-open]{display:block}
+@media(max-width:700px){
+  .reveal{opacity:1!important;transform:none!important;transition:none!important}
+}
