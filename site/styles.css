@@ -593,3 +593,5 @@ body{background:linear-gradient(180deg,#fbf7f1 0,#f7efe7 45%,#efe4d8 100%)}
   .architecture-personal .course-photo:nth-child(4),
   .architecture-course .course-photo:nth-child(4){grid-column:span 1}
 }
+
+@media(max-width:900px){.architecture-course .svc-editorial-grid{grid-template-columns:1fr;min-width:0}.architecture-course .svc-intro,.architecture-course .svc-list,.architecture-course .story-module,.architecture-course .course-gallery{min-width:0;max-width:100%}}
