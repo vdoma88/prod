@@ -1,4 +1,4 @@
-/*! Сила Рода · общий бренд v1.0.1 · https://github.com/vdoma88/prod/tree/main/brand */
+/*! Сила Рода · общий бренд v1.1.0 · https://github.com/vdoma88/prod/tree/main/brand */
 // Общие элементы для всех проектов Екатерины Белой: лендинга belayarod.ru
 // и четырёх учебных приложений. Подключается одним тегом:
 //
@@ -21,7 +21,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '1.0.1';
+  const VERSION = '1.1.0';
   if (!window.customElements || window.customElements.get('sr-brand-bar')) return;
 
   const script = document.currentScript;
