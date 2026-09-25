@@ -219,7 +219,7 @@ body.menu-open{overflow:hidden}
 .service-card:nth-child(3) img{object-position:62% 30%}
 .service-card:nth-child(4) img{object-position:30% 70%}
 .service-card:nth-child(5) img{object-position:30% 22%}
-.service-card:nth-child(6) img{object-position:42% 82%}
+.service-card:nth-child(6) img{object-position:50% 45%}
 .service-card:nth-child(7) img{object-position:50% 48%}
 .service-card:nth-child(8) img{object-position:68% 44%}
 @media(max-width:640px){
