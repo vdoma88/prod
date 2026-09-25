@@ -1,0 +1,54 @@
+/* Сила Рода · общие дизайн-токены v1.0.0
+   Семейная палитра всех проектов Екатерины Белой. Приложения подключают
+   файл и берут отсюда общие цвета и шрифты, а собственный характер
+   держат через --sr-accent (свой цвет у каждого курса, см. ниже).
+
+   Подключение: <link rel="stylesheet" href="/brand/tokens.css">
+   Затем на <html> или <body>: data-sr-product="runes" — и --sr-accent
+   станет цветом курса. Переменные ничего не перекрашивают сами:
+   приложение решает, где их использовать. */
+
+:root {
+  /* Бумага и чернила — основа всех светлых экранов */
+  --sr-paper: #fffaf4;
+  --sr-canvas: #f7f0e7;
+  --sr-sand: #efe2d4;
+  --sr-ink: #33251d;
+  --sr-muted: #776557;
+  --sr-line: rgba(120, 79, 37, .16);
+
+  /* Золото — общий фирменный акцент семейства */
+  --sr-gold: #b87a34;
+  --sr-gold-soft: #d7ae70;
+  --sr-gold-deep: #9f6429;
+
+  /* Ночь — тёмные поверхности и шапка */
+  --sr-night: #241a14;
+  --sr-night-2: #33261d;
+  --sr-night-ink: #f3e6d3;
+  --sr-night-muted: #c9b59c;
+
+  /* Цвета курсов */
+  --sr-rod: #9a6a3a;
+  --sr-plamya: #c04828;
+  --sr-taro: #76603d;
+  --sr-runes: #744153;
+  --sr-accent: var(--sr-gold);
+
+  /* Шрифты: заголовки — Cormorant Garamond, текст — Manrope */
+  --sr-serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --sr-sans: Manrope, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+
+  /* Формы */
+  --sr-radius-s: 10px;
+  --sr-radius-m: 16px;
+  --sr-radius-l: 24px;
+  --sr-radius-pill: 999px;
+  --sr-shadow: 0 20px 70px rgba(71, 46, 25, .10);
+  --sr-touch: 44px;
+}
+
+[data-sr-product="rod"] { --sr-accent: var(--sr-rod); }
+[data-sr-product="plamya"] { --sr-accent: var(--sr-plamya); }
+[data-sr-product="taro"] { --sr-accent: var(--sr-taro); }
+[data-sr-product="runes"] { --sr-accent: var(--sr-runes); }

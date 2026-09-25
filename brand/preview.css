@@ -1,0 +1,24 @@
+/* Оформление витрины brand/preview.html; в приложения не копируется. */
+body { margin: 0; background: var(--sr-canvas); color: var(--sr-ink); font: 15px/1.6 var(--sr-sans); }
+main { max-width: 960px; margin: 0 auto; padding: 40px 16px 80px; }
+h1 { margin: 4px 0 8px; font: 500 52px/1 var(--sr-serif); }
+h2 { margin: 44px 0 6px; font: 500 30px/1.1 var(--sr-serif); }
+.kicker { margin: 0; font-size: 11px; letter-spacing: .2em; color: var(--sr-gold); }
+.lead, .note { color: var(--sr-muted); }
+.code { display: inline-block; margin: 0 0 12px; padding: 4px 10px; border-radius: 8px; background: var(--sr-paper); border: 1px solid var(--sr-line); font: 13px/1.5 ui-monospace, Menlo, monospace; }
+.frame { margin: 12px 0; border: 1px solid var(--sr-line); border-radius: var(--sr-radius-m); background: var(--sr-paper); }
+.frame.pad { padding: 20px; }
+.frame.night { background: var(--sr-night); border-color: transparent; }
+.app-mock { padding: 48px 20px; text-align: center; color: var(--sr-muted); }
+.swatches { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.sw { height: 84px; padding: 10px; border-radius: 12px; border: 1px solid var(--sr-line); display: flex; align-items: flex-end; font-size: 12px; }
+.sw-paper { background: var(--sr-paper); }
+.sw-canvas { background: var(--sr-canvas); }
+.sw-ink, .sw-night, .sw-rod, .sw-plamya, .sw-taro, .sw-runes, .sw-gold { color: #fff; }
+.sw-ink { background: var(--sr-ink); }
+.sw-gold { background: var(--sr-gold); }
+.sw-night { background: var(--sr-night); }
+.sw-rod { background: var(--sr-rod); }
+.sw-plamya { background: var(--sr-plamya); }
+.sw-taro { background: var(--sr-taro); }
+.sw-runes { background: var(--sr-runes); }

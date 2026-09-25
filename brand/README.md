@@ -1,0 +1,23 @@
+# Общий бренд «Сила Рода»
+
+| Файл | Назначение |
+|---|---|
+| `sr-brand.js` | Элементы `<sr-brand-bar>`, `<sr-courses>`, `<sr-footer>` и список курсов `PROJECTS` |
+| `sr-brand.css` | Их стили. Подключаются из Shadow DOM и на страницу не влияют |
+| `tokens.css` | Цвета, шрифты, радиусы семейства (`--sr-*`), цвет курса через `data-sr-product` |
+| `preview.html` | Витрина: `npm run build && npm run serve` → `/brand/preview.html` |
+
+Подключение и атрибуты — [../docs/integration.md](../docs/integration.md).
+
+## Правила
+
+- **Строгий CSP.** Приложения запрещают inline-стили и inline-скрипты. Поэтому
+  разметка строится через DOM, стили — внешним файлом `<link>` внутри Shadow DOM,
+  цвета из данных — через CSSOM (`style.setProperty`). `innerHTML` и атрибут
+  `style` не использовать: `npm run check` это ловит.
+- **Изоляция.** Всё внутри Shadow DOM: Tailwind и стили приложений не ломают
+  шапку, шапка не ломает приложение.
+- **Без зависимостей.** Один файл, ES2020, без сборки.
+- **Версия.** При изменении поднимать версию в `package.json`, `VERSION`
+  и первых строках `sr-brand.js` и `tokens.css` (check сверит). Потом
+  `npm run sync-brand` в каждое приложение и PR в его репозиторий.

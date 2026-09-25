@@ -1,0 +1,18 @@
+{
+  "name": "Сила Рода — Екатерина Белая",
+  "short_name": "Екатерина Белая",
+  "start_url": "/?app=hub",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7f0e7",
+  "theme_color": "#f7f0e7",
+  "lang": "ru",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
