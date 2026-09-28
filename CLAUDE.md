@@ -15,6 +15,10 @@ flame-app (Next.js + PostgreSQL, **рабочее, живые ученицы**),
 Express/Prisma), tarot и runes-belaya (Node без пакетов + SQLite). Их код здесь
 не хранится: бренд попадает к ним копией через `scripts/sync-brand.mjs`.
 
+## Дизайн
+
+@brand/DESIGN.md
+
 ## Правила
 
 - Строгий CSP везде: нет `style="…"`, `on*="…"`, inline-скриптов, `innerHTML` в бренде.
@@ -30,7 +34,7 @@ Express/Prisma), tarot и runes-belaya (Node без пакетов + SQLite). И
 
 Главное правило: в проектах «Сила Рода» (prod, flame-app, terapy, tarot,
 runes-belaya) дизайн уже задан — brand/sr-brand.js, tokens.css и стили
-самого приложения. Внешний DESIGN.md в них не подключать. Референсы — только
+самого приложения, описан в brand/DESIGN.md. Внешний DESIGN.md в них не подключать. Референсы — только
 там, где решение ещё не принято.
 
 - Стиль нового проекта: один DESIGN.md с styles.refero.design или из

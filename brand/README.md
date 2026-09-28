@@ -6,6 +6,7 @@
 | `sr-brand.css` | Их стили. Подключаются из Shadow DOM и на страницу не влияют |
 | `tokens.css` | Цвета, фон, кнопки, радиусы семейства (`--sr-*`); цвет курса и тон его фона — через `data-sr-product` |
 | `fonts.css`, `fonts/` | Cormorant Garamond и Manrope с адреса приложения (кириллица и латиница, OFL) |
+| `DESIGN.md` | Описание дизайна словами — для людей и ИИ: палитра, шрифты, формы, кнопки, движение, правила |
 | `preview.html` | Витрина: `npm run build && npm run serve` → `/brand/preview.html` |
 
 Подключение и атрибуты — [../docs/integration.md](../docs/integration.md).
