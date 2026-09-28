@@ -127,6 +127,40 @@ export function createBot({ store, tg, now = () => new Date(), adminCode = '' })
     return null;
   }
 
+  /**
+   * Событие из курса (сданное ДЗ, пройденная проверка, сообщение ученицы)
+   * → всем привязанным админам.
+   * Возвращает { ok, sent } или { ok: false, error } — для ответа курсу.
+   * Ночью (как и серия, 21:00–10:00 МСК) приходит без звука.
+   */
+  async function notifyCourse(event) {
+    const course = M.COURSES[event?.course];
+    const student = String(event?.student || '').trim().slice(0, 200);
+    const title = M.EVENTS[event?.kind || 'homework'];
+    if (!course) return { ok: false, error: 'unknown course' };
+    if (!title) return { ok: false, error: 'unknown kind' };
+    if (!student) return { ok: false, error: 'student required' };
+    const item = String(event?.item || '').trim().slice(0, 300);
+    const url = typeof event?.url === 'string' && /^https:\/\/[a-z0-9.-]+\.belayarod\.ru\//i.test(event.url) ? event.url : null;
+    const admins = store.admins();
+    if (!admins.length) console.error('Событие из курса без получателя: ни один админ не привязан (см. bot/README.md)');
+    const at = now();
+    const silent = daytime(at).getTime() !== at.getTime();
+    let sent = 0;
+    for (const admin of admins) {
+      const res = await tg('sendMessage', {
+        chat_id: admin,
+        text: M.courseNotice({ title, course, student: escapeHtml(student), item: item && escapeHtml(item) }),
+        parse_mode: 'HTML',
+        disable_web_page_preview: true,
+        disable_notification: silent,
+        ...(url ? { reply_markup: { inline_keyboard: [[{ text: M.REVIEW_BUTTON, url }]] } } : {}),
+      });
+      if (res.ok) sent++;
+    }
+    return { ok: true, sent };
+  }
+
   /** Одно обновление из вебхука. */
   async function handleUpdate(update) {
     if (update.message) return onMessage(update.message);
@@ -165,5 +199,5 @@ export function createBot({ store, tg, now = () => new Date(), adminCode = '' })
     return sent;
   }
 
-  return { handleUpdate, tick };
+  return { handleUpdate, tick, notifyCourse };
 }

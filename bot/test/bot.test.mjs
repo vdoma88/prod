@@ -137,3 +137,62 @@ test('клиент Telegram повторяет сетевой сбой и не �
   assert.equal(res.status, 403);
   assert.equal(m, 1);
 });
+
+test('ДЗ из курса приходит админам с кнопкой проверки', async () => {
+  const { bot, sent } = setup({ start: '2026-10-01T12:00:00Z' }); // 15:00 МСК
+  await linkAdmin(bot);
+  const res = await bot.notifyCourse({ course: 'runes', student: 'Анна <Смирнова>', item: 'Урок 3. Феху', url: 'https://runes.belayarod.ru/#/curator' });
+  assert.deepEqual(res, { ok: true, sent: 1 });
+  const msg = sent(ADMIN).at(-1);
+  assert.match(msg.text, /Новое ДЗ на проверку<\/b> · Руны/);
+  assert.match(msg.text, /Анна &lt;Смирнова&gt; — Урок 3\. Феху/);
+  assert.equal(msg.disable_notification, false);
+  assert.equal(msg.reply_markup.inline_keyboard[0][0].url, 'https://runes.belayarod.ru/#/curator');
+});
+
+test('ДЗ ночью — без звука; чужая ссылка и незнакомый курс не проходят', async () => {
+  const { bot, sent } = setup({ start: '2026-10-01T20:00:00Z' }); // 23:00 МСК
+  await linkAdmin(bot);
+  await bot.notifyCourse({ course: 'taro', student: 'Ольга', url: 'https://evil.example/x' });
+  const msg = sent(ADMIN).at(-1);
+  assert.equal(msg.disable_notification, true);
+  assert.equal(msg.reply_markup, undefined);
+  assert.deepEqual(await bot.notifyCourse({ course: 'nope', student: 'Ольга' }), { ok: false, error: 'unknown course' });
+  assert.deepEqual(await bot.notifyCourse({ course: 'rod', student: '  ' }), { ok: false, error: 'student required' });
+  assert.deepEqual(await bot.notifyCourse({ course: 'rod', kind: 'spam', student: 'Ольга' }), { ok: false, error: 'unknown kind' });
+});
+
+test('проверка и сообщение из курса — свои заголовки', async () => {
+  const { bot, sent } = setup({ start: '2026-10-01T12:00:00Z' });
+  await linkAdmin(bot);
+  await bot.notifyCourse({ course: 'runes', kind: 'test', student: 'Анна', item: 'Модуль 2: 4 из 5' });
+  assert.match(sent(ADMIN).at(-1).text, /^✅ <b>Пройдена проверка<\/b> · Руны\nАнна — Модуль 2: 4 из 5$/);
+  await bot.notifyCourse({ course: 'taro', kind: 'message', student: 'Ольга' });
+  assert.match(sent(ADMIN).at(-1).text, /^💬 <b>Новое сообщение<\/b> · Таро\nОльга$/);
+});
+
+test('адрес /notify: без секрета выключен, с чужим секретом — 401, с верным — 200', async () => {
+  const { spawn } = await import('node:child_process');
+  const { once } = await import('node:events');
+  const port = 43000 + Math.floor(Math.random() * 1000);
+  const run = async (envExtra, fn) => {
+    const child = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', new URL('../server.mjs', import.meta.url).pathname], {
+      env: { ...process.env, PORT: String(port), BOT_DB_PATH: ':memory:', TELEGRAM_BOT_TOKEN: '', PUBLIC_URL: '', ...envExtra },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    await once(child.stdout, 'data');
+    try { await fn(); } finally { child.kill(); await once(child, 'exit'); }
+  };
+  const post = (secret) => fetch(`http://127.0.0.1:${port}/tg/rod-bot/notify`, {
+    method: 'POST', headers: { 'content-type': 'application/json', ...(secret ? { 'x-notify-secret': secret } : {}) },
+    body: JSON.stringify({ course: 'rod', student: 'Анна', item: 'Шаг 1' }),
+  });
+  await run({ NOTIFY_SECRET: '' }, async () => assert.equal((await post('x')).status, 503));
+  await run({ NOTIFY_SECRET: 'right' }, async () => {
+    assert.equal((await post('wrong')).status, 401);
+    assert.equal((await post()).status, 401);
+    const ok = await post('right');
+    assert.equal(ok.status, 200);
+    assert.deepEqual(await ok.json(), { ok: true, sent: 0 });
+  });
+});
