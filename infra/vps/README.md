@@ -13,6 +13,7 @@
 | `taro` | `11-taro.sh` | Таро → `taro.belayarod.ru`, **порт 3100**, служба `polkas` | да — это и обновление |
 | `rod` | `12-rod.sh` | terapy → `rod.belayarod.ru`, порт 5000, PM2 `rodology-platform` | да — это и обновление |
 | `plamya-cert` | `13-plamya-cert.sh` | Сертификат для `plamya.belayarod.ru` заранее; адрес пока ведёт на школу | да |
+| — | `14-bot.sh` | Telegram-бот лендинга → `belayarod.ru/tg/rod-bot`, порт 4310, служба `rodbot` (`bot/README.md`). Запуск: `sudo bash /var/www/prod/infra/vps/14-bot.sh` | да — это и обновление |
 
 Все скрипты запускаются от root и останавливаются при первой ошибке с объяснением.
 

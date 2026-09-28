@@ -8,7 +8,8 @@
     "build": "node scripts/build.mjs",
     "check": "node scripts/check.mjs",
     "serve": "node scripts/serve.mjs",
-    "test": "node scripts/build.mjs && node scripts/check.mjs",
+    "test": "node scripts/build.mjs && node scripts/check.mjs && npm run test:bot",
+    "test:bot": "node --disable-warning=ExperimentalWarning --test bot/test/*.test.mjs",
     "test:e2e": "node scripts/build.mjs && node tests/e2e.mjs",
     "sync-brand": "node scripts/sync-brand.mjs"
   },

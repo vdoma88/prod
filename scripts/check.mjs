@@ -124,6 +124,7 @@ const jsFiles = [
   path.join(BRAND, 'sr-brand.js'),
   ...readdirSync(path.join(ROOT, 'scripts')).map(n => path.join(ROOT, 'scripts', n)),
   ...readdirSync(path.join(ROOT, 'tests')).map(n => path.join(ROOT, 'tests', n)),
+  ...readdirSync(path.join(ROOT, 'bot')).filter(n => n.endsWith('.mjs')).map(n => path.join(ROOT, 'bot', n)),
 ];
 for (const file of jsFiles) {
   try { execFileSync(process.execPath, ['--check', file], { stdio: 'pipe' }); } catch (error) {
