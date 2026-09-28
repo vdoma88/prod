@@ -127,6 +127,37 @@ export function createBot({ store, tg, now = () => new Date(), adminCode = '' })
     return null;
   }
 
+  /**
+   * Сданное домашнее задание из курса → всем привязанным админам.
+   * Возвращает { ok, sent } или { ok: false, error } — для ответа курсу.
+   * Ночью (как и серия, 21:00–10:00 МСК) приходит без звука.
+   */
+  async function notifyHomework(event) {
+    const course = M.COURSES[event?.course];
+    const student = String(event?.student || '').trim().slice(0, 200);
+    if (!course) return { ok: false, error: 'unknown course' };
+    if (!student) return { ok: false, error: 'student required' };
+    const item = String(event?.item || '').trim().slice(0, 300);
+    const url = typeof event?.url === 'string' && /^https:\/\/[a-z0-9.-]+\.belayarod\.ru\//i.test(event.url) ? event.url : null;
+    const admins = store.admins();
+    if (!admins.length) console.error('ДЗ без получателя: ни один админ не привязан (см. bot/README.md)');
+    const at = now();
+    const silent = daytime(at).getTime() !== at.getTime();
+    let sent = 0;
+    for (const admin of admins) {
+      const res = await tg('sendMessage', {
+        chat_id: admin,
+        text: M.homeworkNotice({ course, student: escapeHtml(student), item: item && escapeHtml(item) }),
+        parse_mode: 'HTML',
+        disable_web_page_preview: true,
+        disable_notification: silent,
+        ...(url ? { reply_markup: { inline_keyboard: [[{ text: M.REVIEW_BUTTON, url }]] } } : {}),
+      });
+      if (res.ok) sent++;
+    }
+    return { ok: true, sent };
+  }
+
   /** Одно обновление из вебхука. */
   async function handleUpdate(update) {
     if (update.message) return onMessage(update.message);
@@ -165,5 +196,5 @@ export function createBot({ store, tg, now = () => new Date(), adminCode = '' })
     return sent;
   }
 
-  return { handleUpdate, tick };
+  return { handleUpdate, tick, notifyHomework };
 }

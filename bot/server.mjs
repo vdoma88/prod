@@ -15,6 +15,10 @@ const PORT = Number(env.PORT || 4310);
 const HOST = env.HOST || '127.0.0.1';
 const PATH = '/tg/rod-bot';
 const SECRET = env.WEBHOOK_SECRET || '';
+// Курсы на этом же сервере сообщают о сданных ДЗ: POST ${PATH}/notify с
+// заголовком X-Notify-Secret. Снаружи адрес закрыт дважды: nginx пропускает
+// только точный ${PATH}, а сюда принимаются лишь запросы с 127.0.0.1.
+const NOTIFY_SECRET = env.NOTIFY_SECRET || '';
 const TICK_MS = 60 * 1000;
 
 if (!env.TELEGRAM_BOT_TOKEN) console.error('TELEGRAM_BOT_TOKEN не задан — бот не сможет отвечать');
@@ -27,12 +31,46 @@ for (const id of (env.ADMIN_CHAT_IDS || '').split(',').map(s => Number(s.trim())
 const tg = telegramClient(env.TELEGRAM_BOT_TOKEN);
 const bot = createBot({ store, tg, adminCode: env.ADMIN_CODE || '' });
 
-const sameSecret = (given) => {
-  if (!SECRET) return true;
+const equal = (given, expected) => {
   const a = Buffer.from(String(given || ''));
-  const b = Buffer.from(SECRET);
+  const b = Buffer.from(expected);
   return a.length === b.length && timingSafeEqual(a, b);
 };
+const sameSecret = (given) => !SECRET || equal(given, SECRET);
+const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+
+function readBody(req, limit, done) {
+  let body = '';
+  req.setEncoding('utf8');
+  req.on('data', chunk => {
+    body += chunk;
+    if (body.length > limit) req.destroy();
+  });
+  req.on('end', () => done(body));
+}
+
+function notify(req, res) {
+  const reply = (status, data) => {
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(data));
+  };
+  // Без секрета адрес выключен: иначе любой процесс на сервере слал бы Екатерине что угодно.
+  if (!NOTIFY_SECRET) return reply(503, { ok: false, error: 'NOTIFY_SECRET не задан' });
+  if (!LOOPBACK.has(req.socket.remoteAddress) || !equal(req.headers['x-notify-secret'], NOTIFY_SECRET)) {
+    return reply(401, { ok: false });
+  }
+  readBody(req, 1e4, async body => {
+    let event;
+    try { event = JSON.parse(body); } catch { return reply(400, { ok: false, error: 'bad json' }); }
+    try {
+      const result = await bot.notifyHomework(event);
+      reply(result.ok ? 200 : 400, result);
+    } catch (error) {
+      console.error('Уведомление о ДЗ:', error);
+      reply(500, { ok: false });
+    }
+  });
+}
 
 const server = createServer((req, res) => {
   const url = req.url.split('?')[0];
@@ -40,6 +78,7 @@ const server = createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ ok: true, ...store.stats() }));
   }
+  if (req.method === 'POST' && url === `${PATH}/notify`) return notify(req, res);
   if (req.method !== 'POST' || url !== PATH) {
     res.writeHead(404);
     return res.end();
@@ -48,13 +87,7 @@ const server = createServer((req, res) => {
     res.writeHead(401);
     return res.end();
   }
-  let body = '';
-  req.setEncoding('utf8');
-  req.on('data', chunk => {
-    body += chunk;
-    if (body.length > 1e6) req.destroy();
-  });
-  req.on('end', () => {
+  readBody(req, 1e6, body => {
     // Telegram ждёт быстрый ответ, иначе шлёт обновление повторно:
     // отвечаем сразу, обрабатываем после.
     res.writeHead(200);

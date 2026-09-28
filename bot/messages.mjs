@@ -113,3 +113,18 @@ export function leadNotice({ name, username, service, note }) {
 ${name} — ${who}
 Направление: ${service}${note ? `\nСообщение: ${note}` : ''}`;
 }
+
+// Уведомления о сданных домашних заданиях из курсов (POST /tg/rod-bot/notify).
+// Ключ — идентификатор курса в запросе; незнакомый курс бот не примет.
+export const COURSES = {
+  rod: 'Связь с Родом',
+  plamya: 'Язык Пламени',
+  taro: 'Таро',
+  runes: 'Руны',
+};
+export const REVIEW_BUTTON = 'Открыть на проверку';
+
+export function homeworkNotice({ course, student, item }) {
+  return `📝 <b>Новое ДЗ на проверку</b> · ${course}
+${student}${item ? ` — ${item}` : ''}`;
+}
