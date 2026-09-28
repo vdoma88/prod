@@ -10,6 +10,7 @@
 | `rod.belayarod.ru` | «Связь с Родом» / Родовая карта пути | `vdoma88/terapy` | PM2 | 5000 | `deploy/nginx.rodology.conf` |
 | `taro.belayarod.ru` | Карты Таро | `vdoma88/tarot` | systemd `polkas` | **3100** | `server/deploy/nginx.conf` |
 | `runes.belayarod.ru` | Руны | `vdoma88/runes-belaya` | systemd `runes` | 4173 | `deploy/nginx.example.conf` |
+| `belayarod.ru/tg/rod-bot` | Telegram-бот лендинга (вебхук) | `vdoma88/prod`, `bot/` | systemd `rodbot` | 4310 | `infra/nginx/belayarod.ru.conf` |
 
 У Таро по умолчанию порт 3000, как у школы. На общем сервере Таро обязательно
 запускать с `PORT=3100`, иначе один из процессов не стартует (`EADDRINUSE`).

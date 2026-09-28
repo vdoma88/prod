@@ -1,0 +1,22 @@
+[Unit]
+Description=Сила Рода — Telegram-бот для лендинга
+After=network.target
+
+[Service]
+Type=simple
+User=rodbot
+Group=rodbot
+WorkingDirectory=/var/www/prod
+EnvironmentFile=/etc/rodbot.env
+# Предупреждение об экспериментальном node:sqlite журналу не нужно.
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning /var/www/prod/bot/server.mjs
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/rodbot
+
+[Install]
+WantedBy=multi-user.target
