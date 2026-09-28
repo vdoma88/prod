@@ -141,7 +141,7 @@ test('клиент Telegram повторяет сетевой сбой и не �
 test('ДЗ из курса приходит админам с кнопкой проверки', async () => {
   const { bot, sent } = setup({ start: '2026-10-01T12:00:00Z' }); // 15:00 МСК
   await linkAdmin(bot);
-  const res = await bot.notifyHomework({ course: 'runes', student: 'Анна <Смирнова>', item: 'Урок 3. Феху', url: 'https://runes.belayarod.ru/#/curator' });
+  const res = await bot.notifyCourse({ course: 'runes', student: 'Анна <Смирнова>', item: 'Урок 3. Феху', url: 'https://runes.belayarod.ru/#/curator' });
   assert.deepEqual(res, { ok: true, sent: 1 });
   const msg = sent(ADMIN).at(-1);
   assert.match(msg.text, /Новое ДЗ на проверку<\/b> · Руны/);
@@ -153,12 +153,22 @@ test('ДЗ из курса приходит админам с кнопкой п�
 test('ДЗ ночью — без звука; чужая ссылка и незнакомый курс не проходят', async () => {
   const { bot, sent } = setup({ start: '2026-10-01T20:00:00Z' }); // 23:00 МСК
   await linkAdmin(bot);
-  await bot.notifyHomework({ course: 'taro', student: 'Ольга', url: 'https://evil.example/x' });
+  await bot.notifyCourse({ course: 'taro', student: 'Ольга', url: 'https://evil.example/x' });
   const msg = sent(ADMIN).at(-1);
   assert.equal(msg.disable_notification, true);
   assert.equal(msg.reply_markup, undefined);
-  assert.deepEqual(await bot.notifyHomework({ course: 'nope', student: 'Ольга' }), { ok: false, error: 'unknown course' });
-  assert.deepEqual(await bot.notifyHomework({ course: 'rod', student: '  ' }), { ok: false, error: 'student required' });
+  assert.deepEqual(await bot.notifyCourse({ course: 'nope', student: 'Ольга' }), { ok: false, error: 'unknown course' });
+  assert.deepEqual(await bot.notifyCourse({ course: 'rod', student: '  ' }), { ok: false, error: 'student required' });
+  assert.deepEqual(await bot.notifyCourse({ course: 'rod', kind: 'spam', student: 'Ольга' }), { ok: false, error: 'unknown kind' });
+});
+
+test('проверка и сообщение из курса — свои заголовки', async () => {
+  const { bot, sent } = setup({ start: '2026-10-01T12:00:00Z' });
+  await linkAdmin(bot);
+  await bot.notifyCourse({ course: 'runes', kind: 'test', student: 'Анна', item: 'Модуль 2: 4 из 5' });
+  assert.match(sent(ADMIN).at(-1).text, /^✅ <b>Пройдена проверка<\/b> · Руны\nАнна — Модуль 2: 4 из 5$/);
+  await bot.notifyCourse({ course: 'taro', kind: 'message', student: 'Ольга' });
+  assert.match(sent(ADMIN).at(-1).text, /^💬 <b>Новое сообщение<\/b> · Таро\nОльга$/);
 });
 
 test('адрес /notify: без секрета выключен, с чужим секретом — 401, с верным — 200', async () => {

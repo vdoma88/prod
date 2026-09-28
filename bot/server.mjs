@@ -15,7 +15,7 @@ const PORT = Number(env.PORT || 4310);
 const HOST = env.HOST || '127.0.0.1';
 const PATH = '/tg/rod-bot';
 const SECRET = env.WEBHOOK_SECRET || '';
-// Курсы на этом же сервере сообщают о сданных ДЗ: POST ${PATH}/notify с
+// Курсы на этом же сервере сообщают о сданных ДЗ, проверках и сообщениях: POST ${PATH}/notify с
 // заголовком X-Notify-Secret. Снаружи адрес закрыт дважды: nginx пропускает
 // только точный ${PATH}, а сюда принимаются лишь запросы с 127.0.0.1.
 const NOTIFY_SECRET = env.NOTIFY_SECRET || '';
@@ -63,10 +63,10 @@ function notify(req, res) {
     let event;
     try { event = JSON.parse(body); } catch { return reply(400, { ok: false, error: 'bad json' }); }
     try {
-      const result = await bot.notifyHomework(event);
+      const result = await bot.notifyCourse(event);
       reply(result.ok ? 200 : 400, result);
     } catch (error) {
-      console.error('Уведомление о ДЗ:', error);
+      console.error('Уведомление из курса:', error);
       reply(500, { ok: false });
     }
   });

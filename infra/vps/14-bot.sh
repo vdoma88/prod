@@ -37,7 +37,7 @@ TELEGRAM_BOT_TOKEN=
 WEBHOOK_SECRET=$(openssl rand -hex 24)
 # Код привязки Екатерины: t.me/<бот>?start=admin-<ADMIN_CODE>
 ADMIN_CODE=$(openssl rand -hex 8)
-# Курсы шлют сюда сданные ДЗ (bot/README.md, «Уведомления о ДЗ»)
+# Курсы шлют сюда сданные ДЗ (bot/README.md, «Уведомления из курсов»)
 NOTIFY_SECRET=$(openssl rand -hex 24)
 ENV
   chown root:rodbot "$ENV_FILE"; chmod 640 "$ENV_FILE"
@@ -48,7 +48,7 @@ fi
 # Файл мог появиться до уведомлений о ДЗ — дописываем недостающий секрет.
 if ! grep -q '^NOTIFY_SECRET=.\+' "$ENV_FILE"; then
   sed -i '/^NOTIFY_SECRET=/d' "$ENV_FILE"
-  printf '# Курсы шлют сюда сданные ДЗ (bot/README.md, «Уведомления о ДЗ»)\nNOTIFY_SECRET=%s\n' "$(openssl rand -hex 24)" >> "$ENV_FILE"
+  printf '# Курсы шлют сюда сданные ДЗ (bot/README.md, «Уведомления из курсов»)\nNOTIFY_SECRET=%s\n' "$(openssl rand -hex 24)" >> "$ENV_FILE"
   ok "добавлен NOTIFY_SECRET"
 fi
 
@@ -83,6 +83,6 @@ cat <<NEXT
     https://t.me/<имя бота>?start=admin-$ADMIN_CODE
   Ссылка для лендинга: https://t.me/<имя бота>?start=landing
   Журнал: journalctl -u rodbot -f
-  Уведомления о ДЗ из курсов: в .env каждого курса вписать
+  Уведомления из курсов: в .env каждого курса вписать
     ROD_NOTIFY_SECRET=<NOTIFY_SECRET из $ENV_FILE>
 NEXT

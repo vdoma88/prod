@@ -114,7 +114,7 @@ ${name} — ${who}
 Направление: ${service}${note ? `\nСообщение: ${note}` : ''}`;
 }
 
-// Уведомления о сданных домашних заданиях из курсов (POST /tg/rod-bot/notify).
+// Уведомления из курсов: ДЗ, проверки, сообщения (POST /tg/rod-bot/notify).
 // Ключ — идентификатор курса в запросе; незнакомый курс бот не примет.
 export const COURSES = {
   rod: 'Связь с Родом',
@@ -122,9 +122,16 @@ export const COURSES = {
   taro: 'Таро',
   runes: 'Руны',
 };
-export const REVIEW_BUTTON = 'Открыть на проверку';
+export const REVIEW_BUTTON = 'Открыть';
 
-export function homeworkNotice({ course, student, item }) {
-  return `📝 <b>Новое ДЗ на проверку</b> · ${course}
+// Виды событий из курсов. Ключ — поле kind в запросе.
+export const EVENTS = {
+  homework: '📝 <b>Новое ДЗ на проверку</b>',
+  test: '✅ <b>Пройдена проверка</b>',
+  message: '💬 <b>Новое сообщение</b>',
+};
+
+export function courseNotice({ title, course, student, item }) {
+  return `${title} · ${course}
 ${student}${item ? ` — ${item}` : ''}`;
 }
