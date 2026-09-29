@@ -62,6 +62,12 @@ log "Курсы"
 # Подключённые курсы получают общий секрет и перезапускаются.
 if share_sr_secret /etc/runes.env; then systemctl restart runes; fi
 close_sr_internal runes
+if [ -f /etc/systemd/system/polkas.service ]; then
+  [ -f /etc/polkas.env ] || install -m 640 -o root -g polkas /dev/null /etc/polkas.env
+  if share_sr_secret /etc/polkas.env; then systemctl restart polkas; fi
+  close_sr_internal polkas
+fi
+ok "Таро: $(grep -q '^SR_INTERNAL_SECRET=.' /etc/polkas.env 2>/dev/null && echo подключено || echo не стоит)"
 ok "Руны: $(grep -q '^SR_INTERNAL_SECRET=.' /etc/runes.env 2>/dev/null && echo подключены || echo не стоят)"
 
 if [ -n "${ADMIN_EMAIL:-}" ]; then
