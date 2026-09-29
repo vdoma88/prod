@@ -1,0 +1,99 @@
+# Общий вход «Сила Рода»
+
+Одна учётная запись на все курсы: https://belayarod.ru/account/.
+Администратор заводит ученицу, решает, какие курсы ей открыть, и внутри курса —
+какие уроки открыты и какие приняты (как во «Языке Пламени»).
+
+Node ≥ 22.13 без `npm install`: `node:sqlite`, `node:http`, `node:crypto`.
+
+## Как устроено
+
+- **Учётные записи** — `accounts.sqlite`: почта, имя, роль (ученица, куратор,
+  администратор), открытые курсы. Пароль — scrypt с солью; в базе нет ни
+  паролей, ни токенов входа (только их sha256).
+- **Пароль задаётся только по ссылке.** Администратор создаёт запись и
+  отправляет ссылку `…/account/#reset=…` (72 часа, один раз). Той же кнопкой
+  выдаётся новая ссылка, если пароль забыт. Почта не нужна.
+- **Вход** — cookie `sr_session` на `.belayarod.ru`, 30 дней, HttpOnly, Secure,
+  SameSite=Lax. Её видят все курсы на поддоменах. Новый пароль или выключенная
+  запись — все входы сразу недействительны.
+- **Защита:** изменяющие запросы — только POST с JSON, заголовком `X-SR: 1` и
+  со своего адреса; 8 неверных паролей за 15 минут — пауза; последнего
+  администратора нельзя разжаловать или выключить; строгий CSP, без inline-кода.
+- Все действия администратора пишутся в таблицу `audit`.
+
+## Подключение курса
+
+Курс живёт на своём поддомене и на этом же сервере. Ему нужен
+`SR_INTERNAL_SECRET` из `/etc/sr-accounts.env`.
+
+1. **Кто вошёл.** Курс читает cookie `sr_session` и спрашивает:
+
+   ```
+   POST http://127.0.0.1:4320/account/internal/session
+   X-SR-Secret: <SR_INTERNAL_SECRET>
+   {"token": "<значение sr_session>"}
+   → 200 {"user": {"id","email","name","role"}, "courses": ["runes", …]}
+   → 401 — не вошла или вход устарел
+   ```
+
+   Ученицу в своей базе курс находит (или заводит) по почте. Если курса нет
+   в `courses` — доступа нет. Вход на курсе ведёт на
+   `https://belayarod.ru/account/`. Ответ можно кешировать на минуту.
+
+2. **Уроки** — курс отвечает на внутренних адресах (только с 127.0.0.1 и с
+   `X-SR-Secret`), nginx их наружу не пускает:
+
+   ```
+   GET  /sr-internal/lessons?email=…
+   → {"lessons": [{"id", "title", "status": "locked" | "open" | "done"}]}
+
+   POST /sr-internal/lessons
+   {"email", "name", "lessonId", "status"}
+   → {"ok": true}   (ученицы ещё нет в курсе — завести её)
+   ```
+
+   Пока курс эти адреса не отдаёт (404 или не JSON), админка пишет, что он
+   ещё не подключён.
+
+| Курс | Внутренний адрес | Переменная для другого адреса |
+|---|---|---|
+| Связь с Родом | http://127.0.0.1:5000 | `COURSE_ROD_INTERNAL` |
+| Язык Пламени | http://127.0.0.1:3000 | `COURSE_PLAMYA_INTERNAL` |
+| Таро | http://127.0.0.1:3100 | `COURSE_TARO_INTERNAL` |
+| Руны | http://127.0.0.1:4173 | `COURSE_RUNES_INTERNAL` |
+
+## Настройки (`/etc/sr-accounts.env`)
+
+| Переменная | Что это |
+|---|---|
+| `PORT`, `HOST` | 4320, 127.0.0.1 |
+| `ACCOUNTS_DB_PATH` | `/var/lib/sr-accounts/accounts.sqlite` |
+| `PUBLIC_ORIGIN` | `https://belayarod.ru` — для ссылок и проверки Origin |
+| `COOKIE_DOMAIN` | `.belayarod.ru` — cookie для всех поддоменов |
+| `TRUST_PROXY` | `1` — брать адрес посетителя из `X-Real-IP` (nginx) |
+| `SR_INTERNAL_SECRET` | общий секрет с курсами |
+
+## Сервер
+
+```
+sudo ADMIN_EMAIL=почта ADMIN_NAME="Екатерина Белая" bash /var/www/prod/infra/vps/15-accounts.sh
+```
+
+Скрипт ставит службу `sr-accounts`, nginx и печатает ссылку для пароля
+администратора. Новая ссылка, если потерялась:
+
+```
+cd /var/www/prod && sudo -u sraccounts env ACCOUNTS_DB_PATH=/var/lib/sr-accounts/accounts.sqlite \
+  PUBLIC_ORIGIN=https://belayarod.ru node accounts/cli.mjs reset-link почта
+```
+
+## Локально
+
+```
+PUBLIC_ORIGIN=http://127.0.0.1:4320 node accounts/cli.mjs create-admin me@example.ru "Я"
+node accounts/server.mjs          # http://127.0.0.1:4320/account/
+npm run test:accounts
+```
+
+Локально общие стили (`/brand/…`) не подгружаются — страница работает без них.

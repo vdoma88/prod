@@ -14,6 +14,7 @@
 | `rod` | `12-rod.sh` | terapy → `rod.belayarod.ru`, порт 5000, PM2 `rodology-platform` | да — это и обновление |
 | `plamya-cert` | `13-plamya-cert.sh` | Сертификат для `plamya.belayarod.ru` заранее; адрес пока ведёт на школу | да |
 | — | `14-bot.sh` | Telegram-бот лендинга → `belayarod.ru/tg/rod-bot`, порт 4310, служба `rodbot` (`bot/README.md`). Запуск: `sudo bash /var/www/prod/infra/vps/14-bot.sh` | да — это и обновление |
+| — | `15-accounts.sh` | Общий вход для курсов → `belayarod.ru/account/`, порт 4320, служба `sr-accounts` (`accounts/README.md`). Первый администратор: `sudo ADMIN_EMAIL=почта ADMIN_NAME="Имя" bash /var/www/prod/infra/vps/15-accounts.sh` | да — это и обновление |
 
 Все скрипты запускаются от root и останавливаются при первой ошибке с объяснением.
 

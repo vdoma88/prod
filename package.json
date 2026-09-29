@@ -8,10 +8,11 @@
     "build": "node scripts/build.mjs",
     "check": "node scripts/check.mjs",
     "serve": "node scripts/serve.mjs",
-    "test": "node scripts/build.mjs && node scripts/check.mjs && npm run test:bot",
+    "test": "node scripts/build.mjs && node scripts/check.mjs && npm run test:bot && npm run test:accounts",
     "test:bot": "node --disable-warning=ExperimentalWarning --test bot/test/*.test.mjs",
     "test:e2e": "node scripts/build.mjs && node tests/e2e.mjs",
-    "sync-brand": "node scripts/sync-brand.mjs"
+    "sync-brand": "node scripts/sync-brand.mjs",
+    "test:accounts": "node --disable-warning=ExperimentalWarning --test accounts/test/*.test.mjs"
   },
   "engines": {
     "node": ">=20"
