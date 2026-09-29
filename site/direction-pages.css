@@ -41,6 +41,8 @@
 /* Game: the existing six-position route becomes the first-screen visual. */
 .direction-play{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;background:radial-gradient(ellipse at 80% 40%,#efe2d4,transparent 60%)}
 .direction-board{padding:36px 30px;border:1px solid var(--line);border-radius:24px;background:rgba(255,250,244,.7)}
+.direction-hero .direction-play-photo{height:230px;margin-bottom:28px;border-radius:16px;overflow:hidden}
+.direction-play-photo .direction-image{object-position:50% 52%}
 .direction-route-heading h2{margin:12px 0;font:500 36px/1.05 var(--serif);text-wrap:balance}
 .direction-route-heading p{font-size:13px;line-height:1.65;color:var(--muted)}
 .direction-play .game-board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px 16px;padding:26px 0}
@@ -66,6 +68,7 @@
  .direction-personal,.direction-play{gap:32px}
  .direction-personal .direction-portrait{height:540px}
  .direction-board{padding:28px 20px}
+  .direction-hero .direction-play-photo{height:200px;margin-bottom:22px}
 }
 @media(max-width:700px){
  .direction-hero{padding:110px 20px 40px}
