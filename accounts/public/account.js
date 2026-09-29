@@ -68,14 +68,25 @@ function resetView(token) {
     ], 'Сохранить и войти', async (d) => {
       if (d.get('password') !== d.get('again')) throw new Error('Пароли не совпадают.');
       const me = await call('reset', { token, password: d.get('password') });
-      history.replaceState(null, '', location.pathname);
+      history.replaceState(null, '', location.pathname + location.search);
       home(me);
     })));
 }
 
 // ─── Мои курсы ───
 
+// ?next=адрес курса — куда вернуть после входа. Только в открытый ей курс,
+// иначе остаёмся на странице «Мои курсы».
+const NEXT = new URLSearchParams(location.search).get('next') || '';
+function nextCourse(me) {
+  let origin;
+  try { origin = new URL(NEXT).origin; } catch { return null; }
+  return me.courses.find(c => c.enabled && new URL(c.url).origin === origin) ? NEXT : null;
+}
+
 function home(me) {
+  const next = nextCourse(me);
+  if (next) { location.replace(next); return; }
   logoutBtn.hidden = false;
   const cards = me.courses.map(c => c.enabled
     ? h('a', { class: 'course', href: c.url }, h('strong', null, c.title), h('span', { class: 'muted small' }, 'Открыть курс →'))

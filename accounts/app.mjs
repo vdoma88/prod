@@ -31,6 +31,7 @@ export function createApp({ store, env = {}, fetchImpl = fetch }) {
   const secret = env.SR_INTERNAL_SECRET || '';
   const trustProxy = env.TRUST_PROXY === '1';
   const internalBase = (c) => env[`COURSE_${c.id.toUpperCase()}_INTERNAL`] || c.internal;
+  const publicUrl = (c) => env[`COURSE_${c.id.toUpperCase()}_URL`] || c.url;
   const attempts = new Map();
 
   const sameSecret = (given) => {
@@ -86,7 +87,7 @@ export function createApp({ store, env = {}, fetchImpl = fetch }) {
   const me = (req) => store.sessionUser(tokenOf(req));
   const need = (req) => { const u = me(req); if (!u) throw new AccountError(401, 'Войдите, пожалуйста.'); return u; };
   const needAdmin = (req) => { const u = need(req); if (u.role !== 'admin') throw new AccountError(403, 'Это может только администратор.'); return u; };
-  const withCourses = (u) => ({ user: u, courses: COURSES.map(c => ({ id: c.id, title: c.title, url: c.url, enabled: u.role === 'admin' || u.courses.includes(c.id) })) });
+  const withCourses = (u) => ({ user: u, courses: COURSES.map(c => ({ id: c.id, title: c.title, url: publicUrl(c), enabled: u.role === 'admin' || u.courses.includes(c.id) })) });
   const resetLink = (token) => `${origin}${BASE}/#reset=${token}`;
 
   async function courseCall(c, pathAndQuery, body) {
