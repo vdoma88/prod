@@ -15,6 +15,8 @@ if [ -e /etc/nginx/sites-enabled/belayarod.ru ]; then
 fi
 nginx -t
 systemctl reload nginx
+# Общий вход (accounts/) — перезапуск, если он уже поставлен (infra/vps/15-accounts.sh).
+if systemctl is-enabled --quiet sr-accounts 2>/dev/null; then systemctl restart sr-accounts; fi
 
 EXPECTED_COMMIT="$(git rev-parse HEAD)"
 LIVE_VERSION="$(curl -fsS --max-time 20 -H 'Cache-Control: no-cache' "https://belayarod.ru/version.json?ts=$(date +%s)" || true)"

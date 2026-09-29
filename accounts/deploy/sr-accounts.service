@@ -1,0 +1,22 @@
+[Unit]
+Description=Сила Рода — общий вход для курсов
+After=network.target
+
+[Service]
+Type=simple
+User=sraccounts
+Group=sraccounts
+WorkingDirectory=/var/www/prod
+EnvironmentFile=/etc/sr-accounts.env
+# Предупреждение об экспериментальном node:sqlite журналу не нужно.
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning /var/www/prod/accounts/server.mjs
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/sr-accounts
+
+[Install]
+WantedBy=multi-user.target
