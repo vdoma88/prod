@@ -122,6 +122,8 @@ test('вход, cookie на весь домен, выход', async (t) => {
   assert.match(r.setCookie, /^sr_session=[\w-]+; Path=\/; Max-Age=2592000; HttpOnly; SameSite=Lax; Secure; Domain=\.belayarod\.ru$/);
   assert.equal(r.data.user.name, 'Екатерина');
   assert.ok(r.data.courses.every(c => c.enabled), 'админу открыты все курсы');
+  assert.equal(r.data.courses.find(c => c.id === 'rod').url, 'https://rod.belayarod.ru/admin', 'администратору — сразу кабинет куратора');
+  assert.equal(r.data.courses.find(c => c.id === 'runes').url, 'https://runes.belayarod.ru/#curator');
   assert.equal((await s.req('/account/api/me')).status, 200);
   await s.req('/account/api/logout', { body: {} });
   assert.equal((await s.req('/account/api/me')).status, 401);
@@ -156,6 +158,7 @@ test('админ заводит ученицу, открывает курсы, �
   assert.equal(me.status, 200);
   assert.deepEqual(me.data.courses.filter(c => c.enabled && !c.ownLogin).map(c => c.id), ['runes']);
   assert.equal(me.data.courses.find(c => c.id === 'plamya').ownLogin, true, 'у «Языка Пламени» свой вход — просто ссылка');
+  assert.equal(me.data.courses.find(c => c.id === 'runes').url, 'https://runes.belayarod.ru/', 'ученице — сам курс');
   assert.equal((await s.req('/account/api/admin/users')).status, 403, 'ученице админка закрыта');
   assert.equal((await s.req(`/account/api/admin/users/${created.data.user.id}`, { body: { role: 'admin' } })).status, 403);
 });

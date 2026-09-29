@@ -88,14 +88,15 @@ function home(me) {
   const next = nextCourse(me);
   if (next) { location.replace(next); return; }
   logoutBtn.hidden = false;
+  const staff = me.user.role === 'admin' || me.user.role === 'curator';
   const cards = me.courses.map(c => c.ownLogin
     ? h('a', { class: 'course', href: c.url }, h('strong', null, c.title), h('span', { class: 'muted small' }, 'Свой вход школы →'))
     : c.enabled
-    ? h('a', { class: 'course', href: c.url }, h('strong', null, c.title), h('span', { class: 'muted small' }, 'Открыть курс →'))
+    ? h('a', { class: 'course', href: c.url }, h('strong', null, c.title), h('span', { class: 'muted small' }, staff ? 'Кабинет куратора →' : 'Открыть курс →'))
     : h('div', { class: 'course off' }, h('strong', null, c.title), h('span', { class: 'muted small' }, 'Пока закрыт')));
   const parts = [
     h('h1', null, `Здравствуйте, ${me.user.name}`),
-    h('section', null, h('h2', null, 'Мои курсы'), h('div', { class: 'courses' }, cards)),
+    h('section', null, h('h2', null, staff ? 'Кабинеты курсов' : 'Мои курсы'), h('div', { class: 'courses' }, cards)),
   ];
   if (me.user.role === 'admin') {
     const box = h('section', { class: 'pad' });
