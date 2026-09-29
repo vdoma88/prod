@@ -700,3 +700,14 @@ body{background:linear-gradient(180deg,#fbf7f1 0,#f7efe7 45%,#efe4d8 100%)}
 .desktop-nav .nav-login{padding:6px 12px;margin:-6px 0;border:1px solid rgba(175,122,61,.35);border-radius:999px;color:#8a5a2b}
 .desktop-nav .nav-login:hover{background:rgba(197,139,67,.1)}
 .mobile-nav .nav-login{color:#8a5a2b;font-weight:600}
+
+/* Home: preserve the complete root-and-flame artwork at every screen width. */
+.about-visual--root-symbol{aspect-ratio:4/5;min-height:0;background:#efe2d4}
+.about-visual--root-symbol>img{object-fit:contain;object-position:center top}
+.about-visual--root-symbol:after{background:linear-gradient(180deg,transparent 48%,rgba(36,26,20,.5) 70%,rgba(36,26,20,.94) 100%)}
+.about-visual--root-symbol .about-visual-copy{left:28px;right:28px;bottom:26px}
+.about-visual--root-symbol .about-visual-copy a{display:inline-flex;align-items:center;min-height:44px;margin-top:10px}
+@media(max-width:700px){
+ .about-visual--root-symbol .about-visual-copy{left:22px;right:22px;bottom:18px}
+ .about-visual--root-symbol .about-visual-copy p{font-size:clamp(27px,7vw,34px)}
+}
