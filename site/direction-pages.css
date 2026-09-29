@@ -1,0 +1,95 @@
+/* A local composition pass for four directions; shared brand styles stay in styles.css. */
+.direction-hero{position:relative;isolation:isolate;color:var(--ink);padding:150px max(24px,calc((100% - 1180px)/2)) 64px}
+.direction-copy{min-width:0}
+.direction-back{display:inline-flex;align-items:center;min-height:44px;margin-bottom:22px;font-size:10px;letter-spacing:.13em;color:#79522f}
+.direction-hero h1{margin:14px 0 24px;font:500 clamp(56px,5.5vw,84px)/.98 var(--serif);letter-spacing:-.035em;text-wrap:balance}
+.direction-copy>p:not(.direction-format){margin:0;max-width:620px;font-size:16px;line-height:1.75}
+.direction-hero .eyebrow{color:#79522f;line-height:1.6}
+.direction-link{display:inline-flex;align-items:center;min-height:44px;font-size:10px;letter-spacing:.1em;color:#79522f}
+.direction-hero .svc-actions{gap:12px 22px}
+.direction-hero .primary-btn{min-height:48px;white-space:normal;text-align:center}
+.direction-format{margin:28px 0 0;padding-top:20px;border-top:1px solid var(--line);font-size:12px;line-height:1.8;color:#695646}
+.direction-format strong{font-weight:600}
+.direction-image{display:block;width:100%;height:100%;object-fit:cover}
+.direction-hero figure{margin:0}
+.direction-whisper{font:400 italic 29px/1.15 var(--serif);margin:0}
+.direction-back:focus-visible,.direction-link:focus-visible{outline:2px solid currentColor;outline-offset:4px;border-radius:4px}
+
+/* Personal accompaniment: a quiet editorial page and a portrait of the path. */
+.direction-personal{display:grid;grid-template-columns:1.08fr .92fr;gap:64px;align-items:center;background:linear-gradient(120deg,#fbf7f1,#efe4d8)}
+.direction-personal .direction-portrait{position:relative;height:610px;border-radius:180px 180px 16px 16px;overflow:hidden}
+.direction-personal .direction-image{object-position:50% 36%}
+.direction-personal .direction-portrait:after{content:"";position:absolute;inset:50% 0 0;background:linear-gradient(transparent,rgba(36,26,20,.78))}
+.direction-personal figcaption{position:absolute;z-index:1;bottom:34px;left:20px;right:20px;text-align:center;color:#fffaf4;font:400 italic 36px/1.15 var(--serif)}
+.direction-personal .direction-format{max-width:470px}
+
+/* Mystery: the circle is the central composition, with one line of practical details. */
+.direction-circle{min-height:820px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;color:#fffaf4;background:#33261d;padding-top:160px;padding-bottom:60px}
+.direction-circle>.direction-image{position:absolute;inset:0;z-index:-3;object-position:center 28%}
+.direction-circle:before{content:"";position:absolute;inset:0;z-index:-2;background:linear-gradient(180deg,rgba(36,26,20,.6),rgba(36,26,20,.76))}
+.direction-circle:after{content:"";position:absolute;z-index:-1;width:min(680px,85vw);aspect-ratio:1;border:1px solid rgba(215,174,112,.4);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+.direction-circle .direction-copy{max-width:790px}
+.direction-circle .direction-copy>p{margin-left:auto;margin-right:auto}
+.direction-circle h1{font-size:clamp(58px,6.5vw,92px)}
+.direction-circle .eyebrow,.direction-circle .direction-back,.direction-circle .direction-link,.direction-circle .direction-format{color:#f3dfc2}
+.direction-circle .svc-actions{justify-content:center}
+.direction-circle .direction-format{border:0;padding-top:0}
+.direction-circle .direction-format span{padding:0 12px}
+.direction-circle .direction-whisper{margin-top:46px;color:#f3dfc2}
+.svc-mystery #mystery-route{scroll-margin-top:120px}
+
+/* Game: the existing six-position route becomes the first-screen visual. */
+.direction-play{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;background:radial-gradient(ellipse at 80% 40%,#efe2d4,transparent 60%)}
+.direction-board{padding:36px 30px;border:1px solid var(--line);border-radius:24px;background:rgba(255,250,244,.7)}
+.direction-route-heading h2{margin:12px 0;font:500 36px/1.05 var(--serif);text-wrap:balance}
+.direction-route-heading p{font-size:13px;line-height:1.65;color:var(--muted)}
+.direction-play .game-board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px 16px;padding:26px 0}
+.direction-play .game-board>i{display:none}
+.direction-play .game-node{width:100%;max-width:120px;margin:auto;background:#fffaf4}
+.direction-play .game-node--result{background:linear-gradient(145deg,#edd7bb,#fff8ed)}
+.direction-play .direction-whisper{padding-top:22px;border-top:1px solid var(--line);font-size:26px;text-align:center;color:#79522f}
+
+/* Offerings: a restrained introduction followed by a wide photographic pause. */
+.direction-ceremony{padding-bottom:0;background:linear-gradient(180deg,#fbf7f1,#f0e5d8)}
+.direction-ceremony .direction-copy{max-width:790px;margin:0 auto 48px;text-align:center}
+.direction-ceremony .direction-copy>p{margin-left:auto;margin-right:auto}
+.direction-ceremony h1{font-size:clamp(54px,5.7vw,80px)}
+.direction-ceremony .svc-actions{justify-content:center}
+.direction-ceremony .direction-format{border:0;padding-top:0}
+.direction-ceremony .direction-panorama{position:relative;height:380px;overflow:hidden;border-radius:120px 120px 0 0}
+.direction-ceremony .direction-image{object-position:center 45%}
+.direction-ceremony .direction-panorama:after{content:"";position:absolute;inset:35% 0 0;background:linear-gradient(transparent,rgba(36,26,20,.8))}
+.direction-ceremony figcaption{position:absolute;z-index:1;bottom:28px;left:24px;right:24px;color:#fffaf4;font:400 italic 36px/1.1 var(--serif);text-align:center}
+
+@media(max-width:1000px){
+ .direction-hero{padding-left:24px;padding-right:24px}
+ .direction-personal,.direction-play{gap:32px}
+ .direction-personal .direction-portrait{height:540px}
+ .direction-board{padding:28px 20px}
+}
+@media(max-width:700px){
+ .direction-hero{padding:110px 20px 40px}
+ .direction-hero h1{font-size:50px}
+ .direction-copy>p:not(.direction-format){font-size:14px;line-height:1.7}
+ .direction-back{margin-bottom:16px}
+ .direction-personal,.direction-play{grid-template-columns:1fr;gap:32px}
+ .direction-personal .direction-portrait{height:360px;border-radius:150px 150px 14px 14px}
+ .direction-personal figcaption{font-size:30px;bottom:26px}
+ .direction-circle{min-height:760px;padding-top:120px;padding-bottom:44px}
+ .direction-circle:after{width:calc(100% - 24px);height:560px;aspect-ratio:auto;border-radius:50%}
+ .direction-circle .direction-format span{padding:0 4px}
+ .direction-circle .direction-whisper{margin-top:32px;font-size:26px}
+ .direction-play .game-board{gap:20px 12px}
+ .direction-play .game-node{max-width:100px}
+ .direction-route-heading h2{font-size:32px}
+ .direction-ceremony{padding-bottom:0}
+ .direction-ceremony .direction-copy{margin-bottom:32px}
+ .direction-ceremony .direction-panorama{height:300px;border-radius:80px 80px 0 0}
+ .direction-ceremony figcaption{font-size:30px}
+}
+@media(max-width:380px){
+ .direction-hero{padding-left:16px;padding-right:16px}
+ .direction-hero h1{font-size:44px}
+ .direction-hero .primary-btn{min-width:0;width:100%;padding-left:16px;padding-right:16px}
+ .direction-board{padding:24px 16px}
+}
