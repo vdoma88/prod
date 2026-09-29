@@ -88,7 +88,8 @@ export function createApp({ store, env = {}, fetchImpl = fetch }) {
   const need = (req) => { const u = me(req); if (!u) throw new AccountError(401, 'Войдите, пожалуйста.'); return u; };
   const needAdmin = (req) => { const u = need(req); if (u.role !== 'admin') throw new AccountError(403, 'Это может только администратор.'); return u; };
   // Курс со своим входом (sso: false) виден всем ссылкой: доступ туда выдаёт сам курс.
-  const withCourses = (u) => ({ user: u, courses: COURSES.map(c => ({ id: c.id, title: c.title, url: publicUrl(c), ownLogin: !c.sso, enabled: !c.sso || u.role === 'admin' || u.courses.includes(c.id) })) });
+  const staffOf = (u) => u.role === 'admin' || u.role === 'curator';
+  const withCourses = (u) => ({ user: u, courses: COURSES.map(c => ({ id: c.id, title: c.title, url: c.sso && c.staff && staffOf(u) ? new URL(c.staff, publicUrl(c)).href : publicUrl(c), ownLogin: !c.sso, enabled: !c.sso || u.role === 'admin' || u.courses.includes(c.id) })) });
   const resetLink = (token) => `${origin}${BASE}/#reset=${token}`;
 
   async function courseCall(c, pathAndQuery, body) {
