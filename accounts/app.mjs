@@ -11,7 +11,7 @@ import path from 'node:path';
 import { timingSafeEqual } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { AccountError } from './store.mjs';
-import { COURSES, courseById, LESSON_STATUSES } from './courses.mjs';
+import { COURSES, SSO_COURSES, courseById, LESSON_STATUSES } from './courses.mjs';
 
 const BASE = '/account';
 const COOKIE = 'sr_session';
@@ -87,7 +87,8 @@ export function createApp({ store, env = {}, fetchImpl = fetch }) {
   const me = (req) => store.sessionUser(tokenOf(req));
   const need = (req) => { const u = me(req); if (!u) throw new AccountError(401, 'Войдите, пожалуйста.'); return u; };
   const needAdmin = (req) => { const u = need(req); if (u.role !== 'admin') throw new AccountError(403, 'Это может только администратор.'); return u; };
-  const withCourses = (u) => ({ user: u, courses: COURSES.map(c => ({ id: c.id, title: c.title, url: publicUrl(c), enabled: u.role === 'admin' || u.courses.includes(c.id) })) });
+  // Курс со своим входом (sso: false) виден всем ссылкой: доступ туда выдаёт сам курс.
+  const withCourses = (u) => ({ user: u, courses: COURSES.map(c => ({ id: c.id, title: c.title, url: publicUrl(c), ownLogin: !c.sso, enabled: !c.sso || u.role === 'admin' || u.courses.includes(c.id) })) });
   const resetLink = (token) => `${origin}${BASE}/#reset=${token}`;
 
   async function courseCall(c, pathAndQuery, body) {
@@ -133,7 +134,7 @@ export function createApp({ store, env = {}, fetchImpl = fetch }) {
     }
 
     // ─── Админка ───
-    if (p === '/api/admin/users' && req.method === 'GET') { needAdmin(req); return send(res, 200, { users: store.users(), courses: COURSES.map(({ id, title }) => ({ id, title })) }); }
+    if (p === '/api/admin/users' && req.method === 'GET') { needAdmin(req); return send(res, 200, { users: store.users(), courses: SSO_COURSES.map(({ id, title }) => ({ id, title })) }); }
     if (p === '/api/admin/users') {
       checkWrite(req);
       const admin = needAdmin(req);
@@ -183,7 +184,7 @@ export function createApp({ store, env = {}, fetchImpl = fetch }) {
       const u = store.sessionUser(String(b.token || ''));
       if (!u) return send(res, 401, { error: 'нет сессии' });
       const { user, courses } = withCourses(u);
-      return send(res, 200, { user: { id: user.id, email: user.email, name: user.name, role: user.role }, courses: courses.filter(c => c.enabled).map(c => c.id) });
+      return send(res, 200, { user: { id: user.id, email: user.email, name: user.name, role: user.role }, courses: courses.filter(c => c.enabled && !c.ownLogin).map(c => c.id) });
     }
     return send(res, 404, { error: 'нет такого адреса' });
   }

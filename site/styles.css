@@ -696,3 +696,7 @@ body{background:linear-gradient(180deg,#fbf7f1 0,#f7efe7 45%,#efe4d8 100%)}
 @media(max-width:700px){
   .reveal{opacity:1!important;transform:none!important;transition:none!important}
 }
+/* Вход в общий кабинет «Сила Рода» (belayarod.ru/account) */
+.desktop-nav .nav-login{padding:6px 12px;margin:-6px 0;border:1px solid rgba(175,122,61,.35);border-radius:999px;color:#8a5a2b}
+.desktop-nav .nav-login:hover{background:rgba(197,139,67,.1)}
+.mobile-nav .nav-login{color:#8a5a2b;font-weight:600}

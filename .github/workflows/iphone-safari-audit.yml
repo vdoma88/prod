@@ -119,7 +119,11 @@ jobs:
                 scrollTo(0, 0);
                 await new Promise(r => setTimeout(r, 500));
               });
-              await page.waitForFunction(() => [...document.images].every(img => img.complete), { timeout: 8000 }).catch(() => {});
+              // Отложенные (loading=lazy) картинки, до которых Safari ещё не дошёл
+              // после прокрутки, догружаем сразу: проверяем, что картинка есть и
+              // открывается, а не скорость ленивой загрузки на медленной сети.
+              await page.evaluate(() => document.querySelectorAll('img[loading="lazy"]').forEach(img => { if (!img.complete) img.loading = 'eager'; }));
+              await page.waitForFunction(() => [...document.images].every(img => img.complete), { timeout: 20000 }).catch(() => {});
 
               // Реальные touch-сценарии: мобильное меню, заявка, FAQ.
               let menuOk = null;
@@ -186,14 +190,23 @@ jobs:
                 };
               });
 
+              // Ошибки — до снимка: для снимка Playwright по умолчанию вставляет
+              // свой <style> (прячет курсор), и строгий CSP сайта его отклоняет —
+              // это сообщение самого теста, у посетителей его нет. caret: 'initial'
+              // снимает без вставки.
+              // Настоящее нарушение CSP страница видит событием securitypolicyviolation
+              // (metrics.cspViolations — оно валит проверку). Строка «Refused to apply
+              // a stylesheet» без такого события — от служебного мира Playwright.
+              const cspFromTest = /Refused to apply a stylesheet/;
+              const pageErrors = errors.filter(e => !(cspFromTest.test(e) && !metrics.cspViolations.length));
               const shot = `iphone-audit/${profileName}-${name}.png`;
-              await page.screenshot({ path: shot, fullPage: true });
+              await page.screenshot({ path: shot, fullPage: true, caret: 'initial' });
 
-              const result = { profile: profileName, page: name, status, errors, menuOk, dialogOk, faqOk, ...metrics, screenshot: shot };
+              const result = { profile: profileName, page: name, status, errors: pageErrors, menuOk, dialogOk, faqOk, ...metrics, screenshot: shot };
               report.push(result);
               console.log(JSON.stringify(result));
 
-              if (status !== 200 || errors.length || metrics.overflow > 0 || metrics.brokenImages.length || metrics.h1Count !== 1 || menuOk === false || dialogOk === false || faqOk === false) failures++;
+              if (status !== 200 || pageErrors.length || metrics.cspViolations.length || metrics.overflow > 0 || metrics.brokenImages.length || metrics.h1Count !== 1 || menuOk === false || dialogOk === false || faqOk === false) failures++;
               await page.close();
             }
             await context.close();

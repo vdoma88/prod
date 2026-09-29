@@ -85,6 +85,13 @@ for (const [name, text] of Object.entries(html)) {
   for (const [, id] of text.matchAll(/href="#([^"]+)"/g)) {
     if (id !== 'top' && !text.includes(`id="${id}"`)) fail(`site/${name}: якорь #${id} не найден на странице`);
   }
+  // --- превью в соцсетях (scripts/og.mjs) ---
+  if (name !== '404.html') {
+    const og = /<meta property="og:image" content="https:\/\/belayarod\.ru\/([^"]+)"/.exec(text)?.[1];
+    if (!og) fail(`site/${name}: нет og:image`);
+    else if (!existsSync(path.join(SITE, og))) fail(`site/${name}: og:image ${og} — файла нет (node scripts/og.mjs)`);
+    if (!text.includes('<meta name="twitter:card" content="summary_large_image">')) fail(`site/${name}: twitter:card не summary_large_image`);
+  }
   // --- CSP ---
   if (/\sstyle="/.test(text)) fail(`site/${name}: inline-атрибут style заблокирует CSP`);
   for (const [, attrs] of text.matchAll(/<script([^>]*)>(?!<\/script>)/g)) {

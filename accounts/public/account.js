@@ -88,7 +88,9 @@ function home(me) {
   const next = nextCourse(me);
   if (next) { location.replace(next); return; }
   logoutBtn.hidden = false;
-  const cards = me.courses.map(c => c.enabled
+  const cards = me.courses.map(c => c.ownLogin
+    ? h('a', { class: 'course', href: c.url }, h('strong', null, c.title), h('span', { class: 'muted small' }, 'Свой вход школы →'))
+    : c.enabled
     ? h('a', { class: 'course', href: c.url }, h('strong', null, c.title), h('span', { class: 'muted small' }, 'Открыть курс →'))
     : h('div', { class: 'course off' }, h('strong', null, c.title), h('span', { class: 'muted small' }, 'Пока закрыт')));
   const parts = [
