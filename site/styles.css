@@ -258,6 +258,7 @@ body.menu-open{overflow:hidden}
 .course-link:hover{color:var(--ink)}
 .courses-note{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-top:14px;padding:26px 30px}
 .courses-note p{margin:6px 0 0;max-width:640px;color:var(--muted);font-size:14px;line-height:1.65}
+.courses-account{margin:0 0 14px}
 @media(max-width:900px){.courses-grid{grid-template-columns:1fr}.courses-note{display:block}.courses-note .detail-cta{margin-top:16px}}
 @media(max-width:640px){.courses-page{padding-top:78px}.courses-hero h1{font-size:46px}.course-card{padding:24px 20px 20px;border-radius:22px}.course-card h2{font-size:36px}.courses-note{padding:22px 20px}.courses-note .detail-cta{width:100%}}
 .request-note a{color:#9a642f;text-decoration:underline;text-underline-offset:2px}
