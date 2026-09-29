@@ -224,3 +224,28 @@ certbot_nginx() {
 env_line() {
   sed -n "s/^$2=\"\{0,1\}\([^\"]*\)\"\{0,1\}\$/\1/p" "$1" | head -n1
 }
+
+# share_sr_secret файл — дописать курсу SR_INTERNAL_SECRET общего входа
+# (/etc/sr-accounts.env, accounts/README.md). Возвращает 0, если файл изменился.
+share_sr_secret() {
+  local file="$1" secret
+  [ -f /etc/sr-accounts.env ] && [ -f "$file" ] || return 1
+  secret="$(env_line /etc/sr-accounts.env SR_INTERNAL_SECRET)"
+  [ -n "$secret" ] || return 1
+  [ "$(env_line "$file" SR_INTERNAL_SECRET)" = "$secret" ] && return 1
+  sed -i '/^SR_INTERNAL_SECRET=/d;/^# Общий вход «Сила Рода»/d' "$file"
+  printf '# Общий вход «Сила Рода» (accounts/README.md)\nSR_INTERNAL_SECRET=%s\n' "$secret" >> "$file"
+  ok "$file: подключён общий вход"
+}
+
+# close_sr_internal сайт — закрыть снаружи /sr-internal/ в уже стоящем сайте
+# nginx (файл не перезаписывается, см. nginx_site): строка перед каждым «location / {».
+close_sr_internal() {
+  local avail="/etc/nginx/sites-available/$1"
+  [ -f "$avail" ] || return 0
+  grep -q 'sr-internal' "$avail" && return 0
+  cp "$avail" "$avail.bak-$(date +%Y%m%d-%H%M%S)"
+  sed -i 's|^\([[:space:]]*\)location / {|\1location ^~ /sr-internal/ { return 404; }\n&|' "$avail"
+  nginx -t && systemctl reload nginx
+  ok "nginx: /sr-internal/ закрыт снаружи ($1)"
+}

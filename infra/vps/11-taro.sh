@@ -36,12 +36,20 @@ clone_or_update tarot "$APP"
 grep -q 'Environment=PORT=3100' "$APP/server/deploy/polkas.service" ||
   die "в $APP/server/deploy/polkas.service порт не 3100 — нужна версия tarot после PR #3"
 
+log "Общий вход"
+# /etc/polkas.env — необязательные настройки службы (секреты бота и общего входа).
+if [ ! -f /etc/polkas.env ]; then
+  install -m 640 -o root -g polkas /dev/null /etc/polkas.env
+  ok "создан /etc/polkas.env"
+fi
+share_sr_secret /etc/polkas.env || ok "общий вход: $(grep -q '^SR_INTERNAL_SECRET=.' /etc/polkas.env && echo подключён || echo ещё не поставлен — infra/vps/15-accounts.sh)"
+
 log "Служба"
 install -m 644 "$APP/server/deploy/polkas.service" /etc/systemd/system/polkas.service
 systemctl daemon-reload
 systemctl enable polkas >/dev/null 2>&1
 systemctl restart polkas
-wait_http "http://127.0.0.1:$PORT/"
+wait_http "http://127.0.0.1:$PORT/api/health"
 
 log "Ежедневная копия базы"
 install -m 755 "$APP/server/deploy/backup.sh" /etc/cron.daily/polkas-backup
@@ -49,11 +57,13 @@ ok "/etc/cron.daily/polkas-backup → /var/backups/polkas, 14 дней"
 
 log "nginx и HTTPS"
 nginx_site polkas "$APP/server/deploy/nginx.conf" "$HOST_NAME"
-wait_http "https://$HOST_NAME/" 10
+close_sr_internal polkas
+wait_http "https://$HOST_NAME/api/health" 10
 
 log "Готово: https://$HOST_NAME"
 cat <<NEXT
-  Первый администратор (напечатает ссылку, по ней задаётся пароль):
+  С общим входом (15-accounts.sh) людей заводят в https://$DOMAIN/account/.
+  Без него — первый администратор (напечатает ссылку, по ней задаётся пароль):
     cd $APP && sudo -u polkas env DATA_DIR=/var/lib/polkas PUBLIC_ORIGIN=https://$HOST_NAME \\
       node server/cli.js create-admin почта "Екатерина Белая"
   Журнал: journalctl -u polkas -f

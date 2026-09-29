@@ -58,6 +58,23 @@ nginx -t
 systemctl reload nginx
 ok "https://$DOMAIN/account/"
 
+log "Курсы"
+# Подключённые курсы получают общий секрет и перезапускаются.
+if share_sr_secret /etc/runes.env; then systemctl restart runes; fi
+close_sr_internal runes
+if [ -f /etc/systemd/system/polkas.service ]; then
+  [ -f /etc/polkas.env ] || install -m 640 -o root -g polkas /dev/null /etc/polkas.env
+  if share_sr_secret /etc/polkas.env; then systemctl restart polkas; fi
+  close_sr_internal polkas
+fi
+ROD_ENV=/var/www/rodology/server/.env
+if [ -f "$ROD_ENV" ] && share_sr_secret "$ROD_ENV"; then
+  (cd /var/www/rodology/server && pm2 restart rodology-platform --update-env >/dev/null) || warn "перезапустите «Связь с Родом»: pm2 restart rodology-platform --update-env"
+fi
+ok "Связь с Родом: $(grep -q '^SR_INTERNAL_SECRET=.' "$ROD_ENV" 2>/dev/null && echo подключена || echo не стоит)"
+ok "Таро: $(grep -q '^SR_INTERNAL_SECRET=.' /etc/polkas.env 2>/dev/null && echo подключено || echo не стоит)"
+ok "Руны: $(grep -q '^SR_INTERNAL_SECRET=.' /etc/runes.env 2>/dev/null && echo подключены || echo не стоят)"
+
 if [ -n "${ADMIN_EMAIL:-}" ]; then
   log "Администратор"
   # shellcheck disable=SC2046
@@ -71,6 +88,5 @@ cat <<NEXT
   Администратор (если ещё нет):
     sudo ADMIN_EMAIL=почта ADMIN_NAME="Имя" bash infra/vps/15-accounts.sh
   Журнал: journalctl -u sr-accounts -f
-  Подключение курса: в его настройки вписать
-    SR_INTERNAL_SECRET=<из $ENV_FILE>
+  Курсы получают секрет сами (скрипт курса или этот скрипт повторно).
 NEXT
