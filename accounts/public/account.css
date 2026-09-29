@@ -51,3 +51,6 @@ th { font-size: .8rem; color: var(--sr-muted); font-weight: 500; }
   .grid2 { grid-template-columns: 1fr; }
   th.hide-sm, td.hide-sm { display: none; }
 }
+.group { border-top: 1px solid var(--sr-line); padding: 10px 0; }
+.group summary { cursor: pointer; padding: 4px 0; }
+.group .checks { margin: 6px 0 4px; }

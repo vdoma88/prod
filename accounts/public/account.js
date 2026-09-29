@@ -189,17 +189,50 @@ async function lessonsView(box, u, c) {
     return;
   }
   const err = h('p', { class: 'error', hidden: true });
-  const rows = (data.lessons || []).map(l => {
+  const save = async (l, status) => {
+    await call(`admin/users/${u.id}/lessons/${c.id}`, { lessonId: l.id, status });
+    l.status = status;
+    l.group$?.refresh();
+  };
+  const row = (l) => {
     const sel = h('select', { 'aria-label': `Статус: ${l.title}`, class: 'status-' + l.status, onchange: async () => {
       err.hidden = true; sel.disabled = true;
-      try { await call(`admin/users/${u.id}/lessons/${c.id}`, { lessonId: l.id, status: sel.value }); sel.className = 'status-' + sel.value; }
-      catch (e) { err.textContent = e.message; err.hidden = false; sel.value = l.status; }
-      finally { sel.disabled = false; }
-      l.status = sel.value;
+      try { await save(l, sel.value); } catch (e) { err.textContent = e.message; err.hidden = false; sel.value = l.status; }
+      finally { sel.disabled = false; sel.className = 'status-' + l.status; }
     } }, Object.entries(STATUS_TITLES).map(([v, t]) => h('option', { value: v, selected: v === l.status }, t)));
+    l.select = sel;
     return h('div', { class: 'lesson' }, h('span', null, l.title), sel);
-  });
-  box.replaceChildren(err, rows.length ? h('div', null, rows) : h('p', { class: 'muted' }, 'В курсе нет уроков.'));
+  };
+  // Уроки по группам (модулям), если курс их отдаёт: у группы — «открыть» и «закрыть» разом.
+  const lessons = data.lessons || [];
+  const groups = [];
+  for (const l of lessons) {
+    const last = groups[groups.length - 1];
+    if (last && last.name === (l.group || '')) last.items.push(l); else groups.push({ name: l.group || '', items: [l] });
+  }
+  const bulk = (g, status, label) => h('button', { type: 'button', class: 'rowbtn', onclick: async (e) => {
+    err.hidden = true; e.target.disabled = true;
+    try {
+      for (const l of g.items) if (l.status !== status && !(status === 'open' && l.status === 'done')) {
+        await save(l, status); l.select.value = status; l.select.className = 'status-' + status;
+      }
+    } catch (x) { err.textContent = x.message; err.hidden = false; }
+    finally { e.target.disabled = false; }
+  } }, label);
+  const counter = (g) => {
+    const el = h('span', { class: 'muted small' });
+    g.refresh = () => { el.textContent = `${g.items.filter(l => l.status !== 'locked').length} из ${g.items.length} открыто`; };
+    for (const l of g.items) l.group$ = g;
+    g.refresh();
+    return el;
+  };
+  const body = groups.map(g => g.name
+    ? h('details', { class: 'group', open: groups.length <= 3 },
+        h('summary', null, h('strong', null, g.name), ' ', counter(g)),
+        h('div', { class: 'checks' }, bulk(g, 'open', 'Открыть все'), bulk(g, 'locked', 'Закрыть все')),
+        g.items.map(row))
+    : h('div', null, g.items.map(row)));
+  box.replaceChildren(err, lessons.length ? h('div', null, body) : h('p', { class: 'muted' }, 'В курсе нет уроков.'));
 }
 
 // ─── Старт ───

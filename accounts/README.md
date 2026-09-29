@@ -46,7 +46,7 @@ Node ≥ 22.13 без `npm install`: `node:sqlite`, `node:http`, `node:crypto`.
 
    ```
    GET  /sr-internal/lessons?email=…
-   → {"lessons": [{"id", "title", "status": "locked" | "open" | "done"}]}
+   → {"lessons": [{"id", "title", "group"?, "status": "locked" | "open" | "done"}]}
 
    POST /sr-internal/lessons
    {"email", "name", "lessonId", "status"}

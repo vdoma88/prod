@@ -54,6 +54,8 @@ fi
 log "Код"
 clone_or_update runes-belaya "$APP"
 
+share_sr_secret "$ENV_FILE" || true
+
 log "Сборка и проверки"
 (cd "$APP" && npm run build && npm run check)
 
@@ -66,6 +68,7 @@ wait_http "http://127.0.0.1:$PORT/api/health"
 
 log "nginx и HTTPS"
 nginx_site runes "$SCRIPT_DIR/nginx/runes.conf" "$HOST_NAME"
+close_sr_internal runes
 wait_http "https://$HOST_NAME/api/health" 10
 
 log "Готово: https://$HOST_NAME"

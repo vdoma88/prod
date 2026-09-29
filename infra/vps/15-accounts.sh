@@ -58,6 +58,12 @@ nginx -t
 systemctl reload nginx
 ok "https://$DOMAIN/account/"
 
+log "Курсы"
+# Подключённые курсы получают общий секрет и перезапускаются.
+if share_sr_secret /etc/runes.env; then systemctl restart runes; fi
+close_sr_internal runes
+ok "Руны: $(grep -q '^SR_INTERNAL_SECRET=.' /etc/runes.env 2>/dev/null && echo подключены || echo не стоят)"
+
 if [ -n "${ADMIN_EMAIL:-}" ]; then
   log "Администратор"
   # shellcheck disable=SC2046
@@ -71,6 +77,5 @@ cat <<NEXT
   Администратор (если ещё нет):
     sudo ADMIN_EMAIL=почта ADMIN_NAME="Имя" bash infra/vps/15-accounts.sh
   Журнал: journalctl -u sr-accounts -f
-  Подключение курса: в его настройки вписать
-    SR_INTERNAL_SECRET=<из $ENV_FILE>
+  Курсы получают секрет сами (скрипт курса или этот скрипт повторно).
 NEXT
