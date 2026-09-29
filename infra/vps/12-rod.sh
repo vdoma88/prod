@@ -88,6 +88,9 @@ install -d "$APP/server/public"
 cp -r dist/. "$APP/server/public/"
 ok "статика → server/public"
 
+log "Общий вход"
+share_sr_secret "$ENV_FILE" || ok "общий вход: $(grep -q '^SR_INTERNAL_SECRET=.' "$ENV_FILE" && echo подключён || echo ещё не поставлен — infra/vps/15-accounts.sh)"
+
 log "PM2"
 cd "$APP/server" || die "нет $APP/server"
 install -d "$APP/logs"

@@ -67,6 +67,11 @@ if [ -f /etc/systemd/system/polkas.service ]; then
   if share_sr_secret /etc/polkas.env; then systemctl restart polkas; fi
   close_sr_internal polkas
 fi
+ROD_ENV=/var/www/rodology/server/.env
+if [ -f "$ROD_ENV" ] && share_sr_secret "$ROD_ENV"; then
+  (cd /var/www/rodology/server && pm2 restart rodology-platform --update-env >/dev/null) || warn "перезапустите «Связь с Родом»: pm2 restart rodology-platform --update-env"
+fi
+ok "Связь с Родом: $(grep -q '^SR_INTERNAL_SECRET=.' "$ROD_ENV" 2>/dev/null && echo подключена || echo не стоит)"
 ok "Таро: $(grep -q '^SR_INTERNAL_SECRET=.' /etc/polkas.env 2>/dev/null && echo подключено || echo не стоит)"
 ok "Руны: $(grep -q '^SR_INTERNAL_SECRET=.' /etc/runes.env 2>/dev/null && echo подключены || echo не стоят)"
 
