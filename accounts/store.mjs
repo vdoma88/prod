@@ -2,7 +2,7 @@
 // node:sqlite, как у бота, Таро и рун — без npm install.
 import { DatabaseSync } from 'node:sqlite';
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual, createHash } from 'node:crypto';
-import { COURSES } from './courses.mjs';
+import { SSO_COURSES } from './courses.mjs';
 
 export const ROLES = ['student', 'curator', 'admin'];
 export const MIN_PASSWORD = 10;
@@ -116,7 +116,7 @@ export function openStore(path, { now = () => new Date() } = {}) {
     s.setFields.run(name, role, active, id);
     if (!active) s.dropSessionsOf.run(id);
     if (patch.courses && typeof patch.courses === 'object') {
-      for (const c of COURSES) {
+      for (const c of SSO_COURSES) {
         if (patch.courses[c.id] === true) s.grant.run(id, c.id, iso());
         if (patch.courses[c.id] === false) s.revoke.run(id, c.id);
       }

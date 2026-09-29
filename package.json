@@ -12,7 +12,8 @@
     "test:bot": "node --disable-warning=ExperimentalWarning --test bot/test/*.test.mjs",
     "test:e2e": "node scripts/build.mjs && node tests/e2e.mjs",
     "sync-brand": "node scripts/sync-brand.mjs",
-    "test:accounts": "node --disable-warning=ExperimentalWarning --test accounts/test/*.test.mjs"
+    "test:accounts": "node --disable-warning=ExperimentalWarning --test accounts/test/*.test.mjs",
+    "og": "node scripts/og.mjs"
   },
   "engines": {
     "node": ">=20"

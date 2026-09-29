@@ -65,6 +65,7 @@ test('курсы открываются и закрываются, послед�
   const u = store.createUser({ email: 'a@b.ru', name: 'А' });
   assert.deepEqual(store.updateUser(u.id, { courses: { runes: true, taro: true, nope: true } }).courses.sort(), ['runes', 'taro']);
   assert.deepEqual(store.updateUser(u.id, { courses: { taro: false } }).courses, ['runes']);
+  assert.deepEqual(store.updateUser(u.id, { courses: { plamya: true } }).courses, ['runes'], '«Язык Пламени» здесь не выдаётся');
   assert.throws(() => store.updateUser(admin.id, { role: 'curator' }), /единственный/);
   assert.throws(() => store.updateUser(admin.id, { active: false }), /единственный/);
   store.updateUser(u.id, { role: 'admin' });
@@ -153,7 +154,8 @@ test('админ заводит ученицу, открывает курсы, �
   s.logout();
   const me = await s.req('/account/api/reset', { body: { token, password: 'пароль-марии-1' } });
   assert.equal(me.status, 200);
-  assert.deepEqual(me.data.courses.filter(c => c.enabled).map(c => c.id), ['runes']);
+  assert.deepEqual(me.data.courses.filter(c => c.enabled && !c.ownLogin).map(c => c.id), ['runes']);
+  assert.equal(me.data.courses.find(c => c.id === 'plamya').ownLogin, true, 'у «Языка Пламени» свой вход — просто ссылка');
   assert.equal((await s.req('/account/api/admin/users')).status, 403, 'ученице админка закрыта');
   assert.equal((await s.req(`/account/api/admin/users/${created.data.user.id}`, { body: { role: 'admin' } })).status, 403);
 });
@@ -183,7 +185,7 @@ test('уроки: админка спрашивает сам курс, непо�
   assert.deepEqual(s.calls.at(-1).body, { email: 'maria@b.ru', name: 'Мария', lessonId: 'l2', status: 'done' });
   assert.equal((await s.req(`${path}/runes`, { body: { lessonId: 'l2', status: 'maybe' } })).status, 400);
   assert.equal((await s.req(`${path}/taro`, { body: { lessonId: 'l1', status: 'open' } })).status, 409, 'курс ей не открыт');
-  assert.deepEqual((await s.req(`${path}/plamya`)).data, { connected: false });
+  assert.equal((await s.req(`${path}/plamya`)).status, 404, 'курс со своим входом общий вход не ведёт');
   assert.deepEqual((await s.req(`${path}/taro`)).data, { connected: false }, 'страница приложения вместо JSON');
   assert.equal((await s.req(`${path}/nope`)).status, 404);
 });
@@ -201,7 +203,7 @@ test('внутренний адрес: только локально и с се�
   assert.equal(ok.status, 200);
   const data = await ok.json();
   assert.equal(data.user.email, 'kate@b.ru');
-  assert.deepEqual(data.courses, ['rod', 'plamya', 'taro', 'runes']);
+  assert.deepEqual(data.courses, ['rod', 'taro', 'runes'], 'курсы со своим входом курсам не сообщаются');
   assert.equal((await ask('inner-secret', 'bad')).status, 401);
 });
 
