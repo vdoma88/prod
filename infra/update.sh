@@ -5,7 +5,12 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# Не прерываем публикацию посередине и не собираем две версии одновременно.
+exec 9>/var/lock/belayarod-deploy.lock
+flock 9
+
 git pull --ff-only
+EXPECTED_COMMIT="$(git rev-parse HEAD)"
 node scripts/check.mjs --sources
 node scripts/build.mjs
 
@@ -18,14 +23,11 @@ systemctl reload nginx
 # Общий вход (accounts/) — перезапуск, если он уже поставлен (infra/vps/15-accounts.sh).
 if systemctl is-enabled --quiet sr-accounts 2>/dev/null; then systemctl restart sr-accounts; fi
 
-EXPECTED_COMMIT="$(git rev-parse HEAD)"
-LIVE_VERSION="$(curl -fsS --max-time 20 -H 'Cache-Control: no-cache' "https://belayarod.ru/version.json?ts=$(date +%s)" || true)"
-LIVE_COMMIT="$(printf '%s' "$LIVE_VERSION" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(JSON.parse(s).commit||'')}catch{console.log('')}})" 2>/dev/null)"
-if [ "$LIVE_COMMIT" != "$EXPECTED_COMMIT" ]; then
-  echo "ОШИБКА: live-версия не совпала с git HEAD."
-  echo "ожидали: $EXPECTED_COMMIT"
-  echo "live:     ${LIVE_COMMIT:-нет version.json}"
-  exit 1
-fi
+EXPECTED_SHA="$EXPECTED_COMMIT" LIVE_ATTEMPTS=6 \
+  LIVE_REPORT_PATH=/var/log/prod-live-version.json node scripts/check-live.mjs
 
 echo "belayarod.ru обновлён и подтверждён: $(git log -1 --format='%h %s')"
+
+# Вызывается только после успешных сборки, reload и сверки опубликованного SHA.
+# Без токена остаётся резервная проверка по push; настройка — infra/DEPLOY.md.
+EXPECTED_SHA="$EXPECTED_COMMIT" node scripts/dispatch-live-audit.mjs

@@ -1,43 +1,54 @@
 name: Live site freshness
+run-name: Live ${{ inputs.expected_sha || github.sha }} (${{ github.event_name }})
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Полный SHA уже опубликованной сборки
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+# Push новой, ещё не опубликованной версии не отменяет post-deploy аудит.
+concurrency:
+  group: live-audit-production-${{ github.event_name == 'push' && 'push' || 'post-deploy' }}
+  cancel-in-progress: true
 
 jobs:
   verify-live:
+    # Отключать резервный push только после проверки callback на VPS (infra/DEPLOY.md).
+    if: github.event_name != 'push' || vars.LIVE_AUDIT_MODE != 'post-deploy'
     runs-on: ubuntu-latest
+    timeout-minutes: 12
+    outputs:
+      expected_sha: ${{ steps.version.outputs.expected_sha }}
     steps:
-      - name: Проверить опубликованную версию
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Проверить опубликованный commit
+        id: version
         env:
-          EXPECTED_SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          base="https://belayarod.ru"
-          ok=0
-          for attempt in 1 2 3 4 5 6; do
-            ts="$(date +%s)"
-            echo "Попытка $attempt: $base/?gh=$EXPECTED_SHA-$ts"
-            html="$(curl -fsSL --max-time 20 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "$base/?gh=$EXPECTED_SHA-$ts" || true)"
-            version="$(curl -fsSL --max-time 20 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "$base/version.json?gh=$EXPECTED_SHA-$ts" || true)"
-            live_sha="$(printf '%s' "$version" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(JSON.parse(s).commit||'')}catch{console.log('')}})" 2>/dev/null || true)"
+          EXPECTED_SHA: ${{ inputs.expected_sha || github.sha }}
+          LIVE_ATTEMPTS: ${{ github.event_name == 'push' && '16' || '6' }}
+          LIVE_REPORT_PATH: live-check/report.json
+        run: node scripts/check-live.mjs
+      - name: Сохранить диагностику публикации
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: belayarod-live-freshness
+          path: live-check/
+          retention-days: 7
 
-            if printf '%s' "$html" | grep -q 'brand-monogram' &&
-               printf '%s' "$html" | grep -q 'Четыре маршрута для практики' &&
-               [ "$live_sha" = "$EXPECTED_SHA" ]; then
-              echo "✓ belayarod.ru отдаёт текущий commit $EXPECTED_SHA"
-              ok=1
-              break
-            fi
-
-            echo "live commit: ${live_sha:-version.json отсутствует}"
-            echo "monogram: $(printf '%s' "$html" | grep -q 'brand-monogram' && echo yes || echo no)"
-            echo "DS2 home: $(printf '%s' "$html" | grep -q 'Четыре маршрута для практики' && echo yes || echo no)"
-            [ "$attempt" = 6 ] || sleep 20
-          done
-
-          if [ "$ok" != 1 ]; then
-            echo "::error::belayarod.ru не подтверждает текущий commit $EXPECTED_SHA"
-            exit 1
-          fi
+  iphone-audit:
+    needs: verify-live
+    uses: ./.github/workflows/iphone-safari-audit.yml
+    with:
+      expected_sha: ${{ needs.verify-live.outputs.expected_sha }}
