@@ -38,7 +38,7 @@ const requiredLandingPages = [
 for (const name of requiredLandingPages) {
   if (!html[name]) fail(`site/: после интеграции отсутствует обязательная страница ${name}`);
 }
-for (const asset of ['styles.css', 'app.js', 'tree.js', 'favicon.svg', 'touch-icon.png', 'pulse.js', 'site.webmanifest']) {
+for (const asset of ['styles.css', 'app.js', 'favicon.svg', 'touch-icon.png', 'pulse.js', 'site.webmanifest']) {
   if (!existsSync(path.join(SITE, asset))) fail(`site/: после интеграции отсутствует обязательный файл ${asset}`);
 }
 // iPhone не берёт SVG-иконку и иконки из манифеста: без PNG на экране «Домой»
@@ -46,7 +46,7 @@ for (const asset of ['styles.css', 'app.js', 'tree.js', 'favicon.svg', 'touch-ic
 // nginx отправляет в школу (иконки её прежнего приложения).
 // Телеметрия (pulse.js) — на каждой странице и раньше app.js, чтобы видеть его ошибки.
 for (const [name, source] of Object.entries(html)) {
-  if (!source.includes('<link rel="apple-touch-icon" href="touch-icon.png">')) fail(`site/${name}: нет apple-touch-icon для iPhone`);
+  if (!/<link rel="apple-touch-icon" href="\/?touch-icon\.png">/.test(source)) fail(`site/${name}: нет apple-touch-icon для iPhone`);
   const pulseAt = source.search(/<script src="\/?pulse\.js"><\/script>/);
   if (pulseAt < 0) fail(`site/${name}: не подключён pulse.js`);
   const appAt = source.indexOf('<script src="app.js">');
@@ -66,6 +66,11 @@ for (const [name, source] of Object.entries(html)) {
     if (!existsSync(file)) fail(`site/${name}: нет файла ${ref}`);
     else if (statSync(file).size === 0) fail(`site/${name}: пустой файл ${ref}`);
   }
+}
+// 404.html nginx отдаёт на любом адресе, в том числе вложенном (/a/b): относительная
+// ссылка там ведёт в /a/styles.css, и страница остаётся без оформления.
+for (const m of (html['404.html'] || '').matchAll(/\s(?:src|href)="([^"]+)"/g)) {
+  if (!/^(\/|https?:|mailto:|tel:|#|data:)/.test(m[1])) fail(`site/404.html: ссылка ${m[1]} должна начинаться с /`);
 }
 (function emptyAssets(dir) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -160,7 +165,7 @@ if (/innerHTML|insertAdjacentHTML|\.style\s*=\s*['"`]|setAttribute\('style'/.tes
 
 // --- синтаксис JS ---
 const jsFiles = [
-  ...['app.js', 'tree.js', 'drum.js', 'pulse.js'].map(n => path.join(SITE, n)),
+  ...['app.js', 'drum.js', 'pulse.js'].map(n => path.join(SITE, n)),
   path.join(BRAND, 'sr-brand.js'),
   ...readdirSync(path.join(ROOT, 'scripts')).map(n => path.join(ROOT, 'scripts', n)),
   ...readdirSync(path.join(ROOT, 'tests')).map(n => path.join(ROOT, 'tests', n)),

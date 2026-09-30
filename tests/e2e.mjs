@@ -38,7 +38,7 @@ try {
   for (const [width, height, label] of [[1440, 900, 'компьютер'], [375, 812, 'телефон']]) {
     console.log(`Страницы — ${label} ${width}px`);
     const context = await browser.newContext({ viewport: { width, height } });
-    // Внешние шрифты и three.js в песочнице могут быть недоступны; для проверки
+    // Внешние шрифты и CDN в песочнице могут быть недоступны; для проверки
     // вёрстки и CSP они не нужны.
     await context.route(/^https:\/\/(fonts\.(googleapis|gstatic)\.com|cdn\.jsdelivr\.net)\//, route => route.abort());
     for (const name of pages) {
@@ -59,6 +59,20 @@ try {
     }
     await context.close();
   }
+
+  console.log('Страница 404');
+  await check('на вложенном адресе — с оформлением и без битых ссылок', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const p = await ctx.newPage();
+    const failed = [];
+    p.on('response', r => { if (r.status() >= 400 && !r.url().endsWith('/a/b/c')) failed.push(r.url()); });
+    const res = await p.goto(`${origin}/a/b/c`, { waitUntil: 'load' });
+    const styled = await p.evaluate(() => getComputedStyle(document.body).fontFamily);
+    await ctx.close();
+    assert.equal(res.status(), 404);
+    assert.deepEqual(failed, []);
+    assert.match(styled, /Manrope/);
+  });
 
   console.log('Общая шапка');
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
