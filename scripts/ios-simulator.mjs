@@ -81,18 +81,29 @@ for (const d of devices) {
     await sleep(i === 0 ? WAIT_FIRST : WAIT);
     const name = `${d.name.replace(/\W+/g, '-')}${page === '/' ? '-home' : page.replace(/\W+/g, '-')}`.replace(/-+$/, '');
     const shot = path.join(OUT, `${name}.png`);
-    sh('xcrun', ['simctl', 'io', d.udid, 'screenshot', shot]);
-    const { white, spread } = blankness(shot);
-    const blank = white >= 0.97 || spread < 6;
+    // Белый снимок бывает и у страницы, которая ещё грузится (раннер в США,
+    // сервер в России): Safari до первой отрисовки показывает белое. Такой
+    // странице даём ещё до 30 секунд; белый экран — только если так и не появилась.
+    const isBlank = ({ white, spread }) => white >= 0.97 || spread < 6;
+    let m, waited = 0;
+    for (;;) {
+      sh('xcrun', ['simctl', 'io', d.udid, 'screenshot', shot]);
+      m = blankness(shot);
+      if (!isBlank(m) || waited >= 30000) break;
+      await sleep(10000);
+      waited += 10000;
+    }
+    const blank = isBlank(m);
+    const slow = !blank && waited > 0;
     if (blank) failures++;
-    const line = { device: d.name, ios: d.runtime, page, white: +white.toFixed(3), spread: +spread.toFixed(1), blank, screenshot: shot };
+    const line = { device: d.name, ios: d.runtime, page, white: +m.white.toFixed(3), spread: +m.spread.toFixed(1), blank, slow, waitedMs: waited, screenshot: shot };
     report.push(line);
-    console.log(`${blank ? '✗ БЕЛЫЙ ЭКРАН' : '✓'} ${page} — белого ${(white * 100).toFixed(0)}%, разброс ${spread.toFixed(0)}`);
+    console.log(`${blank ? '✗ БЕЛЫЙ ЭКРАН' : slow ? '⚠ медленно' : '✓'} ${page} — белого ${(m.white * 100).toFixed(0)}%, разброс ${m.spread.toFixed(0)}${waited ? `, ждали ещё ${waited / 1000} с` : ''}`);
   }
   try { sh('xcrun', ['simctl', 'shutdown', d.udid]); } catch { /* не мешает */ }
 }
 
 writeFileSync(path.join(OUT, 'report.json'), JSON.stringify(report, null, 2));
-console.log(`\nБелых экранов: ${failures} из ${report.length}`);
+console.log(`\nБелых экранов: ${failures} из ${report.length}; медленных (появились после ${WAIT / 1000} с): ${report.filter(r => r.slow).length}`);
 if (failures) process.exit(1);
 }
