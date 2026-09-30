@@ -38,8 +38,13 @@ const requiredLandingPages = [
 for (const name of requiredLandingPages) {
   if (!html[name]) fail(`site/: после интеграции отсутствует обязательная страница ${name}`);
 }
-for (const asset of ['styles.css', 'app.js', 'tree.js', 'favicon.svg', 'site.webmanifest']) {
+for (const asset of ['styles.css', 'app.js', 'tree.js', 'favicon.svg', 'apple-touch-icon.png', 'site.webmanifest']) {
   if (!existsSync(path.join(SITE, asset))) fail(`site/: после интеграции отсутствует обязательный файл ${asset}`);
+}
+// iPhone не берёт SVG-иконку и иконки из манифеста: без PNG на экране «Домой»
+// вместо знака будет снимок страницы.
+for (const [name, source] of Object.entries(html)) {
+  if (!source.includes('<link rel="apple-touch-icon" href="apple-touch-icon.png">')) fail(`site/${name}: нет apple-touch-icon для iPhone`);
 }
 const landingHome = html['index.html'] || '';
 for (const id of ['services', 'start', 'faq']) {

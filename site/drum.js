@@ -149,6 +149,10 @@
   }
 
   function start() {
+    // iPhone по умолчанию глушит Web Audio беззвучным режимом (переключатель
+    // сбоку). Тип «playback» — как у плеера: бубен слышен и при нём.
+    // Safari 16.4+; где свойства нет, ничего не меняется.
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* нет — и ладно */ }
     if (!ctx) init();
     ctx.resume();
     nextT = ctx.currentTime + 0.1;
