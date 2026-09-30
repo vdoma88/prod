@@ -1,4 +1,4 @@
-// Телеметрия лендинга belayarod.ru: приём от site/pulse.js и сводка.
+// Телеметрия лендинга belayarod.ru: приём от brand/sr-pulse.js и сводка.
 //
 // Живёт в той же базе, что общий вход (отдельная таблица pulse), потому что
 // это уже работающая служба за nginx на /account/ — новой службы и новых
@@ -91,6 +91,9 @@ export function parseBatch(body) {
   return { id: body.id, path, env: body.env ? clean(body.env, ENV) : null, events };
 }
 
+// Сайт визита: путь лендинга начинается с «/», у курсов — с их поддомена.
+export const siteOf = (path) => (String(path).startsWith('/') ? '' : String(path).split('/')[0]);
+
 const pct = (arr, p) => {
   if (!arr.length) return null;
   const s = [...arr].sort((a, b) => a - b);
@@ -134,7 +137,7 @@ export function openPulse(db, { now = () => new Date() } = {}) {
     const rows = since.all(ago(days)).map(r => ({ ...r, data: JSON.parse(r.data), env: r.env ? JSON.parse(r.env) : null }));
     const visits = new Map();
     for (const r of rows) {
-      const v = visits.get(r.visit) || { platform: r.platform, os: r.os, browser: r.browser, view: null, left: false, env: null };
+      const v = visits.get(r.visit) || { platform: r.platform, os: r.os, browser: r.browser, site: siteOf(r.path), view: null, left: false, env: null };
       if (r.kind === 'view') v.view = r.data;
       if (r.kind === 'left') v.left = true;
       if (r.env) v.env = r.env;
@@ -169,8 +172,13 @@ export function openPulse(db, { now = () => new Date() } = {}) {
     const iosVisits = [...visits.values()].filter(v => v.platform === 'iPhone' || v.platform === 'iPad');
     const ios = count(iosVisits.map(v => ({ ...v, at: '' })), v => `${v.os} · ${v.browser}`).map(({ key, count }) => ({ key, count }));
 
+    const bySite = {};
+    for (const v of visits.values()) if (v.view || v.left) bySite[v.site] = (bySite[v.site] || 0) + 1;
+    const sites = Object.entries(bySite).map(([site, visits]) => ({ site, visits })).sort((a, b) => b.visits - a.visits);
+
     return {
       days,
+      sites,
       platforms,
       ios,
       errors: count(of('error'), r => r.data.msg, r => ({ where: r.data.src ? `${r.data.src.replace(/^https?:\/\/[^/]+/, '')}:${r.data.line}` : '', path: r.path })),

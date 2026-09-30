@@ -3,7 +3,7 @@
 //   /account/                 страница входа, «Мои курсы», новая ссылка, админка
 //   /account/api/…            JSON для этой страницы
 //   /account/internal/…       для курсов на этом же сервере (nginx наружу не пускает)
-//   /account/pulse            телеметрия лендинга от site/pulse.js (pulse.mjs)
+//   /account/pulse            телеметрия лендинга от brand/sr-pulse.js (pulse.mjs)
 //
 // Сессия — cookie sr_session на домене .belayarod.ru: её видят все курсы
 // на поддоменах и спрашивают у этого сервиса, кто вошёл (/internal/session).
@@ -36,6 +36,13 @@ export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchI
   const publicUrl = (c) => env[`COURSE_${c.id.toUpperCase()}_URL`] || c.url;
   const attempts = new Map();
   const pulseHits = new Map();
+  const hubHost = new URL(origin).hostname;
+  const subdomainOf = (from) => {
+    try {
+      const u = new URL(from);
+      return u.protocol === new URL(origin).protocol && u.hostname.endsWith('.' + hubHost) && /^[a-z0-9-]+$/.test(u.hostname.slice(0, -hubHost.length - 1)) ? u.hostname : '';
+    } catch { return ''; }
+  };
   let pulseWindow = Date.now();
 
   const sameSecret = (given) => {
@@ -94,8 +101,10 @@ export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchI
   async function acceptPulse(req, res) {
     const done = (status) => { res.writeHead(status, { 'Cache-Control': 'no-store' }); res.end(); };
     if (req.method !== 'POST') return done(405);
+    // Свой сайт или курс на его поддомене (taro.belayarod.ru и т. п.).
     const from = req.headers.origin;
-    if ((from && from !== origin) || req.headers['sec-fetch-site'] === 'cross-site') return done(403);
+    const sub = from && from !== origin ? subdomainOf(from) : '';
+    if ((from && from !== origin && !sub) || req.headers['sec-fetch-site'] === 'cross-site') return done(403);
     if (Date.now() - pulseWindow > 10 * 60e3) { pulseHits.clear(); pulseWindow = Date.now(); }
     const ip = clientIp(req);
     if ((pulseHits.get(ip) || 0) >= 300) return done(429);
@@ -103,6 +112,7 @@ export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchI
     try { body = await readJson(req, 16 * 1024); } catch { return done(400); }
     const batch = parseBatch(body);
     if (!batch) return done(400);
+    if (sub) batch.path = sub + batch.path; // «taro.belayarod.ru/…»: сводка различает сайты
     pulseHits.set(ip, (pulseHits.get(ip) || 0) + pulse.add(batch, req.headers['user-agent']));
     return done(204);
   }

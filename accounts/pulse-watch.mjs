@@ -16,11 +16,15 @@ const sec = (ms) => (ms == null ? '—' : (ms / 1000).toFixed(1).replace('.', ',
 const quote = (s, n = 90) => { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
 const who = (r) => (r.platform === 'iPhone' || r.platform === 'iPad') ? `${r.platform} ${r.os} ${r.browser}` : `${r.platform} ${r.browser}`;
 
+const SITE_NAMES = { '': 'лендинг', rod: 'Связь с Родом', plamya: 'Язык Пламени', taro: 'Таро', runes: 'Руны' };
+const siteName = (host) => (host ? SITE_NAMES[host.split('.')[0]] ?? host : SITE_NAMES['']);
+
 // Строки сводки за сутки из pulse.summary(1).
 export function digestLines(s) {
   if (!s.platforms.length) return ['Визитов не было — или телеметрия не доходит. Проверьте: откройте belayarod.ru с телефона.'];
   const total = s.platforms.reduce((n, p) => n + p.visits, 0);
   const lines = [`Визитов: ${total} · ${s.platforms.map(p => `${p.platform} ${p.visits}`).join(', ')}`];
+  if ((s.sites || []).some(x => x.site)) lines.push(`По сайтам: ${s.sites.map(x => `${siteName(x.site)} ${x.visits}`).join(', ')}`);
   for (const p of s.platforms) {
     if (p.platform !== 'iPhone' && p.platform !== 'iPad') continue;
     const extra = [p.leftEarly ? `ушли до загрузки: ${p.leftEarly}` : '', p.noStorage ? `без хранилища: ${p.noStorage}` : ''].filter(Boolean).join('; ');
@@ -49,11 +53,14 @@ export function digestLines(s) {
 // «Script error.» без подробностей) и чужие файлы не оповещают.
 export function problemKey(r, origin) {
   const d = r.data;
-  const path = (u) => String(u || '').replace(origin, '');
-  if (r.kind === 'broken') return String(d.url).startsWith(origin + '/') ? { key: 'b ' + path(d.url), text: `Не загрузился файл ${path(d.url)}` } : null;
+  // Наши адреса — сам сайт и курсы на его поддоменах; адрес лендинга короче: «/app.js».
+  const host = new URL(origin).hostname.replace(/\./g, '\\.');
+  const ours = (u) => new RegExp(`^https?://([a-z0-9-]+\\.)*${host}/`).test(String(u || ''));
+  const path = (u) => String(u || '').replace(origin, '').replace(/^https?:\/\//, '');
+  if (r.kind === 'broken') return ours(d.url) ? { key: 'b ' + path(d.url), text: `Не загрузился файл ${path(d.url)}` } : null;
   if (r.kind === 'csp') return { key: `c ${d.dir} ${d.uri}`, text: `Нарушение CSP: ${d.dir} ${quote(d.uri, 80)}` };
   if (!d.msg || /^Script error\.?$/i.test(d.msg)) return null;
-  if (d.src && !String(d.src).startsWith(origin + '/')) return null;
+  if (d.src && !ours(d.src)) return null;
   const where = d.src ? ` (${path(d.src)}:${d.line})` : '';
   return { key: `e ${d.msg}|${path(d.src)}:${d.line}`, text: `Ошибка «${quote(d.msg)}»${where}` };
 }

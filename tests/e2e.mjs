@@ -119,7 +119,7 @@ try {
   });
   await context.close();
 
-  // Телеметрия (site/pulse.js): приём подменяется, проверяется, что уходит.
+  // Телеметрия (brand/sr-pulse.js): приём подменяется, проверяется, что уходит.
   // Под Playwright скрипт молчит; ?pulse=1 включает его для этой проверки.
   console.log('Телеметрия');
   const pulseContext = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
@@ -152,6 +152,34 @@ try {
     assert.equal(batches.length, before);
   });
   await pulseContext.close();
+
+  // Курс на поддомене: скрипт из его копии бренда, CSP курса с connect-src
+  // https://belayarod.ru (docs/integration.md) — данные уходят на belayarod.ru.
+  await check('курс на поддомене шлёт на belayarod.ru и CSP это пропускает', async () => {
+    const ctx = await browser.newContext();
+    const got = [];
+    const csp = [];
+    const { readFileSync } = await import('node:fs');
+    const script = readFileSync(new URL('../brand/sr-pulse.js', import.meta.url));
+    await ctx.route('https://taro.belayarod.ru/**', route => {
+      const url = new URL(route.request().url());
+      if (url.pathname === '/brand/sr-pulse.js') return route.fulfill({ body: script, contentType: 'text/javascript' });
+      route.fulfill({
+        contentType: 'text/html; charset=utf-8',
+        headers: { 'Content-Security-Policy': "default-src 'self'; script-src 'self'; connect-src 'self' https://belayarod.ru" },
+        body: '<!doctype html><title>Таро</title><script src="/brand/sr-pulse.js"></script><p>урок</p>',
+      });
+    });
+    await ctx.route('https://belayarod.ru/account/pulse', route => { got.push(JSON.parse(route.request().postData())); route.fulfill({ status: 204 }); });
+    const p = await ctx.newPage();
+    p.on('console', m => { if (/Content Security Policy|Refused/.test(m.text())) csp.push(m.text()); });
+    await p.goto('https://taro.belayarod.ru/lesson?pulse=1', { waitUntil: 'load' });
+    await p.waitForTimeout(500);
+    await ctx.close();
+    assert.deepEqual(csp, []);
+    assert.equal(got[0]?.path, '/lesson');
+    assert.ok(got[0].ev.some(e => e.k === 'view'));
+  });
 } finally {
   await browser.close();
   server.close();

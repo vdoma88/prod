@@ -154,7 +154,7 @@
     // Safari 16.4+; где свойства нет, ничего не меняется.
     try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* нет — и ладно */ }
     if (!ctx) init();
-    // Телеметрия (pulse.js): заиграл ли звук на живом телефоне.
+    // Телеметрия (brand/sr-pulse.js): заиграл ли звук на живом телефоне.
     const report = () => window.srPulse?.('drum', ctx.state + (navigator.audioSession ? ' session' : ''));
     const resumed = ctx.resume();
     if (resumed && resumed.then) resumed.then(report, report); else report();

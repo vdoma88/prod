@@ -38,19 +38,19 @@ const requiredLandingPages = [
 for (const name of requiredLandingPages) {
   if (!html[name]) fail(`site/: после интеграции отсутствует обязательная страница ${name}`);
 }
-for (const asset of ['styles.css', 'app.js', 'favicon.svg', 'touch-icon.png', 'pulse.js', 'site.webmanifest']) {
+for (const asset of ['styles.css', 'app.js', 'favicon.svg', 'touch-icon.png', 'site.webmanifest']) {
   if (!existsSync(path.join(SITE, asset))) fail(`site/: после интеграции отсутствует обязательный файл ${asset}`);
 }
 // iPhone не берёт SVG-иконку и иконки из манифеста: без PNG на экране «Домой»
 // вместо знака будет снимок страницы. Имя не apple-touch-icon.png: этот адрес
 // nginx отправляет в школу (иконки её прежнего приложения).
-// Телеметрия (pulse.js) — на каждой странице и раньше app.js, чтобы видеть его ошибки.
+// Телеметрия (brand/sr-pulse.js) — на каждой странице и раньше app.js, чтобы видеть его ошибки.
 for (const [name, source] of Object.entries(html)) {
   if (!/<link rel="apple-touch-icon" href="\/?touch-icon\.png">/.test(source)) fail(`site/${name}: нет apple-touch-icon для iPhone`);
-  const pulseAt = source.search(/<script src="\/?pulse\.js"><\/script>/);
-  if (pulseAt < 0) fail(`site/${name}: не подключён pulse.js`);
+  const pulseAt = source.search(/<script src="\/?brand\/sr-pulse\.js"><\/script>/);
+  if (pulseAt < 0) fail(`site/${name}: не подключён brand/sr-pulse.js`);
   const appAt = source.indexOf('<script src="app.js">');
-  if (appAt >= 0 && pulseAt > appAt) fail(`site/${name}: pulse.js должен стоять раньше app.js`);
+  if (appAt >= 0 && pulseAt > appAt) fail(`site/${name}: sr-pulse.js должен стоять раньше app.js`);
 }
 // Картинки и файлы страниц: есть и не пустые. Пустой consult.webp из PR #40
 // проходил все проверки, а iPhone с плотным экраном выбирал именно его — фото
@@ -165,8 +165,9 @@ if (/innerHTML|insertAdjacentHTML|\.style\s*=\s*['"`]|setAttribute\('style'/.tes
 
 // --- синтаксис JS ---
 const jsFiles = [
-  ...['app.js', 'drum.js', 'pulse.js'].map(n => path.join(SITE, n)),
+  ...['app.js', 'drum.js'].map(n => path.join(SITE, n)),
   path.join(BRAND, 'sr-brand.js'),
+  path.join(BRAND, 'sr-pulse.js'),
   ...readdirSync(path.join(ROOT, 'scripts')).map(n => path.join(ROOT, 'scripts', n)),
   ...readdirSync(path.join(ROOT, 'tests')).map(n => path.join(ROOT, 'tests', n)),
   ...readdirSync(path.join(ROOT, 'bot')).filter(n => n.endsWith('.mjs')).map(n => path.join(ROOT, 'bot', n)),
