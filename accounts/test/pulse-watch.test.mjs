@@ -96,3 +96,18 @@ test('отправка в бота: секрет в заголовке, сбой
   const fail = await botSender({ url: 'http://bot/notify', secret: 's3', fetchImpl: async () => { throw new Error('ECONNREFUSED'); } })({ site: 'alert', lines: ['x'] });
   assert.equal(fail, false);
 });
+
+test('курсы: сводка по сайтам, поломки с поддомена оповещают', async () => {
+  const s = setup('2026-10-01T07:01:00Z');
+  s.visit([{ k: 'view', load: 900 }]);
+  s.pulse.add(parseBatch({ v: 1, id: 'aaaaaaaaaaaaaaaa', path: '/', ev: [{ k: 'view', load: 700 }] }), IPHONE);
+  const b = parseBatch({ v: 1, id: 'bbbbbbbbbbbbbbbb', path: '/', ev: [{ k: 'view', load: 700 }] });
+  b.path = 'runes.belayarod.ru/';
+  s.pulse.add(b, IPHONE);
+  await s.watch.digest();
+  assert.ok(s.sent[0].lines.includes('По сайтам: лендинг 2, Руны 1'));
+  const r = (data) => ({ kind: 'broken', data, platform: 'iPhone', os: 'iOS 18.6', browser: 'Safari' });
+  assert.deepEqual(problemKey(r({ tag: 'img', url: 'https://runes.belayarod.ru/img/rune.webp' }), O).text, 'Не загрузился файл runes.belayarod.ru/img/rune.webp');
+  assert.equal(problemKey(r({ tag: 'img', url: 'https://belayarod.ru.evil.example/x.png' }), O), null);
+  assert.equal(problemKey({ ...r({}), kind: 'error', data: { msg: 'boom', src: 'https://taro.belayarod.ru/app.js', line: 3 } }, O).text, 'Ошибка «boom» (taro.belayarod.ru/app.js:3)');
+});

@@ -1,4 +1,4 @@
-// Телеметрия лендинга: разбор пачек от site/pulse.js, приём по HTTP и сводка.
+// Телеметрия лендинга: разбор пачек от brand/sr-pulse.js, приём по HTTP и сводка.
 //
 //   npm run test:accounts
 import test from 'node:test';
@@ -124,4 +124,16 @@ test('сводка в админке — только администратор
   const data = await r.json();
   assert.equal(data.days, 30);
   assert.equal(data.platforms[0].platform, 'iPhone');
+});
+
+test('курсы на поддоменах: принимаются и помечаются, чужие домены — нет', async (t) => {
+  const s = await server(); t.after(s.close);
+  assert.equal((await s.send(batch([{ k: 'view', load: 800 }]), { Origin: 'https://taro.belayarod.ru', 'Sec-Fetch-Site': 'same-site' })).status, 204);
+  assert.equal((await s.send(batch([{ k: 'view' }]), { Origin: 'https://belayarod.ru.evil.example' })).status, 403);
+  assert.equal((await s.send(batch([{ k: 'view' }]), { Origin: 'https://evil-belayarod.ru' })).status, 403);
+  assert.equal((await s.send(batch([{ k: 'view' }]), { Origin: 'http://taro.belayarod.ru' })).status, 403, 'только https, как у сайта');
+  const row = s.store.db.prepare('SELECT path FROM pulse').get();
+  assert.equal(row.path, 'taro.belayarod.ru/');
+  const pulse = openPulse(s.store.db);
+  assert.deepEqual(pulse.summary(1).sites, [{ site: 'taro.belayarod.ru', visits: 1 }]);
 });

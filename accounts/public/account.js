@@ -251,7 +251,7 @@ async function lessonsView(box, u, c) {
   box.replaceChildren(err, lessons.length ? h('div', null, body) : h('p', { class: 'muted' }, 'В курсе нет уроков.'));
 }
 
-// ─── Телеметрия лендинга (site/pulse.js → accounts/pulse.mjs) ───
+// ─── Телеметрия лендинга (brand/sr-pulse.js → accounts/pulse.mjs) ───
 
 const sec = (ms) => (ms == null ? '—' : (ms / 1000).toFixed(1).replace('.', ',') + ' с');
 
@@ -280,6 +280,7 @@ async function pulseView(box, days) {
           h('td', { class: p.leftEarly ? 'warn' : null }, p.leftEarly), h('td', null, sec(p.medianMs)),
           h('td', { class: 'hide-sm' }, sec(p.p90Ms)), h('td', { class: 'hide-sm' }, p.noStorage))))
       : h('p', { class: 'muted' }, 'Пока нет данных.'),
+    ...((s.sites || []).some(x => x.site) ? listCard('По сайтам', s.sites, i => [h('span', null, i.site || 'belayarod.ru'), h('span', { class: 'muted small' }, i.visits)]) : []),
     ...listCard('iPhone и iPad', s.ios, i => [h('span', null, i.key), h('span', { class: 'muted small' }, i.count)]),
     ...listCard('Ошибки скриптов', s.errors, i => [h('span', null, `${i.count}× ${i.key}`, h('span', { class: 'muted small' }, i.where ? ` (${i.where})` : ''), where(i))]),
     ...listCard('Не загрузились файлы', s.broken, i => [h('span', null, `${i.count}× ${i.tag} ${i.key.replace(/^https:\/\/belayarod\.ru/, '')}`, where(i))]),
