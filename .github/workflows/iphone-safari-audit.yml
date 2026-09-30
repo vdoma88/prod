@@ -33,6 +33,8 @@ jobs:
         with:
           node-version: 22
 
+      # Проверяем version.json и полный SHA сборки: HTML-маркеры вроде tree-loader.js
+      # могут исчезать при штатном обновлении сайта. Ожидание публикации — в freshness.
       - name: Подтвердить commit перед Safari
         id: before
         env:

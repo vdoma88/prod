@@ -149,8 +149,15 @@
   }
 
   function start() {
+    // iPhone по умолчанию глушит Web Audio беззвучным режимом (переключатель
+    // сбоку). Тип «playback» — как у плеера: бубен слышен и при нём.
+    // Safari 16.4+; где свойства нет, ничего не меняется.
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* нет — и ладно */ }
     if (!ctx) init();
-    ctx.resume();
+    // Телеметрия (pulse.js): заиграл ли звук на живом телефоне.
+    const report = () => window.srPulse?.('drum', ctx.state + (navigator.audioSession ? ' session' : ''));
+    const resumed = ctx.resume();
+    if (resumed && resumed.then) resumed.then(report, report); else report();
     nextT = ctx.currentTime + 0.1;
     step = 0;
     master.gain.cancelScheduledValues(ctx.currentTime);

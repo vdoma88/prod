@@ -100,6 +100,7 @@
     if (selectedService) selectedService.textContent = service || 'Подбор формата';
     if (requestStatus) requestStatus.textContent = '';
     if (showDialog()) {
+      window.srPulse?.('dialog', dialog.open ? 'open' : 'closed');
       requestAnimationFrame(() => messageField?.focus({ preventScroll: true }));
     }
   }
@@ -120,8 +121,10 @@
   document.getElementById('copy-request')?.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(buildText());
+      window.srPulse?.('copy', 'ok');
       if (requestStatus) requestStatus.textContent = 'Текст заявки скопирован.';
     } catch {
+      window.srPulse?.('copy', 'fail');
       if (requestStatus) requestStatus.textContent = 'Не удалось скопировать автоматически. Выделите текст вручную.';
     }
   });
@@ -132,12 +135,15 @@
     const pageUrl = window.location.href;
 
     if (username) {
+      let copied = 'ok';
       try {
         await navigator.clipboard.writeText(text);
         if (requestStatus) requestStatus.textContent = 'Текст заявки скопирован. Открываю Telegram…';
       } catch {
+        copied = 'fail';
         if (requestStatus) requestStatus.textContent = 'Открываю Telegram. При необходимости скопируйте текст заявки вручную.';
       }
+      window.srPulse?.('telegram', 'copy-' + copied);
       window.location.assign(`https://t.me/${encodeURIComponent(username)}`);
       return;
     }
