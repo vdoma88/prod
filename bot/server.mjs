@@ -63,7 +63,8 @@ function notify(req, res) {
     let event;
     try { event = JSON.parse(body); } catch { return reply(400, { ok: false, error: 'bad json' }); }
     try {
-      const result = await bot.notifyCourse(event);
+      // Сводки сайта от службы входа (поле site), остальное — события курсов.
+      const result = await (event?.site ? bot.notifySite(event) : bot.notifyCourse(event));
       reply(result.ok ? 200 : 400, result);
     } catch (error) {
       console.error('Уведомление из курса:', error);

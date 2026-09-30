@@ -181,7 +181,11 @@ export function openPulse(db, { now = () => new Date() } = {}) {
     };
   }
 
-  return { add, summary, cleanup: () => drop.run(ago(KEEP_DAYS)) };
+  // Сырые события после момента since — для оповещений (pulse-watch.mjs).
+  const after = db.prepare(`SELECT at, path, kind, data, platform, os, browser FROM pulse WHERE at > ? AND kind IN ('error','broken','csp') ORDER BY at`);
+  const rowsAfter = (iso) => after.all(iso).map(r => ({ ...r, data: JSON.parse(r.data) }));
+
+  return { add, summary, rowsAfter, cleanup: () => drop.run(ago(KEEP_DAYS)) };
 }
 
 // Сводка текстом — для консоли сервера (node accounts/cli.mjs pulse 7).

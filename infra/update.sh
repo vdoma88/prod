@@ -20,7 +20,18 @@ if [ -e /etc/nginx/sites-enabled/belayarod.ru ]; then
 fi
 nginx -t
 systemctl reload nginx
-# Общий вход (accounts/) — перезапуск, если он уже поставлен (infra/vps/15-accounts.sh).
+# Телеметрия в Telegram: служба входа шлёт сводки через бота лендинга тем же
+# секретом, что курсы (bot/README.md). Один раз переносим его из /etc/rodbot.env.
+if [ -f /etc/rodbot.env ] && [ -f /etc/sr-accounts.env ] && ! grep -q '^ROD_NOTIFY_SECRET=.\+' /etc/sr-accounts.env; then
+  NOTIFY_SECRET_VALUE="$(sed -n 's/^NOTIFY_SECRET=//p' /etc/rodbot.env | tail -n 1)"
+  if [ -n "$NOTIFY_SECRET_VALUE" ]; then
+    printf '# Телеметрия лендинга в Telegram через бота (accounts/pulse-watch.mjs)\nROD_NOTIFY_SECRET=%s\n' "$NOTIFY_SECRET_VALUE" >> /etc/sr-accounts.env
+    echo "Телеметрия в Telegram: секрет бота добавлен в /etc/sr-accounts.env"
+  fi
+fi
+# Бот лендинга (bot/) и общий вход (accounts/) — перезапуск, если они уже поставлены
+# (infra/vps/14-bot.sh, 15-accounts.sh). Telegram повторит вебхук, пришедший за эти секунды.
+if systemctl is-enabled --quiet rodbot 2>/dev/null; then systemctl restart rodbot; fi
 if systemctl is-enabled --quiet sr-accounts 2>/dev/null; then systemctl restart sr-accounts; fi
 
 EXPECTED_SHA="$EXPECTED_COMMIT" LIVE_ATTEMPTS=6 \
