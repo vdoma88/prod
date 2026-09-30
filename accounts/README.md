@@ -91,6 +91,13 @@ Node ≥ 22.13 без `npm install`: `node:sqlite`, `node:http`, `node:crypto`.
 - **Смотреть:** админка belayarod.ru/account/ → «Сайт у посетителей»
   (сутки, неделя, месяц) или на сервере `node accounts/cli.mjs pulse 7`.
 - Под Playwright скрипт молчит, чтобы проверки не засоряли сводку.
+- **В Telegram** (`pulse-watch.mjs`), через бота лендинга тем же адресом, что
+  уведомления из курсов: сводка за сутки в 10:00 МСК и сразу — о новой
+  поломке (ошибка нашего скрипта, не загрузившийся файл сайта, нарушение
+  CSP). Одна поломка приходит один раз; если пропадёт на 30 дней и вернётся —
+  придёт снова. Нужен `ROD_NOTIFY_SECRET` — `NOTIFY_SECRET` из
+  `/etc/rodbot.env`; `infra/update.sh` переносит его сам. Без него
+  оповещения выключены, остальное работает.
 
 ## Настройки (`/etc/sr-accounts.env`)
 
@@ -102,6 +109,8 @@ Node ≥ 22.13 без `npm install`: `node:sqlite`, `node:http`, `node:crypto`.
 | `COOKIE_DOMAIN` | `.belayarod.ru` — cookie для всех поддоменов |
 | `TRUST_PROXY` | `1` — брать адрес посетителя из `X-Real-IP` (nginx) |
 | `SR_INTERNAL_SECRET` | общий секрет с курсами |
+| `ROD_NOTIFY_SECRET` | секрет бота лендинга для сводок в Telegram (`NOTIFY_SECRET` из `/etc/rodbot.env`) |
+| `ROD_NOTIFY_URL` | адрес бота, по умолчанию `http://127.0.0.1:4310/tg/rod-bot/notify` |
 | `COURSE_<ID>_INTERNAL`, `COURSE_<ID>_URL` | другой внутренний или внешний адрес курса (для проверки на своей машине) |
 
 ## Сервер
