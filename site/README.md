@@ -18,7 +18,7 @@ canonical/OG-адресами `belayarod.ru` и совместимостью с 
 - `runes.html` — Руны (runes.belayarod.ru)
 - `mystery.html`, `game.html`, `offerings.html`, `massage.html`, `consultations.html` — направления без кабинета
 - `404.html`
-- `styles.css`, `app.js` (меню, FAQ, окно заявки), `tree.js` (three.js-анимация на главной)
+- `styles.css`, `app.js` (меню, FAQ, окно заявки), `drum.js` (бубен на главной)
 - `pulse.js` — телеметрия: как сайт открывается у посетителей (приём и сводка — `accounts/pulse.mjs`, смотреть в админке belayarod.ru/account/). Стоит на каждой странице раньше `app.js`
 - `touch-icon.png` — иконка для экрана «Домой» на iPhone (180×180). Не `apple-touch-icon.png`: этот адрес nginx отправляет в школу
 - `assets/` — изображения
