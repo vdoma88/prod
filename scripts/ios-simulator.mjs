@@ -22,14 +22,15 @@ const WAIT = 8000;
 const sh = (cmd, args, opts = {}) => execFileSync(cmd, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], ...opts });
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-// Два айфона: маленький (SE) и обычный последний из установленных в Xcode.
+// Два айфона: обычный последний из установленных в Xcode и маленький (SE или 16e).
 function pickDevices() {
   const { devices } = JSON.parse(sh('xcrun', ['simctl', 'list', 'devices', 'available', '--json']));
   const ios = Object.entries(devices)
     .filter(([runtime]) => /iOS/.test(runtime))
     .sort(([a], [b]) => b.localeCompare(a, undefined, { numeric: true })) // новейшая iOS первой
     .flatMap(([runtime, list]) => list.map(d => ({ ...d, runtime: runtime.replace(/.*SimRuntime\./, '') })));
-  const se = ios.find(d => /^iPhone SE/.test(d.name));
+  // SE в Xcode 26 уже нет — его место занял 16e (маленький экран, без «острова»).
+  const se = ios.find(d => /^iPhone SE/.test(d.name)) || ios.find(d => /^iPhone \d+e$/.test(d.name));
   const plain = ios.find(d => /^iPhone \d+$/.test(d.name)) || ios.find(d => /^iPhone/.test(d.name));
   return [plain, se].filter(Boolean);
 }
