@@ -1,13 +1,31 @@
 name: iPhone Safari live audit
 
 on:
-  push:
-    branches: [main]
+  workflow_call:
+    inputs:
+      expected_sha:
+        required: true
+        type: string
   workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Полный SHA опубликованной сборки
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: iphone-safari-live-production
+  cancel-in-progress: true
 
 jobs:
   iphone-audit:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      EXPECTED_SHA: ${{ inputs.expected_sha }}
     steps:
       - uses: actions/checkout@v4
 
@@ -15,25 +33,17 @@ jobs:
         with:
           node-version: 22
 
+      - name: Подтвердить commit перед Safari
+        id: before
+        env:
+          LIVE_ATTEMPTS: '1'
+          LIVE_REPORT_PATH: iphone-audit/version-before.json
+        run: node scripts/check-live.mjs
+
       - name: Установить WebKit
         run: |
           npm i -g playwright@1.56.1
           npx playwright install --with-deps webkit
-
-      - name: Дождаться публикации iOS-версии
-        run: |
-          set -euo pipefail
-          for attempt in $(seq 1 20); do
-            html="$(curl -fsSL --max-time 20 -H 'Cache-Control: no-cache' "https://belayarod.ru/?iphoneDeploy=$attempt-$(date +%s)" || true)"
-            if printf '%s' "$html" | grep -q 'tree-loader.js'; then
-              echo "✓ iOS hardening опубликован"
-              exit 0
-            fi
-            echo "Попытка $attempt/20: production ещё не обновлён"
-            sleep 30
-          done
-          echo "::error::production не получил iOS hardening за 10 минут"
-          exit 1
 
       - name: Проверить belayarod.ru как iPhone Safari
         run: |
@@ -85,6 +95,14 @@ jobs:
             for (const [name, path] of pages) {
               const page = await context.newPage();
               const errors = [];
+              const imageStatuses = new Map();
+              const imageFailures = new Map();
+              page.on('response', response => {
+                if (response.request().resourceType() === 'image') imageStatuses.set(response.url(), response.status());
+              });
+              page.on('requestfailed', request => {
+                if (request.resourceType() === 'image') imageFailures.set(request.url(), request.failure()?.errorText || 'request failed');
+              });
               await page.addInitScript(() => {
                 window.__cspViolations = [];
                 document.addEventListener('securitypolicyviolation', event => {
@@ -123,7 +141,7 @@ jobs:
               // после прокрутки, догружаем сразу: проверяем, что картинка есть и
               // открывается, а не скорость ленивой загрузки на медленной сети.
               await page.evaluate(() => document.querySelectorAll('img[loading="lazy"]').forEach(img => { if (!img.complete) img.loading = 'eager'; }));
-              await page.waitForFunction(() => [...document.images].every(img => img.complete), { timeout: 20000 }).catch(() => {});
+              await page.waitForFunction(() => [...document.images].every(img => img.complete), undefined, { timeout: 20000 }).catch(() => {});
 
               // Реальные touch-сценарии: мобильное меню, заявка, FAQ.
               let menuOk = null;
@@ -157,9 +175,10 @@ jobs:
               await page.waitForTimeout(150);
               const metrics = await page.evaluate(() => {
                 const doc = document.documentElement;
-                const brokenImages = [...document.images]
+                const brokenImageDetails = [...document.images]
                   .filter(img => !img.complete || img.naturalWidth === 0)
-                  .map(img => img.src);
+                  .map(img => ({ src: img.currentSrc || img.src, state: img.complete ? 'failed' : 'pending' }));
+                const brokenImages = brokenImageDetails.map(img => img.src);
                 const h1 = [...document.querySelectorAll('h1')];
                 const fixedHeader = document.querySelector('.site-header');
                 const heroH1 = h1[0]?.getBoundingClientRect();
@@ -176,6 +195,7 @@ jobs:
                   title: document.title,
                   overflow: doc.scrollWidth - doc.clientWidth,
                   brokenImages,
+                  brokenImageDetails,
                   h1Count: h1.length,
                   h1Text: h1[0]?.textContent?.trim() || '',
                   headerHeight: headerRect ? Math.round(headerRect.height) : null,
@@ -190,22 +210,40 @@ jobs:
                 };
               });
 
-              // Ошибки — до снимка: для снимка Playwright по умолчанию вставляет
-              // свой <style> (прячет курсор), и строгий CSP сайта его отклоняет —
-              // это сообщение самого теста, у посетителей его нет. caret: 'initial'
-              // снимает без вставки.
+              // Ошибки приложения фиксируем до снимка. WebKit Playwright вставляет
+              // служебный <style> для синхронизации анимаций даже при caret: 'initial';
+              // строгий CSP его отклоняет. Сырые сообщения сохраняем в rawErrors,
+              // но операция screenshot не должна менять уже собранный pageErrors.
               // Настоящее нарушение CSP страница видит событием securitypolicyviolation
               // (metrics.cspViolations — оно валит проверку). Строка «Refused to apply
               // a stylesheet» без такого события — от служебного мира Playwright.
               const cspFromTest = /Refused to apply a stylesheet/;
               const pageErrors = errors.filter(e => !(cspFromTest.test(e) && !metrics.cspViolations.length));
+              metrics.brokenImageDetails = metrics.brokenImageDetails.map(img => ({
+                ...img,
+                httpStatus: imageStatuses.get(img.src) ?? null,
+                networkError: imageFailures.get(img.src) || null,
+              }));
               const shot = `iphone-audit/${profileName}-${name}.png`;
               await page.screenshot({ path: shot, fullPage: true, caret: 'initial' });
 
-              const result = { profile: profileName, page: name, status, errors: pageErrors, menuOk, dialogOk, faqOk, ...metrics, screenshot: shot };
+              const result = { expectedSha: process.env.EXPECTED_SHA, profile: profileName, page: name, status, errors: pageErrors, rawErrors: [...errors], menuOk, dialogOk, faqOk, ...metrics, screenshot: shot };
               report.push(result);
               console.log(JSON.stringify(result));
 
+              const annotate = (code, message) => {
+                const escaped = (profileName + '/' + name + ': ' + message)
+                  .replaceAll('%', '%25').replaceAll('\r', '%0D').replaceAll('\n', '%0A');
+                console.error('::error title=' + code + '::' + escaped);
+              };
+              if (status !== 200) annotate('PAGE_HTTP_ERROR', 'HTTP ' + status);
+              if (pageErrors.length) annotate('PAGE_SCRIPT_ERROR', pageErrors.join('; '));
+              if (metrics.cspViolations.length) annotate('PAGE_CSP_VIOLATION', JSON.stringify(metrics.cspViolations));
+              for (const img of metrics.brokenImageDetails) {
+                annotate(img.state === 'pending' ? 'IMAGE_LOAD_PENDING' : 'IMAGE_LOAD_FAILED', JSON.stringify(img));
+              }
+              if (metrics.overflow > 0 || metrics.h1Count !== 1) annotate('PAGE_LAYOUT_ERROR', 'overflow=' + metrics.overflow + ', h1=' + metrics.h1Count);
+              if (menuOk === false || dialogOk === false || faqOk === false) annotate('PAGE_INTERACTION_ERROR', 'menu=' + menuOk + ', dialog=' + dialogOk + ', faq=' + faqOk);
               if (status !== 200 || pageErrors.length || metrics.cspViolations.length || metrics.overflow > 0 || metrics.brokenImages.length || metrics.h1Count !== 1 || menuOk === false || dialogOk === false || faqOk === false) failures++;
               await page.close();
             }
@@ -218,6 +256,14 @@ jobs:
           if (failures) process.exit(1);
           EOF
           node /tmp/iphone-audit.mjs
+
+      - name: Подтвердить commit после Safari
+        if: always() && !cancelled() && steps.before.outcome == 'success'
+        env:
+          LIVE_ATTEMPTS: '1'
+          LIVE_PHASE: after-audit
+          LIVE_REPORT_PATH: iphone-audit/version-after.json
+        run: node scripts/check-live.mjs
 
       - name: Загрузить скриншоты и отчёт
         if: always()
