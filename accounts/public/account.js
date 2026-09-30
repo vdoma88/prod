@@ -99,9 +99,11 @@ function home(me) {
     h('section', null, h('h2', null, staff ? 'Кабинеты курсов' : 'Мои курсы'), h('div', { class: 'courses' }, cards)),
   ];
   if (me.user.role === 'admin') {
-    const box = h('section', { class: 'pad' });
-    parts.push(h('div', { class: 'pad' }), box);
+    const box = h('section');
+    const pulse = h('section');
+    parts.push(h('div', { class: 'pad' }), box, h('div', { class: 'pad' }), pulse);
     adminView(box, me.user);
+    pulseView(pulse, 7);
   }
   show(...parts);
 }
@@ -247,6 +249,42 @@ async function lessonsView(box, u, c) {
         g.items.map(row))
     : h('div', null, g.items.map(row)));
   box.replaceChildren(err, lessons.length ? h('div', null, body) : h('p', { class: 'muted' }, 'В курсе нет уроков.'));
+}
+
+// ─── Телеметрия лендинга (site/pulse.js → accounts/pulse.mjs) ───
+
+const sec = (ms) => (ms == null ? '—' : (ms / 1000).toFixed(1).replace('.', ',') + ' с');
+
+async function pulseView(box, days) {
+  const pick = h('div', { class: 'tabs', role: 'group', 'aria-label': 'За сколько дней' },
+    [[1, 'Сутки'], [7, 'Неделя'], [30, 'Месяц']].map(([d, t]) =>
+      h('button', { type: 'button', 'aria-pressed': String(d === days), onclick: () => pulseView(box, d) }, t)));
+  const head = [h('h2', null, 'Сайт у посетителей'),
+    h('p', { class: 'muted small' }, 'Как belayarod.ru открывается на живых телефонах и компьютерах: скорость, ошибки, шаги заявки. Без имён, cookie и адресов IP.'),
+    pick];
+  box.replaceChildren(...head, h('p', { class: 'muted' }, 'Загружаю…'));
+  let s;
+  try { s = await call('admin/pulse?days=' + days); } catch (e) { box.replaceChildren(...head, h('p', { class: 'error' }, e.message)); return; }
+
+  const table = (cols, rows) => h('div', { class: 'card' }, h('table', null,
+    h('thead', null, h('tr', null, cols.map(([t, cls]) => h('th', { class: cls }, t)))),
+    h('tbody', null, rows)));
+  const listCard = (title, items, render) => [h('h3', { class: 'mt' }, title),
+    items.length ? h('div', { class: 'card' }, items.map(i => h('div', { class: 'lesson' }, render(i)))) : h('p', { class: 'muted small' }, 'Нет — и хорошо.')];
+  const where = (i) => h('span', { class: 'muted small' }, ` · ${i.platforms.join(', ')}`);
+
+  box.replaceChildren(...head,
+    s.platforms.length
+      ? table([['Устройство'], ['Визиты'], ['Ушли до загрузки'], ['Загрузка, медиана'], ['90%', 'hide-sm'], ['Без хранилища', 'hide-sm']],
+        s.platforms.map(p => h('tr', null, h('td', null, p.platform), h('td', null, p.visits),
+          h('td', { class: p.leftEarly ? 'warn' : null }, p.leftEarly), h('td', null, sec(p.medianMs)),
+          h('td', { class: 'hide-sm' }, sec(p.p90Ms)), h('td', { class: 'hide-sm' }, p.noStorage))))
+      : h('p', { class: 'muted' }, 'Пока нет данных.'),
+    ...listCard('iPhone и iPad', s.ios, i => [h('span', null, i.key), h('span', { class: 'muted small' }, i.count)]),
+    ...listCard('Ошибки скриптов', s.errors, i => [h('span', null, `${i.count}× ${i.key}`, h('span', { class: 'muted small' }, i.where ? ` (${i.where})` : ''), where(i))]),
+    ...listCard('Не загрузились файлы', s.broken, i => [h('span', null, `${i.count}× ${i.tag} ${i.key.replace(/^https:\/\/belayarod\.ru/, '')}`, where(i))]),
+    ...listCard('Нарушения CSP', s.csp, i => [h('span', null, `${i.count}× ${i.key}`, where(i))]),
+    ...listCard('Заявка и бубен', s.steps, i => [h('span', null, `${i.count}× ${i.key}`, where(i))]));
 }
 
 // ─── Старт ───
