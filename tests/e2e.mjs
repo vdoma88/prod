@@ -104,6 +104,40 @@ try {
     assert.deepEqual(titles, ['Связь с Родом', 'Карты Таро', 'Руны']);
   });
   await context.close();
+
+  // Телеметрия (site/pulse.js): приём подменяется, проверяется, что уходит.
+  // Под Playwright скрипт молчит; ?pulse=1 включает его для этой проверки.
+  console.log('Телеметрия');
+  const pulseContext = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  await pulseContext.route(/^https:\/\/(fonts\.(googleapis|gstatic)\.com|cdn\.jsdelivr\.net)\//, route => route.abort());
+  const batches = [];
+  await pulseContext.route('**/account/pulse', route => { batches.push(JSON.parse(route.request().postData())); route.fulfill({ status: 204 }); });
+  const pulsePage = await pulseContext.newPage();
+  const events = () => batches.flatMap(b => b.ev);
+  await check('после загрузки уходят визит и сведения об экране', async () => {
+    await pulsePage.goto(`${origin}/index.html?pulse=1`, { waitUntil: 'load' });
+    await pulsePage.waitForTimeout(300);
+    const view = events().find(e => e.k === 'view');
+    assert.ok(view && view.load > 0, 'нет события view');
+    assert.equal(batches[0].path, '/index.html');
+    assert.match(batches[0].id, /^[0-9a-f]{16}$/);
+    assert.equal(batches[0].env.vw, 390);
+    assert.equal(batches[0].env.storage, 'ok');
+  });
+  await check('ошибка скрипта и шаг заявки доходят', async () => {
+    await pulsePage.evaluate(() => setTimeout(() => { throw new Error('проверка телеметрии'); }));
+    await pulsePage.locator('[data-open-request]:visible').first().tap();
+    await pulsePage.waitForTimeout(2600);
+    assert.ok(events().some(e => e.k === 'error' && /проверка телеметрии/.test(e.msg)), 'нет ошибки');
+    assert.ok(events().some(e => e.k === 'step' && e.name === 'dialog' && e.info === 'open'), 'нет шага dialog');
+  });
+  await check('без ?pulse=1 под Playwright скрипт молчит', async () => {
+    const before = batches.length;
+    await pulsePage.goto(`${origin}/courses.html`, { waitUntil: 'load' });
+    await pulsePage.waitForTimeout(300);
+    assert.equal(batches.length, before);
+  });
+  await pulseContext.close();
 } finally {
   await browser.close();
   server.close();

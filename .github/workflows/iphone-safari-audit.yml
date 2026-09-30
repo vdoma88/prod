@@ -20,19 +20,25 @@ jobs:
           npm i -g playwright@1.56.1
           npx playwright install --with-deps webkit
 
-      - name: Дождаться публикации iOS-версии
+      - name: Дождаться публикации этого коммита
+        # Ждём ровно тот коммит, который проверяем: его пишет в version.json
+        # scripts/build.mjs. Раньше ждали строку tree-loader.js в HTML — после
+        # того как дерево ушло с главной, проверка падала на рабочем сайте.
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
           for attempt in $(seq 1 20); do
-            html="$(curl -fsSL --max-time 20 -H 'Cache-Control: no-cache' "https://belayarod.ru/?iphoneDeploy=$attempt-$(date +%s)" || true)"
-            if printf '%s' "$html" | grep -q 'tree-loader.js'; then
-              echo "✓ iOS hardening опубликован"
+            version="$(curl -fsSL --max-time 20 -H 'Cache-Control: no-cache' "https://belayarod.ru/version.json?iphoneDeploy=$attempt-$(date +%s)" || true)"
+            live_sha="$(printf '%s' "$version" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(JSON.parse(s).commit||'')}catch{console.log('')}})")"
+            if [ "$live_sha" = "$EXPECTED_SHA" ]; then
+              echo "✓ belayarod.ru отдаёт $EXPECTED_SHA"
               exit 0
             fi
-            echo "Попытка $attempt/20: production ещё не обновлён"
+            echo "Попытка $attempt/20: на сайте ${live_sha:-неизвестный коммит}"
             sleep 30
           done
-          echo "::error::production не получил iOS hardening за 10 минут"
+          echo "::error::belayarod.ru не получил $EXPECTED_SHA за 10 минут"
           exit 1
 
       - name: Проверить belayarod.ru как iPhone Safari

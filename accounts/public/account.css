@@ -24,6 +24,7 @@ button { font: inherit; cursor: pointer; }
 .muted { color: var(--sr-muted); }
 .small { font-size: .85rem; }
 .error { color: #9b2c1f; background: rgba(155, 44, 31, .08); border-radius: 10px; padding: 10px 12px; margin: 12px 0 0; }
+td.warn { color: #9b2c1f; font-weight: 600; }
 .ok { color: #2f6b3a; background: rgba(47, 107, 58, .08); border-radius: 10px; padding: 10px 12px; margin: 12px 0 0; word-break: break-all; }
 .courses { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 .course { display: block; padding: 18px; border-radius: 14px; border: 1px solid var(--sr-line); background: var(--sr-paper); color: inherit; text-decoration: none; }
@@ -41,6 +42,7 @@ th { font-size: .8rem; color: var(--sr-muted); font-weight: 500; }
 .checks label { display: flex; gap: 6px; align-items: center; margin: 0; color: inherit; font-size: .95rem; }
 .checks input { width: auto; }
 .grid2 { display: grid; gap: 0 16px; grid-template-columns: 1fr 1fr; }
+.lesson > span { min-width: 0; overflow-wrap: anywhere; }
 .lesson { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--sr-line); }
 .lesson select { width: auto; }
 .status-done { color: #2f6b3a; } .status-open { color: var(--sr-gold-deep); } .status-locked { color: var(--sr-muted); }
