@@ -784,7 +784,7 @@ body{background:linear-gradient(180deg,#fbf7f1 0,#f7efe7 45%,#efe4d8 100%)}
   background:
     linear-gradient(90deg,rgba(7,27,17,.20),rgba(7,27,17,.38)),
     linear-gradient(180deg,rgba(6,26,16,.18),rgba(6,26,16,.28)),
-    url("assets/home/hero-forest.webp?v=20261001-3") center center/cover no-repeat,
+    url("assets/home/hero-forest.webp?v=20261001-4") center center/cover no-repeat,
     url("assets/archaic/mystery.webp?v=20261001-3") center center/cover no-repeat
 }
 .portal-intro:after{
@@ -1117,9 +1117,9 @@ body{background:linear-gradient(180deg,#fbf7f1 0,#f7efe7 45%,#efe4d8 100%)}
 .portal-header .portal-nav-shell{max-width:none;margin:0;border:0;border-radius:0;background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
 .portal-intro{
   background:
-    linear-gradient(180deg,rgba(8,34,20,.50),rgba(6,28,17,.72)),
-    linear-gradient(90deg,rgba(8,40,22,.55),rgba(8,40,22,.35)),
-    url("assets/archaic/offerings.webp?v=20261001-3") 40% 30%/cover no-repeat,
+    linear-gradient(180deg,rgba(4,22,12,.12) 40%,rgba(4,22,12,.55)),
+    linear-gradient(90deg,rgba(4,22,12,.42),rgba(4,22,12,.12)),
+    url("assets/home/hero-forest.webp?v=20261001-4") center/cover no-repeat,
     #123422
 }
 @media(min-width:901px){
