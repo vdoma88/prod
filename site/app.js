@@ -1,4 +1,5 @@
 (() => {
+  document.documentElement.classList.add('app-ready');
   const SITE_CONFIG = { telegramUsername: "BelayaKatrin", schoolUrl: "https://plamya.belayarod.ru/" };
 
   // До объединения по адресу belayarod.ru жила школа «Язык Пламени», и у
