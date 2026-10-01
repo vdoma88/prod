@@ -784,7 +784,8 @@ body{background:linear-gradient(180deg,#fbf7f1 0,#f7efe7 45%,#efe4d8 100%)}
   background:
     linear-gradient(90deg,rgba(7,27,17,.20),rgba(7,27,17,.38)),
     linear-gradient(180deg,rgba(6,26,16,.18),rgba(6,26,16,.28)),
-    url("assets/home/hero-forest.webp") center center/cover no-repeat
+    url("assets/home/hero-forest.webp?v=20261001-2") center center/cover no-repeat,
+    url("assets/archaic/mystery.webp?v=20261001-2") center center/cover no-repeat
 }
 .portal-intro:after{
   content:"";position:absolute;inset:0;
