@@ -10,7 +10,7 @@
 // В утренней сводке — строка «Доступность» за сутки.
 //
 // Если ляжет весь сервер, отсюда никто не напишет: на этот случай нужна
-// проверка снаружи (infra/DEPLOY.md, «Проверка снаружи»).
+// проверка снаружи: .github/workflows/uptime-outside.yml (infra/DEPLOY.md).
 import tls from 'node:tls';
 
 export const DEFAULT_TARGETS = [

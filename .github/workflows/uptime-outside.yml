@@ -1,0 +1,34 @@
+name: Доступность снаружи
+
+# Раз в 3 часа с машины GitHub: лендинг, общий вход и четыре курса
+# (scripts/uptime-outside.mjs). Ловит то, чего не видит проверка на самом
+# сервере (accounts/uptime.mjs), — когда лёг весь сервер. Красный прогон —
+# письмо от GitHub. Обычный раннер: ~8 прогонов в сутки по минуте.
+on:
+  schedule:
+    - cron: '23 */3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: uptime-outside
+  cancel-in-progress: false
+
+jobs:
+  uptime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            accounts/uptime.mjs
+            scripts/uptime-outside.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Все сайты отвечают
+        run: node scripts/uptime-outside.mjs
