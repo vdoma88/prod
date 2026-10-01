@@ -2,6 +2,17 @@
   document.documentElement.classList.add('app-ready');
   const SITE_CONFIG = { telegramUsername: "BelayaKatrin", schoolUrl: "https://plamya.belayarod.ru/" };
 
+  // CSP-safe fallback for hero images. Inline onerror handlers are blocked by the site's CSP,
+  // so fallbacks are wired from this external script instead.
+  document.querySelectorAll('img[data-fallback-src]').forEach(img => {
+    img.addEventListener('error', () => {
+      const fallback = img.dataset.fallbackSrc;
+      if (!fallback || img.dataset.fallbackUsed === '1') return;
+      img.dataset.fallbackUsed = '1';
+      img.src = fallback;
+    }, { once: true });
+  });
+
   // До объединения по адресу belayarod.ru жила школа «Язык Пламени», и у
   // учениц на экране телефона осталась её иконка: она открывает корень сайта
   // в режиме приложения. Теперь в корне лендинг, поэтому такой запуск
