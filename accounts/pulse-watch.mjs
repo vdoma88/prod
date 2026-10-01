@@ -65,7 +65,7 @@ export function problemKey(r, origin) {
   return { key: `e ${d.msg}|${path(d.src)}:${d.line}`, text: `Ошибка «${quote(d.msg)}»${where}` };
 }
 
-export function openWatch({ db, pulse, send, origin = 'https://belayarod.ru', now = () => new Date() }) {
+export function openWatch({ db, pulse, send, origin = 'https://belayarod.ru', now = () => new Date(), extraDigest = () => [] }) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS pulse_seen (key TEXT PRIMARY KEY, last_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS pulse_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -121,7 +121,7 @@ export function openWatch({ db, pulse, send, origin = 'https://belayarod.ru', no
     if (msk.getUTCHours() < DIGEST_HOUR) return false;
     const day = msk.toISOString().slice(0, 10);
     if (meta('digest_day') === day) return false;
-    if (!(await send({ site: 'digest', lines: digestLines(pulse.summary(1)), url: account }))) return false;
+    if (!(await send({ site: 'digest', lines: [...digestLines(pulse.summary(1)), ...extraDigest()], url: account }))) return false;
     setMeta.run('digest_day', day);
     return true;
   }

@@ -136,6 +136,9 @@ export const EVENTS = {
 export const SITE_EVENTS = {
   digest: '📊 <b>Сайт за сутки</b>',
   alert: '⚠️ <b>Новая поломка на сайте</b>',
+  down: '🔴 <b>Сайт не отвечает</b>',
+  up: '🟢 <b>Сайт снова работает</b>',
+  cert: '🔐 <b>Сертификат скоро истечёт</b>',
 };
 export const SITE_BUTTON = 'Открыть сводку';
 
