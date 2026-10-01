@@ -697,3 +697,12 @@ body{background:linear-gradient(180deg,#fbf7f1 0,#f7efe7 45%,#efe4d8 100%)}
 .desktop-nav .nav-login{padding:6px 12px;margin:-6px 0;border:1px solid rgba(175,122,61,.35);border-radius:999px;color:#8a5a2b}
 .desktop-nav .nav-login:hover{background:rgba(197,139,67,.1)}
 .mobile-nav .nav-login{color:#8a5a2b;font-weight:600}
+
+
+/* Fresh Tarot editorial: balance seven-photo grid */
+.svc-tarot .course-photo:nth-child(6),
+.svc-tarot .course-photo:nth-child(7){grid-column:span 6}
+@media(max-width:900px){
+  .svc-tarot .course-photo:nth-child(6),
+  .svc-tarot .course-photo:nth-child(7){grid-column:span 1}
+}
