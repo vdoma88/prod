@@ -226,3 +226,14 @@
 @media(max-width:360px){
  .archaic-home .service-card h3{font-size:30px;bottom:144px}
 }
+
+/* Keep the course galleries readable after the desktop architecture overrides. */
+@media(max-width:900px){
+  .svc-therapy .course-photo-grid,
+  .svc-tarot .course-photo-grid,
+  .svc-runes .course-photo-grid,
+  .svc-offerings .course-photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .svc-therapy .course-photo:nth-child(4),
+  .svc-tarot .course-photo:nth-child(4),
+  .svc-runes .course-photo:nth-child(4){grid-column:1/-1}
+}
