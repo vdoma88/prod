@@ -214,3 +214,12 @@ test('сводка сайта: экранируется, ссылка тольк
   assert.deepEqual(await bot.notifySite({ site: 'spam', lines: ['x'] }), { ok: false, error: 'unknown site event' });
   assert.deepEqual(await bot.notifySite({ site: 'alert', lines: [] }), { ok: false, error: 'lines required' });
 });
+
+test('доступность сайтов: «не отвечает», «снова работает», сертификат', async () => {
+  const { bot, sent } = setup({ start: '2026-10-01T12:00:00Z' });
+  await linkAdmin(bot);
+  for (const [site, title] of [['down', '🔴 <b>Сайт не отвечает</b>'], ['up', '🟢 <b>Сайт снова работает</b>'], ['cert', '🔐 <b>Сертификат скоро истечёт</b>']]) {
+    assert.deepEqual(await bot.notifySite({ site, lines: ['Руны — runes.belayarod.ru/'] }), { ok: true, sent: 1 });
+    assert.equal(sent(ADMIN).at(-1).text, `${title}\nРуны — runes.belayarod.ru/`);
+  }
+});

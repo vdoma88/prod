@@ -6,6 +6,7 @@ import { openStore } from './store.mjs';
 import { createApp } from './app.mjs';
 import { openPulse } from './pulse.mjs';
 import { openWatch, botSender } from './pulse-watch.mjs';
+import { openUptime, parseTargets } from './uptime.mjs';
 
 const env = process.env;
 const store = openStore(env.ACCOUNTS_DB_PATH || 'accounts.sqlite');
@@ -18,14 +19,16 @@ const port = Number(env.PORT || 4320), host = env.HOST || '127.0.0.1';
 setInterval(() => { store.cleanup(); pulse.cleanup(); }, 3600e3).unref();
 // Телеметрия в Telegram через бота лендинга (pulse-watch.mjs): без секрета выключено.
 if (env.ROD_NOTIFY_SECRET) {
-  const watch = openWatch({
-    db: store.db, pulse, origin: String(env.PUBLIC_ORIGIN || 'https://belayarod.ru').replace(/\/$/, ''),
-    send: botSender({ url: env.ROD_NOTIFY_URL || 'http://127.0.0.1:4310/tg/rod-bot/notify', secret: env.ROD_NOTIFY_SECRET }),
-  });
+  const origin = String(env.PUBLIC_ORIGIN || 'https://belayarod.ru').replace(/\/$/, '');
+  const send = botSender({ url: env.ROD_NOTIFY_URL || 'http://127.0.0.1:4310/tg/rod-bot/notify', secret: env.ROD_NOTIFY_SECRET });
+  // Доступность сайтов и сертификаты (uptime.mjs): тот же бот, та же частота.
+  const uptime = openUptime({ db: store.db, send, origin, targets: parseTargets(env.UPTIME_TARGETS) });
+  const watch = openWatch({ db: store.db, pulse, origin, send, extraDigest: uptime.digestLines });
   let busy = false;
   const run = async () => {
     if (busy) return;
     busy = true;
+    try { await uptime.tick(); } catch (error) { console.error('[uptime]', error); }
     try { await watch.tick(); } catch (error) { console.error('[pulse] оповещения:', error); } finally { busy = false; }
   };
   setTimeout(run, 60e3).unref();
