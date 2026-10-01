@@ -821,3 +821,23 @@ body{background:linear-gradient(180deg,#fbf7f1 0,#f7efe7 45%,#efe4d8 100%)}
  .portal-quick-links a{min-height:68px;padding:12px 14px}
  .portal-quick-links span{font-size:17px}
 }
+
+
+/* Brand symbol refinement — reference-match */
+.portal-symbol-svg{display:block;width:100%;height:100%}
+.portal-brand-sign{
+  width:30px;height:40px;display:inline-flex;align-items:center;justify-content:center;
+  color:#c43e24;transform:none;font:inherit;flex:0 0 auto
+}
+.portal-intro-symbol{
+  width:46px;height:61px;display:block;align-self:center;margin:0 0 16px;
+  color:#d34829;transform:none;font:inherit
+}
+.portal-choice-sign{
+  width:34px;height:46px;display:inline-block;color:#c43e24;transform:none;font:inherit
+}
+@media(max-width:640px){
+ .portal-brand-sign{width:26px;height:35px}
+ .portal-intro-symbol{width:40px;height:54px;margin-bottom:16px}
+ .portal-choice-sign{width:30px;height:40px}
+}
