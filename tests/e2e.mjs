@@ -38,7 +38,7 @@ try {
   for (const [width, height, label] of [[1440, 900, 'компьютер'], [375, 812, 'телефон']]) {
     console.log(`Страницы — ${label} ${width}px`);
     const context = await browser.newContext({ viewport: { width, height } });
-    // Внешние шрифты и three.js в песочнице могут быть недоступны; для проверки
+    // Внешние шрифты и CDN в песочнице могут быть недоступны; для проверки
     // вёрстки и CSP они не нужны.
     await context.route(/^https:\/\/(fonts\.(googleapis|gstatic)\.com|cdn\.jsdelivr\.net)\//, route => route.abort());
     for (const name of pages) {
@@ -59,6 +59,20 @@ try {
     }
     await context.close();
   }
+
+  console.log('Страница 404');
+  await check('на вложенном адресе — с оформлением и без битых ссылок', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const p = await ctx.newPage();
+    const failed = [];
+    p.on('response', r => { if (r.status() >= 400 && !r.url().endsWith('/a/b/c')) failed.push(r.url()); });
+    const res = await p.goto(`${origin}/a/b/c`, { waitUntil: 'load' });
+    const styled = await p.evaluate(() => getComputedStyle(document.body).fontFamily);
+    await ctx.close();
+    assert.equal(res.status(), 404);
+    assert.deepEqual(failed, []);
+    assert.match(styled, /Manrope/);
+  });
 
   console.log('Общая шапка');
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
@@ -104,6 +118,68 @@ try {
     assert.deepEqual(titles, ['Связь с Родом', 'Карты Таро', 'Руны']);
   });
   await context.close();
+
+  // Телеметрия (brand/sr-pulse.js): приём подменяется, проверяется, что уходит.
+  // Под Playwright скрипт молчит; ?pulse=1 включает его для этой проверки.
+  console.log('Телеметрия');
+  const pulseContext = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  await pulseContext.route(/^https:\/\/(fonts\.(googleapis|gstatic)\.com|cdn\.jsdelivr\.net)\//, route => route.abort());
+  const batches = [];
+  await pulseContext.route('**/account/pulse', route => { batches.push(JSON.parse(route.request().postData())); route.fulfill({ status: 204 }); });
+  const pulsePage = await pulseContext.newPage();
+  const events = () => batches.flatMap(b => b.ev);
+  await check('после загрузки уходят визит и сведения об экране', async () => {
+    await pulsePage.goto(`${origin}/index.html?pulse=1`, { waitUntil: 'load' });
+    await pulsePage.waitForTimeout(300);
+    const view = events().find(e => e.k === 'view');
+    assert.ok(view && view.load > 0, 'нет события view');
+    assert.equal(batches[0].path, '/index.html');
+    assert.match(batches[0].id, /^[0-9a-f]{16}$/);
+    assert.equal(batches[0].env.vw, 390);
+    assert.equal(batches[0].env.storage, 'ok');
+  });
+  await check('ошибка скрипта и шаг заявки доходят', async () => {
+    await pulsePage.evaluate(() => setTimeout(() => { throw new Error('проверка телеметрии'); }));
+    await pulsePage.locator('[data-open-request]:visible').first().tap();
+    await pulsePage.waitForTimeout(2600);
+    assert.ok(events().some(e => e.k === 'error' && /проверка телеметрии/.test(e.msg)), 'нет ошибки');
+    assert.ok(events().some(e => e.k === 'step' && e.name === 'dialog' && e.info === 'open'), 'нет шага dialog');
+  });
+  await check('без ?pulse=1 под Playwright скрипт молчит', async () => {
+    const before = batches.length;
+    await pulsePage.goto(`${origin}/courses.html`, { waitUntil: 'load' });
+    await pulsePage.waitForTimeout(300);
+    assert.equal(batches.length, before);
+  });
+  await pulseContext.close();
+
+  // Курс на поддомене: скрипт из его копии бренда, CSP курса с connect-src
+  // https://belayarod.ru (docs/integration.md) — данные уходят на belayarod.ru.
+  await check('курс на поддомене шлёт на belayarod.ru и CSP это пропускает', async () => {
+    const ctx = await browser.newContext();
+    const got = [];
+    const csp = [];
+    const { readFileSync } = await import('node:fs');
+    const script = readFileSync(new URL('../brand/sr-pulse.js', import.meta.url));
+    await ctx.route('https://taro.belayarod.ru/**', route => {
+      const url = new URL(route.request().url());
+      if (url.pathname === '/brand/sr-pulse.js') return route.fulfill({ body: script, contentType: 'text/javascript' });
+      route.fulfill({
+        contentType: 'text/html; charset=utf-8',
+        headers: { 'Content-Security-Policy': "default-src 'self'; script-src 'self'; connect-src 'self' https://belayarod.ru" },
+        body: '<!doctype html><title>Таро</title><script src="/brand/sr-pulse.js"></script><p>урок</p>',
+      });
+    });
+    await ctx.route('https://belayarod.ru/account/pulse', route => { got.push(JSON.parse(route.request().postData())); route.fulfill({ status: 204 }); });
+    const p = await ctx.newPage();
+    p.on('console', m => { if (/Content Security Policy|Refused/.test(m.text())) csp.push(m.text()); });
+    await p.goto('https://taro.belayarod.ru/lesson?pulse=1', { waitUntil: 'load' });
+    await p.waitForTimeout(500);
+    await ctx.close();
+    assert.deepEqual(csp, []);
+    assert.equal(got[0]?.path, '/lesson');
+    assert.ok(got[0].ev.some(e => e.k === 'view'));
+  });
 } finally {
   await browser.close();
   server.close();

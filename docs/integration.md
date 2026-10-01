@@ -1,7 +1,7 @@
 # Встраивание общего бренда в приложения
 
-Общий бренд — файлы из `brand/`: `sr-brand.js`, `sr-brand.css`, `tokens.css`,
-`fonts.css` и папка `fonts/`.
+Общий бренд — файлы из `brand/`: `sr-brand.js`, `sr-brand.css`, `sr-pulse.js`,
+`tokens.css`, `fonts.css` и папка `fonts/`.
 Каждое приложение раздаёт их **со своего адреса** из папки `brand/`: так не нужно
 менять его CSP, и приложение не зависит от доступности belayarod.ru.
 
@@ -22,6 +22,7 @@ node scripts/sync-brand.mjs ../<приложение>/<папка>/brand
 | `<sr-footer product="…">` | Низ публичных страниц, экранов входа и кабинетов |
 | `tokens.css` | Общие цвета, фон, кнопки. Ничего не перекрашивает само; `data-sr-product` на `<html>` выбирает цвет и тон фона курса |
 | `fonts.css` | Шрифты лендинга с адреса приложения: `font-src 'self'` достаточно |
+| `sr-pulse.js` | Телеметрия: как курс открывается у учениц, прежде всего на iPhone. Обычный `<script>` первым в `<head>`, раньше скриптов приложения. Шлёт на `https://belayarod.ru/account/pulse` — в CSP курса `connect-src 'self' https://belayarod.ru`. Сводка — в админке belayarod.ru/account/ («По сайтам») и в Telegram. Без cookie и текстов учениц |
 
 Атрибуты: `product` — `rod`, `plamya`, `taro` или `runes`. Текущий курс отмечается
 в меню «Курсы» и не повторяется в `<sr-courses>`. `tone` — `light`/`dark`,

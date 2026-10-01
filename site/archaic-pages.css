@@ -10,6 +10,14 @@
 .archaic-layout .ap-author-quote{padding:42px;display:flex;flex-direction:column;justify-content:center;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .archaic-layout .ap-author-quote>p{font:500 45px/1.08 var(--serif);max-width:430px}
 .archaic-layout .ap-author-quote .ap-text-action{display:inline-flex;align-items:center;min-height:44px;margin-top:20px}
+/* «Родовой знак»: графика корней и пламени под цитатой, композиция целиком. */
+.archaic-layout .ap-author-quote--symbol{position:relative;overflow:hidden;justify-content:flex-end;min-height:0;aspect-ratio:4/5;padding:0;border:1px solid var(--line);border-radius:28px;background:#efe2d4;box-shadow:var(--shadow)}
+.archaic-layout .ap-author-quote--symbol>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top}
+.archaic-layout .ap-author-quote--symbol:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 42%,rgba(36,26,20,.55) 66%,rgba(36,26,20,.94) 100%);pointer-events:none}
+.archaic-layout .ap-author-quote-copy{position:relative;z-index:1;padding:28px 30px 22px;color:#fff8ef}
+.archaic-layout .ap-author-quote--symbol .section-kicker{color:#e2bd84}
+.archaic-layout .ap-author-quote--symbol p{margin:6px 0 0;font:500 40px/1.08 var(--serif);max-width:430px;color:#fff8ef}
+.archaic-layout .ap-author-quote--symbol .ap-text-action{margin-top:8px;color:#e2bd84!important}
 .archaic-home .services-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 .archaic-home .service-card{min-width:0;width:100%;grid-column:auto;aspect-ratio:4/5;min-height:440px}
 .archaic-home .service-card h3{font-size:35px;left:22px;right:22px;bottom:100px}
@@ -23,6 +31,9 @@
  .archaic-layout{padding-top:88px}
  .archaic-layout .ap-author-quote{padding:28px 22px}
  .archaic-layout .ap-author-quote>p{font-size:36px}
+ .archaic-layout .ap-author-quote--symbol{padding:0}
+ .archaic-layout .ap-author-quote-copy{padding:22px 22px 16px}
+ .archaic-layout .ap-author-quote--symbol p{font-size:clamp(28px,8vw,34px)}
  .archaic-home .services-grid{grid-template-columns:minmax(0,1fr)}
  .archaic-home .service-card{min-height:390px;aspect-ratio:1/1.08}
  .archaic-home .service-card h3{font-size:34px;bottom:104px}
@@ -240,4 +251,15 @@
 }
 @media(max-width:360px){
  .archaic-home .service-card h3{font-size:30px;bottom:144px}
+}
+
+/* Keep the course galleries readable after the desktop architecture overrides. */
+@media(max-width:900px){
+  .svc-therapy .course-photo-grid,
+  .svc-tarot .course-photo-grid,
+  .svc-runes .course-photo-grid,
+  .svc-offerings .course-photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .svc-therapy .course-photo:nth-child(4),
+  .svc-tarot .course-photo:nth-child(4),
+  .svc-runes .course-photo:nth-child(4){grid-column:1/-1}
 }

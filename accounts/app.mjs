@@ -3,6 +3,7 @@
 //   /account/                 страница входа, «Мои курсы», новая ссылка, админка
 //   /account/api/…            JSON для этой страницы
 //   /account/internal/…       для курсов на этом же сервере (nginx наружу не пускает)
+//   /account/pulse            телеметрия лендинга от brand/sr-pulse.js (pulse.mjs)
 //
 // Сессия — cookie sr_session на домене .belayarod.ru: её видят все курсы
 // на поддоменах и спрашивают у этого сервиса, кто вошёл (/internal/session).
@@ -12,6 +13,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { AccountError } from './store.mjs';
 import { COURSES, SSO_COURSES, courseById, LESSON_STATUSES } from './courses.mjs';
+import { openPulse, parseBatch } from './pulse.mjs';
 
 const BASE = '/account';
 const COOKIE = 'sr_session';
@@ -24,7 +26,7 @@ const STATIC = {
 const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
 
-export function createApp({ store, env = {}, fetchImpl = fetch }) {
+export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchImpl = fetch }) {
   const origin = String(env.PUBLIC_ORIGIN || 'http://127.0.0.1:4320').replace(/\/$/, '');
   const secure = env.COOKIE_SECURE ? env.COOKIE_SECURE === '1' : origin.startsWith('https://');
   const cookieDomain = env.COOKIE_DOMAIN || '';
@@ -33,6 +35,15 @@ export function createApp({ store, env = {}, fetchImpl = fetch }) {
   const internalBase = (c) => env[`COURSE_${c.id.toUpperCase()}_INTERNAL`] || c.internal;
   const publicUrl = (c) => env[`COURSE_${c.id.toUpperCase()}_URL`] || c.url;
   const attempts = new Map();
+  const pulseHits = new Map();
+  const hubHost = new URL(origin).hostname;
+  const subdomainOf = (from) => {
+    try {
+      const u = new URL(from);
+      return u.protocol === new URL(origin).protocol && u.hostname.endsWith('.' + hubHost) && /^[a-z0-9-]+$/.test(u.hostname.slice(0, -hubHost.length - 1)) ? u.hostname : '';
+    } catch { return ''; }
+  };
+  let pulseWindow = Date.now();
 
   const sameSecret = (given) => {
     if (!secret) return false;
@@ -82,6 +93,28 @@ export function createApp({ store, env = {}, fetchImpl = fetch }) {
     const now = Date.now(), fresh = (attempts.get(key) || []).filter(t => now - t < 15 * 60e3);
     attempts.set(key, fresh);
     return fresh.length >= 8;
+  }
+
+  // Телеметрия: sendBeacon не умеет ставить заголовки, поэтому без X-SR.
+  // Взамен — только со своего сайта, до 16 КБ и не больше 300 событий
+  // с одного адреса за 10 минут. Ответ всегда пустой.
+  async function acceptPulse(req, res) {
+    const done = (status) => { res.writeHead(status, { 'Cache-Control': 'no-store' }); res.end(); };
+    if (req.method !== 'POST') return done(405);
+    // Свой сайт или курс на его поддомене (taro.belayarod.ru и т. п.).
+    const from = req.headers.origin;
+    const sub = from && from !== origin ? subdomainOf(from) : '';
+    if ((from && from !== origin && !sub) || req.headers['sec-fetch-site'] === 'cross-site') return done(403);
+    if (Date.now() - pulseWindow > 10 * 60e3) { pulseHits.clear(); pulseWindow = Date.now(); }
+    const ip = clientIp(req);
+    if ((pulseHits.get(ip) || 0) >= 300) return done(429);
+    let body;
+    try { body = await readJson(req, 16 * 1024); } catch { return done(400); }
+    const batch = parseBatch(body);
+    if (!batch) return done(400);
+    if (sub) batch.path = sub + batch.path; // «taro.belayarod.ru/…»: сводка различает сайты
+    pulseHits.set(ip, (pulseHits.get(ip) || 0) + pulse.add(batch, req.headers['user-agent']));
+    return done(204);
   }
 
   const me = (req) => store.sessionUser(tokenOf(req));
@@ -135,6 +168,11 @@ export function createApp({ store, env = {}, fetchImpl = fetch }) {
     }
 
     // ─── Админка ───
+    if (p === '/api/admin/pulse' && req.method === 'GET') {
+      needAdmin(req);
+      const days = Math.min(30, Math.max(1, Number(new URL(req.url, 'http://x').searchParams.get('days')) || 7));
+      return send(res, 200, pulse.summary(days));
+    }
     if (p === '/api/admin/users' && req.method === 'GET') { needAdmin(req); return send(res, 200, { users: store.users(), courses: SSO_COURSES.map(({ id, title }) => ({ id, title })) }); }
     if (p === '/api/admin/users') {
       checkWrite(req);
@@ -207,6 +245,7 @@ export function createApp({ store, env = {}, fetchImpl = fetch }) {
     p = p.slice(BASE.length);
     try {
       if (p.startsWith('/internal/')) return await internal(req, res, p);
+      if (p === '/pulse') return await acceptPulse(req, res);
       if (p.startsWith('/api/')) return await api(req, res, p);
       if (serveStatic(req, res, p)) return;
       res.writeHead(404); res.end();

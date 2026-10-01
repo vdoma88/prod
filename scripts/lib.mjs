@@ -11,7 +11,7 @@ export const HUB = 'https://belayarod.ru';
 
 // Файлы бренда, которые получают приложения (scripts/sync-brand.mjs).
 export const BRAND_FILES = [
-  'sr-brand.js', 'sr-brand.css', 'tokens.css', 'fonts.css',
+  'sr-brand.js', 'sr-brand.css', 'sr-pulse.js', 'tokens.css', 'fonts.css',
   ...readdirSync(path.join(BRAND, 'fonts')).sort().map(name => `fonts/${name}`),
 ];
 

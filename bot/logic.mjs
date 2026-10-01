@@ -161,6 +161,37 @@ export function createBot({ store, tg, now = () => new Date(), adminCode = '' })
     return { ok: true, sent };
   }
 
+  /**
+   * Сводка сайта (телеметрия лендинга) → всем привязанным админам.
+   * { site: 'digest' | 'alert', lines: [строки], url? }. Текст строк
+   * экранируется, ссылка — только на belayarod.ru. Ночью — без звука.
+   */
+  async function notifySite(event) {
+    const title = M.SITE_EVENTS[event?.site];
+    if (!title) return { ok: false, error: 'unknown site event' };
+    const lines = (Array.isArray(event.lines) ? event.lines : []).slice(0, 40)
+      .map(l => escapeHtml(String(l ?? '').slice(0, 300)));
+    if (!lines.some(Boolean)) return { ok: false, error: 'lines required' };
+    const url = typeof event.url === 'string' && /^https:\/\/([a-z0-9-]+\.)*belayarod\.ru\//i.test(event.url) ? event.url : null;
+    const admins = store.admins();
+    if (!admins.length) console.error('Сводка сайта без получателя: ни один админ не привязан (см. bot/README.md)');
+    const at = now();
+    const silent = daytime(at).getTime() !== at.getTime();
+    let sent = 0;
+    for (const admin of admins) {
+      const res = await tg('sendMessage', {
+        chat_id: admin,
+        text: `${title}\n${lines.join('\n')}`,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true,
+        disable_notification: silent,
+        ...(url ? { reply_markup: { inline_keyboard: [[{ text: M.SITE_BUTTON, url }]] } } : {}),
+      });
+      if (res.ok) sent++;
+    }
+    return { ok: true, sent };
+  }
+
   /** Одно обновление из вебхука. */
   async function handleUpdate(update) {
     if (update.message) return onMessage(update.message);
@@ -199,5 +230,5 @@ export function createBot({ store, tg, now = () => new Date(), adminCode = '' })
     return sent;
   }
 
-  return { handleUpdate, tick, notifyCourse };
+  return { handleUpdate, tick, notifyCourse, notifySite };
 }

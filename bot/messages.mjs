@@ -131,6 +131,17 @@ export const EVENTS = {
   message: '💬 <b>Новое сообщение</b>',
 };
 
+// Сводки сайта belayarod.ru от службы входа (accounts/pulse-watch.mjs):
+// телеметрия лендинга раз в сутки и новые ошибки сразу. Ключ — поле site.
+export const SITE_EVENTS = {
+  digest: '📊 <b>Сайт за сутки</b>',
+  alert: '⚠️ <b>Новая поломка на сайте</b>',
+  down: '🔴 <b>Сайт не отвечает</b>',
+  up: '🟢 <b>Сайт снова работает</b>',
+  cert: '🔐 <b>Сертификат скоро истечёт</b>',
+};
+export const SITE_BUTTON = 'Открыть сводку';
+
 export function courseNotice({ title, course, student, item }) {
   return `${title} · ${course}
 ${student}${item ? ` — ${item}` : ''}`;

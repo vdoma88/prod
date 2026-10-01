@@ -1,0 +1,47 @@
+name: iOS Simulator (настоящий Safari)
+
+# Раз в неделю и по кнопке: belayarod.ru в Safari из iOS Simulator на двух
+# айфонах, снимки экрана и поиск белого экрана (scripts/ios-simulator.mjs).
+# Mac-раннер для приватного репозитория тратит минуты в 10 раз быстрее
+# обычного, поэтому не на каждый коммит: ~10 минут × 4 раза в месяц.
+on:
+  schedule:
+    - cron: '17 6 * * 1' # понедельник, 09:17 МСК
+  workflow_dispatch:
+    inputs:
+      pages:
+        description: Страницы через запятую (пусто — все 11)
+        required: false
+        type: string
+  pull_request:
+    paths:
+      - .github/workflows/ios-simulator.yml
+      - scripts/ios-simulator.mjs
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-simulator
+  cancel-in-progress: true
+
+jobs:
+  simulator:
+    runs-on: macos-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Safari в iOS Simulator
+        env:
+          PAGES: ${{ inputs.pages }}
+        run: node scripts/ios-simulator.mjs
+      - name: Снимки экрана и отчёт
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-simulator
+          path: ios-simulator/
+          retention-days: 14

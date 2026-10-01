@@ -9,7 +9,7 @@
 //  • нет inline-стилей и inline-скриптов (иначе их заблокирует CSP);
 //  • версия бренда одна в package.json, sr-brand.js и tokens.css;
 //  • JS-файлы синтаксически корректны.
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { BRAND, DIST, ROOT, SITE, readBrand } from './lib.mjs';
@@ -38,9 +38,47 @@ const requiredLandingPages = [
 for (const name of requiredLandingPages) {
   if (!html[name]) fail(`site/: после интеграции отсутствует обязательная страница ${name}`);
 }
-for (const asset of ['styles.css', 'app.js', 'tree.js', 'favicon.svg', 'site.webmanifest']) {
+for (const asset of ['styles.css', 'app.js', 'favicon.svg', 'touch-icon.png', 'site.webmanifest']) {
   if (!existsSync(path.join(SITE, asset))) fail(`site/: после интеграции отсутствует обязательный файл ${asset}`);
 }
+// iPhone не берёт SVG-иконку и иконки из манифеста: без PNG на экране «Домой»
+// вместо знака будет снимок страницы. Имя не apple-touch-icon.png: этот адрес
+// nginx отправляет в школу (иконки её прежнего приложения).
+// Телеметрия (brand/sr-pulse.js) — на каждой странице и раньше app.js, чтобы видеть его ошибки.
+for (const [name, source] of Object.entries(html)) {
+  if (!/<link rel="apple-touch-icon" href="\/?touch-icon\.png">/.test(source)) fail(`site/${name}: нет apple-touch-icon для iPhone`);
+  const pulseAt = source.search(/<script src="\/?brand\/sr-pulse\.js"><\/script>/);
+  if (pulseAt < 0) fail(`site/${name}: не подключён brand/sr-pulse.js`);
+  const appAt = source.indexOf('<script src="app.js">');
+  if (appAt >= 0 && pulseAt > appAt) fail(`site/${name}: sr-pulse.js должен стоять раньше app.js`);
+}
+// Картинки и файлы страниц: есть и не пустые. Пустой consult.webp из PR #40
+// проходил все проверки, а iPhone с плотным экраном выбирал именно его — фото
+// не показывалось. Пустой файл в assets/ — ошибка, даже если на него нет ссылки.
+for (const [name, source] of Object.entries(html)) {
+  const refs = [...source.matchAll(/\s(?:src|href)="([^"#?]+)"/g)].map(m => m[1])
+    .concat([...source.matchAll(/\ssrcset="([^"]+)"/g)].flatMap(m => m[1].split(',').map(part => part.trim().split(/\s+/)[0])));
+  for (const ref of new Set(refs)) {
+    if (/^(https?:|mailto:|tel:|data:|\/\/)/.test(ref) || !/\.(webp|jpe?g|png|svg|gif|avif|css|js|woff2)$/i.test(ref)) continue;
+    const file = path.join(SITE, ref.replace(/^\//, ''));
+    const inBrand = ref.replace(/^\//, '').startsWith('brand/') && existsSync(path.join(BRAND, ref.replace(/^\/?brand\//, '')));
+    if (inBrand) continue;
+    if (!existsSync(file)) fail(`site/${name}: нет файла ${ref}`);
+    else if (statSync(file).size === 0) fail(`site/${name}: пустой файл ${ref}`);
+  }
+}
+// 404.html nginx отдаёт на любом адресе, в том числе вложенном (/a/b): относительная
+// ссылка там ведёт в /a/styles.css, и страница остаётся без оформления.
+for (const m of (html['404.html'] || '').matchAll(/\s(?:src|href)="([^"]+)"/g)) {
+  if (!/^(\/|https?:|mailto:|tel:|#|data:)/.test(m[1])) fail(`site/404.html: ссылка ${m[1]} должна начинаться с /`);
+}
+(function emptyAssets(dir) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) emptyAssets(full);
+    else if (statSync(full).size === 0) fail(`${path.relative(ROOT, full)}: пустой файл`);
+  }
+})(path.join(SITE, 'assets'));
 const landingHome = html['index.html'] || '';
 for (const id of ['services', 'start', 'faq']) {
   if (!landingHome.includes(`id="${id}"`)) fail(`site/index.html: после интеграции отсутствует секция #${id}`);
@@ -127,8 +165,9 @@ if (/innerHTML|insertAdjacentHTML|\.style\s*=\s*['"`]|setAttribute\('style'/.tes
 
 // --- синтаксис JS ---
 const jsFiles = [
-  ...['app.js', 'tree.js', 'drum.js'].map(n => path.join(SITE, n)),
+  ...['app.js', 'drum.js'].map(n => path.join(SITE, n)),
   path.join(BRAND, 'sr-brand.js'),
+  path.join(BRAND, 'sr-pulse.js'),
   ...readdirSync(path.join(ROOT, 'scripts')).map(n => path.join(ROOT, 'scripts', n)),
   ...readdirSync(path.join(ROOT, 'tests')).map(n => path.join(ROOT, 'tests', n)),
   ...readdirSync(path.join(ROOT, 'bot')).filter(n => n.endsWith('.mjs')).map(n => path.join(ROOT, 'bot', n)),

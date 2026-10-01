@@ -196,3 +196,30 @@ test('адрес /notify: без секрета выключен, с чужим 
     assert.deepEqual(await ok.json(), { ok: true, sent: 0 });
   });
 });
+
+test('сводка сайта: экранируется, ссылка только на belayarod.ru, ночью без звука', async () => {
+  const { bot, sent } = setup({ start: '2026-10-01T07:00:00Z' }); // 10:00 МСК
+  await linkAdmin(bot);
+  const res = await bot.notifySite({ site: 'digest', lines: ['Визитов: 12', 'Ошибка <script>'], url: 'https://belayarod.ru/account/' });
+  assert.deepEqual(res, { ok: true, sent: 1 });
+  const msg = sent(ADMIN).at(-1);
+  assert.equal(msg.text, '📊 <b>Сайт за сутки</b>\nВизитов: 12\nОшибка &lt;script&gt;');
+  assert.equal(msg.disable_notification, false);
+  assert.equal(msg.reply_markup.inline_keyboard[0][0].url, 'https://belayarod.ru/account/');
+  const night = setup({ start: '2026-10-01T20:00:00Z' });
+  await linkAdmin(night.bot);
+  await night.bot.notifySite({ site: 'alert', lines: ['x'], url: 'https://evil.example/' });
+  assert.equal(night.sent(ADMIN).at(-1).disable_notification, true);
+  assert.equal(night.sent(ADMIN).at(-1).reply_markup, undefined);
+  assert.deepEqual(await bot.notifySite({ site: 'spam', lines: ['x'] }), { ok: false, error: 'unknown site event' });
+  assert.deepEqual(await bot.notifySite({ site: 'alert', lines: [] }), { ok: false, error: 'lines required' });
+});
+
+test('доступность сайтов: «не отвечает», «снова работает», сертификат', async () => {
+  const { bot, sent } = setup({ start: '2026-10-01T12:00:00Z' });
+  await linkAdmin(bot);
+  for (const [site, title] of [['down', '🔴 <b>Сайт не отвечает</b>'], ['up', '🟢 <b>Сайт снова работает</b>'], ['cert', '🔐 <b>Сертификат скоро истечёт</b>']]) {
+    assert.deepEqual(await bot.notifySite({ site, lines: ['Руны — runes.belayarod.ru/'] }), { ok: true, sent: 1 });
+    assert.equal(sent(ADMIN).at(-1).text, `${title}\nРуны — runes.belayarod.ru/`);
+  }
+});

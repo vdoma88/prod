@@ -1,6 +1,6 @@
 {
   "name": "sila-roda",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "description": "Сила Рода · belayarod.ru — общий сайт и бренд проектов Екатерины Белой",
@@ -8,7 +8,8 @@
     "build": "node scripts/build.mjs",
     "check": "node scripts/check.mjs",
     "serve": "node scripts/serve.mjs",
-    "test": "node scripts/build.mjs && node scripts/check.mjs && npm run test:bot && npm run test:accounts",
+    "test": "node scripts/build.mjs && node scripts/check.mjs && npm run test:bot && npm run test:accounts && npm run test:live",
+    "test:live": "node --test tests/live-check.test.mjs tests/dispatch-live-audit.test.mjs",
     "test:bot": "node --disable-warning=ExperimentalWarning --test bot/test/*.test.mjs",
     "test:e2e": "node scripts/build.mjs && node tests/e2e.mjs",
     "sync-brand": "node scripts/sync-brand.mjs",
