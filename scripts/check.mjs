@@ -38,7 +38,7 @@ const requiredLandingPages = [
 for (const name of requiredLandingPages) {
   if (!html[name]) fail(`site/: после интеграции отсутствует обязательная страница ${name}`);
 }
-for (const asset of ['styles.css', 'app.js', 'favicon.svg', 'touch-icon.png', 'site.webmanifest']) {
+for (const asset of ['styles.css', 'app.js', 'boot.js', 'favicon.svg', 'touch-icon.png', 'site.webmanifest']) {
   if (!existsSync(path.join(SITE, asset))) fail(`site/: после интеграции отсутствует обязательный файл ${asset}`);
 }
 // iPhone не берёт SVG-иконку и иконки из манифеста: без PNG на экране «Домой»
@@ -51,6 +51,9 @@ for (const [name, source] of Object.entries(html)) {
   if (pulseAt < 0) fail(`site/${name}: не подключён brand/sr-pulse.js`);
   const appAt = source.indexOf('<script src="app.js">');
   if (appAt >= 0 && pulseAt > appAt) fail(`site/${name}: sr-pulse.js должен стоять раньше app.js`);
+  // boot.js — страховка показа .reveal: без неё сбой app.js оставляет пустую страницу.
+  const bootAt = source.indexOf('<script src="boot.js">');
+  if (appAt >= 0 && (bootAt < 0 || bootAt > appAt)) fail(`site/${name}: boot.js должен стоять раньше app.js`);
 }
 // Картинки и файлы страниц: есть и не пустые. Пустой consult.webp из PR #40
 // проходил все проверки, а iPhone с плотным экраном выбирал именно его — фото
@@ -165,7 +168,7 @@ if (/innerHTML|insertAdjacentHTML|\.style\s*=\s*['"`]|setAttribute\('style'/.tes
 
 // --- синтаксис JS ---
 const jsFiles = [
-  ...['app.js', 'drum.js'].map(n => path.join(SITE, n)),
+  ...['app.js', 'boot.js', 'drum.js'].map(n => path.join(SITE, n)),
   path.join(BRAND, 'sr-brand.js'),
   path.join(BRAND, 'sr-pulse.js'),
   ...readdirSync(path.join(ROOT, 'scripts')).map(n => path.join(ROOT, 'scripts', n)),
