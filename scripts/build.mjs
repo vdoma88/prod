@@ -19,7 +19,9 @@ await cp(SITE, OUT, { recursive: true, filter: src => path.basename(src) !== 'RE
 await cp(BRAND, path.join(OUT, 'brand'), { recursive: true, filter: src => path.basename(src) !== 'README.md' });
 
 const pages = (await readdir(SITE)).filter(name => name.endsWith('.html') && name !== '404.html').sort();
-const urls = pages.map(name => `  <url><loc>${HUB}/${name === 'index.html' ? '' : name}</loc></url>`);
+// lastmod — дата последнего коммита страницы: по ней поисковики решают, что пора переобойти.
+const lastmod = name => { try { return execFileSync('git', ['log', '-1', '--format=%cs', '--', path.join(SITE, name)], { cwd: path.dirname(DIST), encoding: 'utf8' }).trim() || builtAt.slice(0, 10); } catch { return builtAt.slice(0, 10); } };
+const urls = pages.map(name => `  <url><loc>${HUB}/${name === 'index.html' ? '' : name}</loc><lastmod>${lastmod(name)}</lastmod></url>`);
 await writeFile(path.join(OUT, 'sitemap.xml'),
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`);
 await writeFile(path.join(OUT, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /brand/preview.html\n\nSitemap: ${HUB}/sitemap.xml\n`);
