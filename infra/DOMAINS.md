@@ -24,6 +24,11 @@
 В панели Beget → DNS для `belayarod.ru` нужны A-записи на IP сервера:
 `@`, `www`, `plamya`, `rod`, `taro`, `runes`. Проверка — `infra/vps/00-preflight.sh`.
 
+## Почта
+
+Почта `info@belayarod.ru` живёт у Beget, на VPS ничего не ставится. MX, SPF, DKIM
+и DMARC, настройки программ и проверка — в `infra/MAIL.md`.
+
 ## Память
 
 На сервере 1 ГБ, и уже школа упирается в этот предел. Swap ставит
