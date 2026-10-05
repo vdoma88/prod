@@ -7,9 +7,9 @@ import { openStore } from './store.mjs';
 import { openPulse, summaryText } from './pulse.mjs';
 
 const [cmd, email, name] = process.argv.slice(2);
-const store = openStore(process.env.ACCOUNTS_DB_PATH || 'accounts.sqlite');
+const store = openStore(process.env.ACCOUNTS_DB_PATH || 'accounts.sqlite', { resetSecret: process.env.ACCOUNT_RESET_SECRET || '' });
 const origin = String(process.env.PUBLIC_ORIGIN || 'http://127.0.0.1:4320').replace(/\/$/, '');
-const link = (id) => `${origin}/account/#reset=${store.createReset(id, 'cli').token}`;
+const link = (id) => { const reset = store.activeReset(id) || store.createReset(id, 'cli'); return `${origin}/account/#reset=${reset.token}`; };
 try {
   if (cmd === 'create-admin' && email && name) {
     const u = store.userByEmail(email) || store.createUser({ email, name, role: 'admin' }, 'cli');
