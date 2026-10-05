@@ -40,6 +40,8 @@ table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--sr-line); vertical-align: top; }
 th { font-size: .8rem; color: var(--sr-muted); font-weight: 500; }
 .rowbtn { background: none; border: 0; padding: 0; color: var(--sr-gold-deep); text-decoration: underline; text-align: left; }
+.actions { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.danger-link { color: #9b2c1f; }
 .checks { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 6px; }
 .checks label { display: flex; gap: 6px; align-items: center; margin: 0; color: inherit; font-size: .95rem; }
 .checks input { width: auto; }

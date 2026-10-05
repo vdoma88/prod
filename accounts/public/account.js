@@ -117,18 +117,39 @@ async function adminView(box, admin) {
   const { users, courses } = data;
   const title = (id) => courses.find(c => c.id === id)?.title || id;
   const detail = h('div');
+  const reload = () => adminView(box, admin);
+  const showPasswordLink = async (u) => {
+    detail.replaceChildren(h('p', { class: 'muted' }, 'Получаю действующую ссылку…'));
+    try {
+      const r = await call(`admin/users/${u.id}/reset-link`, {});
+      u.passwordLink = r.link;
+      u.passwordLinkExpiresAt = r.expiresAt;
+      detail.replaceChildren(linkNote(`Ссылка для ${u.name}:`, r.link, r.expiresAt));
+      detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {
+      detail.replaceChildren(h('p', { class: 'error' }, e.message));
+    }
+  };
+  const deleteFromList = async (u) => {
+    if (!confirm(`Удалить учётную запись «${u.name}» (${u.email})? Доступ к общему кабинету будет отозван сразу.`)) return;
+    try { await call(`admin/users/${u.id}/delete`, {}); await reload(); }
+    catch (e) { detail.replaceChildren(h('p', { class: 'error' }, e.message)); }
+  };
   const rows = users.map(u => h('tr', null,
-    h('td', null, h('button', { class: 'rowbtn', type: 'button', onclick: () => userView(detail, u, courses, admin, () => adminView(box, admin)) }, u.name),
+    h('td', null, h('button', { class: 'rowbtn', type: 'button', onclick: () => userView(detail, u, courses, admin, reload) }, u.name),
       u.active ? null : h('span', { class: 'muted small' }, ' · выключена')),
     h('td', { class: 'hide-sm' }, u.email),
     h('td', null, ROLE_TITLES[u.role]),
-    h('td', { class: 'hide-sm small' }, u.role === 'admin' ? 'все' : (u.courses.map(title).join(', ') || '—'))));
+    h('td', { class: 'hide-sm small' }, u.role === 'admin' ? 'все' : (u.courses.map(title).join(', ') || '—')),
+    h('td', { class: 'actions' },
+      h('button', { class: 'rowbtn', type: 'button', onclick: () => showPasswordLink(u) }, u.passwordLink ? 'Ссылка' : 'Создать ссылку'),
+      u.id === admin.id ? null : h('button', { class: 'rowbtn danger-link', type: 'button', onclick: () => deleteFromList(u) }, 'Удалить'))));
 
   const courseChecks = h('div', { class: 'checks' }, courses.map(c => h('label', null, h('input', { type: 'checkbox', name: 'c-' + c.id }), c.title)));
   box.replaceChildren(
     h('h2', null, 'Учётные записи'),
     h('div', { class: 'card' }, h('table', null,
-      h('thead', null, h('tr', null, h('th', null, 'Имя'), h('th', { class: 'hide-sm' }, 'Почта'), h('th', null, 'Роль'), h('th', { class: 'hide-sm' }, 'Курсы'))),
+      h('thead', null, h('tr', null, h('th', null, 'Имя'), h('th', { class: 'hide-sm' }, 'Почта'), h('th', null, 'Роль'), h('th', { class: 'hide-sm' }, 'Курсы'), h('th', null, 'Действия'))),
       h('tbody', null, rows))),
     detail,
     h('div', { class: 'card' }, h('h3', null, 'Новая учётная запись'),
