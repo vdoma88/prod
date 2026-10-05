@@ -51,9 +51,9 @@ function loginView() {
     h('h1', null, 'Вход'),
     h('p', { class: 'muted' }, 'Один вход для всех курсов Екатерины Белой.'),
     form([
-      field('Почта', { name: 'email', type: 'email', autocomplete: 'username', required: true }),
+      field('Логин', { name: 'login', type: 'text', autocomplete: 'username', autocapitalize: 'none', spellcheck: false, required: true }),
       field('Пароль', { name: 'password', type: 'password', autocomplete: 'current-password', required: true }),
-    ], 'Войти', async (d) => { home(await call('login', { email: d.get('email'), password: d.get('password') })); }),
+    ], 'Войти', async (d) => { home(await call('login', { login: d.get('login'), password: d.get('password') })); }),
     h('p', { class: 'muted small' }, 'Забыли пароль или ещё не задали его? Напишите куратору — он пришлёт ссылку.')));
 }
 
@@ -149,24 +149,23 @@ async function adminView(box, admin) {
   box.replaceChildren(
     h('h2', null, 'Учётные записи'),
     h('div', { class: 'card' }, h('table', null,
-      h('thead', null, h('tr', null, h('th', null, 'Имя'), h('th', { class: 'hide-sm' }, 'Почта'), h('th', null, 'Роль'), h('th', { class: 'hide-sm' }, 'Курсы'), h('th', null, 'Действия'))),
+      h('thead', null, h('tr', null, h('th', null, 'Имя'), h('th', { class: 'hide-sm' }, 'Логин'), h('th', null, 'Роль'), h('th', { class: 'hide-sm' }, 'Курсы'), h('th', null, 'Действия'))),
       h('tbody', null, rows))),
     detail,
     h('div', { class: 'card' }, h('h3', null, 'Новая учётная запись'),
       form([
-        h('div', { class: 'grid2' },
-          h('div', null, field('Имя', { name: 'name', required: true, maxlength: 120 })),
-          h('div', null, field('Почта', { name: 'email', type: 'email', required: true }))),
+        field('Имя', { name: 'name', required: true, maxlength: 120 }),
+        h('p', { class: 'muted small' }, 'Логин создастся автоматически из имени: имя.фамилия → imya.familiya@belayarod.ru'),
         h('label', { for: 'f-role' }, 'Роль'),
         h('select', { id: 'f-role', name: 'role' }, Object.entries(ROLE_TITLES).map(([v, t]) => h('option', { value: v }, t))),
         h('label', null, 'Открыть курсы'), courseChecks,
       ], 'Создать', async (d) => {
         const r = await call('admin/users', {
-          name: d.get('name'), email: d.get('email'), role: d.get('role'),
+          name: d.get('name'), role: d.get('role'),
           courses: Object.fromEntries(courses.map(c => [c.id, d.get('c-' + c.id) === 'on'])),
         });
         await adminView(box, admin);
-        box.append(linkNote(`Создано: ${r.user.name}. Отправьте ей ссылку, чтобы задать пароль:`, r.link, r.expiresAt));
+        box.append(linkNote(`Создано: ${r.user.name}. Логин: ${r.user.email}. Отправьте ссылку, чтобы задать пароль:`, r.link, r.expiresAt));
       })));
 }
 
@@ -194,7 +193,7 @@ function userView(box, u, courses, admin, reload) {
     h('button', { type: 'button', 'data-id': c.id, 'aria-pressed': 'false', onclick: () => pick(c) }, c.title)));
 
   box.replaceChildren(h('div', { class: 'card' },
-    h('h3', null, u.name), h('p', { class: 'muted small' }, u.email, u.hasPassword ? '' : ' · пароль ещё не задан'),
+    h('h3', null, u.name), h('p', { class: 'muted small' }, 'Логин: ', u.email, u.hasPassword ? '' : ' · пароль ещё не задан'),
     form([
       h('div', { class: 'grid2' },
         h('div', null, field('Имя', { name: 'name', value: u.name, required: true, maxlength: 120 })),
