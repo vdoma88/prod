@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { openStore, MIN_PASSWORD } from '../store.mjs';
+import { openStore, MIN_PASSWORD, loginBase } from '../store.mjs';
 import { createApp } from '../app.mjs';
 
 const PASS = 'верный-пароль-1';
@@ -30,6 +30,16 @@ test('пароль задаётся только по ссылке и прове
   assert.equal(store.checkPassword('kate@example.ru', PASS + 'x'), null);
   assert.equal(store.checkPassword('nobody@example.ru', PASS), null);
   assert.ok(MIN_PASSWORD >= 10);
+});
+
+test('логин автоматически создаётся из имени и не дублируется', () => {
+  const store = openStore(':memory:');
+  assert.equal(loginBase('Екатерина Белая'), 'ekaterina.belaya');
+  assert.equal(loginBase('Анна-Мария  Иванова'), 'anna.mariya.ivanova');
+  const first = store.createUser({ name: 'Мария Иванова' });
+  const second = store.createUser({ name: 'Мария Иванова' });
+  assert.equal(first.email, 'mariya.ivanova@belayarod.ru');
+  assert.equal(second.email, 'mariya.ivanova2@belayarod.ru');
 });
 
 test('ссылка на пароль живёт 72 часа', () => {
@@ -82,7 +92,7 @@ test('курсы открываются и закрываются, послед�
   store.updateUser(u.id, { role: 'admin' });
   assert.equal(store.updateUser(admin.id, { role: 'curator' }).role, 'curator');
   assert.throws(() => store.createUser({ email: 'A@b.ru', name: 'Дубль' }), /уже есть/);
-  assert.throws(() => store.createUser({ email: 'не почта', name: 'Х' }), /почту/);
+  assert.throws(() => store.createUser({ email: 'не логин', name: 'Х' }), /логин/);
 });
 
 test('администратор может удалить пользователя, но не себя и не последнего админа', () => {
@@ -177,8 +187,9 @@ test('перебор паролей: после 8 ошибок — пауза', 
 test('админ заводит ученицу, открывает курсы, ученица задаёт пароль по ссылке', async (t) => {
   const s = await server(); t.after(s.close);
   await s.req('/account/api/login', { body: { email: 'kate@b.ru', password: PASS } });
-  const created = await s.req('/account/api/admin/users', { body: { email: 'maria@b.ru', name: 'Мария', courses: { runes: true } } });
+  const created = await s.req('/account/api/admin/users', { body: { name: 'Мария Иванова', courses: { runes: true } } });
   assert.equal(created.status, 201);
+  assert.equal(created.data.user.email, 'mariya.ivanova@belayarod.ru');
   assert.deepEqual(created.data.user.courses, ['runes']);
   const token = new URL(created.data.link).hash.replace('#reset=', '');
   assert.match(created.data.link, /^https:\/\/belayarod\.ru\/account\/#reset=/);
@@ -202,7 +213,7 @@ test('админ заводит ученицу, открывает курсы, �
 test('админ удаляет пользователя через общий кабинет', async (t) => {
   const s = await server(); t.after(s.close);
   await s.req('/account/api/login', { body: { email: 'kate@b.ru', password: PASS } });
-  const created = await s.req('/account/api/admin/users', { body: { email: 'delete@b.ru', name: 'Удалить' } });
+  const created = await s.req('/account/api/admin/users', { body: { name: 'Удалить Пользователя' } });
   assert.equal(created.status, 201);
   const id = created.data.user.id;
   assert.equal((await s.req(`/account/api/admin/users/${id}/delete`, { body: {} })).status, 200);
