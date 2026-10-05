@@ -34,11 +34,22 @@ test('пароль задаётся только по ссылке и прове
 
 test('ссылка на пароль живёт 72 часа', () => {
   const c = withClock();
-  const store = openStore(':memory:', c);
+  const store = openStore(':memory:', { now: c.now, resetSecret: 'test-reset-secret-1234567890' });
   const u = store.createUser({ email: 'a@b.ru', name: 'А' });
   const { token } = store.createReset(u.id);
+  assert.equal(store.activeReset(u.id).token, token, 'действующую ссылку можно получить повторно');
   c.advance(73);
+  assert.equal(store.activeReset(u.id), null, 'после срока ссылка больше не показывается');
   assert.throws(() => store.useReset(token, PASS), /устарела/);
+});
+
+test('действующая ссылка исчезает только после использования', () => {
+  const store = openStore(':memory:', { resetSecret: 'test-reset-secret-1234567890' });
+  const u = store.createUser({ email: 'link@b.ru', name: 'Ссылка' });
+  const issued = store.createReset(u.id);
+  assert.equal(store.activeReset(u.id).token, issued.token);
+  store.useReset(issued.token, PASS);
+  assert.equal(store.activeReset(u.id), null);
 });
 
 test('сессия: 30 дней, сбрасывается при смене пароля и выключении', () => {
@@ -74,10 +85,32 @@ test('курсы открываются и закрываются, послед�
   assert.throws(() => store.createUser({ email: 'не почта', name: 'Х' }), /почту/);
 });
 
+test('администратор может удалить пользователя, но не себя и не последнего админа', () => {
+  const store = openStore(':memory:');
+  const admin = store.createUser({ email: 'admin@b.ru', name: 'Админ', role: 'admin' });
+  const u = store.createUser({ email: 'user@b.ru', name: 'Пользователь' });
+  store.updateUser(u.id, { courses: { runes: true } }, admin.id);
+  const session = store.createSession(u.id);
+  store.deleteUser(u.id, admin.id);
+  assert.equal(store.user(u.id), null);
+  assert.equal(store.sessionUser(session.token), null, 'сессии удалённого пользователя удаляются каскадно');
+  assert.throws(() => store.deleteUser(admin.id, admin.id), /свою учётную запись/);
+
+  const second = store.createUser({ email: 'admin2@b.ru', name: 'Админ 2', role: 'admin' });
+  assert.throws(() => store.deleteUser(second.id, second.id), /свою учётную запись/);
+  assert.equal(store.deleteUser(second.id, admin.id).id, second.id);
+  assert.throws(() => store.deleteUser(admin.id, 'other-admin-id'), /единственный/);
+});
+
 // ─── HTTP ───
 
 async function server({ env = {}, courses = {} } = {}) {
-  const store = openStore(':memory:');
+  const appEnv = {
+    PUBLIC_ORIGIN: 'https://belayarod.ru', COOKIE_DOMAIN: '.belayarod.ru', SR_INTERNAL_SECRET: 'inner-secret',
+    ACCOUNT_RESET_SECRET: 'test-reset-secret-1234567890',
+    COURSE_RUNES_INTERNAL: 'http://runes.test', COURSE_TARO_INTERNAL: 'http://taro.test', ...env,
+  };
+  const store = openStore(':memory:', { resetSecret: appEnv.ACCOUNT_RESET_SECRET });
   const calls = [];
   // Подделка курсов: courses.runes = (url, body) => ответ
   const fetchImpl = async (url, init) => {
@@ -90,10 +123,7 @@ async function server({ env = {}, courses = {} } = {}) {
       ? new Response(data, { status, headers: { 'Content-Type': 'text/html' } })
       : new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
   };
-  const handle = createApp({ store, fetchImpl, env: {
-    PUBLIC_ORIGIN: 'https://belayarod.ru', COOKIE_DOMAIN: '.belayarod.ru', SR_INTERNAL_SECRET: 'inner-secret',
-    COURSE_RUNES_INTERNAL: 'http://runes.test', COURSE_TARO_INTERNAL: 'http://taro.test', ...env,
-  } });
+  const handle = createApp({ store, fetchImpl, env: appEnv });
   const srv = createServer(handle);
   await new Promise(r => srv.listen(0, '127.0.0.1', r));
   const base = `http://127.0.0.1:${srv.address().port}`;
@@ -152,6 +182,11 @@ test('админ заводит ученицу, открывает курсы, �
   assert.deepEqual(created.data.user.courses, ['runes']);
   const token = new URL(created.data.link).hash.replace('#reset=', '');
   assert.match(created.data.link, /^https:\/\/belayarod\.ru\/account\/#reset=/);
+  const listed = await s.req('/account/api/admin/users');
+  const maria = listed.data.users.find(u => u.id === created.data.user.id);
+  assert.equal(maria.passwordLink, created.data.link, 'активная ссылка не пропадает из карточки');
+  const same = await s.req(`/account/api/admin/users/${created.data.user.id}/reset-link`, { body: {} });
+  assert.equal(same.data.link, created.data.link, 'кнопка возвращает ту же активную ссылку');
 
   s.logout();
   const me = await s.req('/account/api/reset', { body: { token, password: 'пароль-марии-1' } });
@@ -161,6 +196,19 @@ test('админ заводит ученицу, открывает курсы, �
   assert.equal(me.data.courses.find(c => c.id === 'runes').url, 'https://runes.belayarod.ru/', 'ученице — сам курс');
   assert.equal((await s.req('/account/api/admin/users')).status, 403, 'ученице админка закрыта');
   assert.equal((await s.req(`/account/api/admin/users/${created.data.user.id}`, { body: { role: 'admin' } })).status, 403);
+});
+
+
+test('админ удаляет пользователя через общий кабинет', async (t) => {
+  const s = await server(); t.after(s.close);
+  await s.req('/account/api/login', { body: { email: 'kate@b.ru', password: PASS } });
+  const created = await s.req('/account/api/admin/users', { body: { email: 'delete@b.ru', name: 'Удалить' } });
+  assert.equal(created.status, 201);
+  const id = created.data.user.id;
+  assert.equal((await s.req(`/account/api/admin/users/${id}/delete`, { body: {} })).status, 200);
+  const listed = await s.req('/account/api/admin/users');
+  assert.equal(listed.data.users.some(u => u.id === id), false);
+  assert.equal((await s.req(`/account/api/admin/users/${s.admin.id}/delete`, { body: {} })).status, 409, 'себя удалить нельзя');
 });
 
 test('уроки: админка спрашивает сам курс, неподключённый курс — connected:false', async (t) => {

@@ -12,8 +12,9 @@ Node ≥ 22.13 без `npm install`: `node:sqlite`, `node:http`, `node:crypto`.
   администратор), открытые курсы. Пароль — scrypt с солью; в базе нет ни
   паролей, ни токенов входа (только их sha256).
 - **Пароль задаётся только по ссылке.** Администратор создаёт запись и
-  отправляет ссылку `…/account/#reset=…` (72 часа, один раз). Той же кнопкой
-  выдаётся новая ссылка, если пароль забыт. Почта не нужна.
+  отправляет ссылку `…/account/#reset=…` (72 часа, один раз). Пока ссылка
+  действительна и не использована, она остаётся видна в карточке пользователя;
+  кнопка показывает ту же ссылку, а не аннулирует её. Почта не нужна.
 - **Вход** — cookie `sr_session` на `.belayarod.ru`, 30 дней, HttpOnly, Secure,
   SameSite=Lax. Её видят все курсы на поддоменах. Новый пароль или выключенная
   запись — все входы сразу недействительны.
@@ -109,6 +110,7 @@ Node ≥ 22.13 без `npm install`: `node:sqlite`, `node:http`, `node:crypto`.
 | `COOKIE_DOMAIN` | `.belayarod.ru` — cookie для всех поддоменов |
 | `TRUST_PROXY` | `1` — брать адрес посетителя из `X-Real-IP` (nginx) |
 | `SR_INTERNAL_SECRET` | общий секрет с курсами |
+| `ACCOUNT_RESET_SECRET` | отдельный секрет для повторного показа действующей одноразовой ссылки задания пароля; генерируется при установке/обновлении |
 | `ROD_NOTIFY_SECRET` | секрет бота лендинга для сводок в Telegram (`NOTIFY_SECRET` из `/etc/rodbot.env`) |
 | `UPTIME_TARGETS` | адреса для проверки доступности (`Имя=https://…,…`, `off` — выключить); по умолчанию лендинг, общий вход и четыре курса — `infra/DEPLOY.md`, «Доступность сайтов» |
 | `ROD_NOTIFY_URL` | адрес бота, по умолчанию `http://127.0.0.1:4310/tg/rod-bot/notify` |
@@ -125,7 +127,7 @@ sudo ADMIN_EMAIL=почта ADMIN_NAME="Екатерина Белая" bash /var
 
 ```
 cd /var/www/prod && sudo -u sraccounts env ACCOUNTS_DB_PATH=/var/lib/sr-accounts/accounts.sqlite \
-  PUBLIC_ORIGIN=https://belayarod.ru node accounts/cli.mjs reset-link почта
+  PUBLIC_ORIGIN=https://belayarod.ru ACCOUNT_RESET_SECRET="$(sed -n 's/^ACCOUNT_RESET_SECRET=//p' /etc/sr-accounts.env)" node accounts/cli.mjs reset-link почта
 ```
 
 ## Локально

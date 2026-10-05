@@ -20,6 +20,8 @@ button { font: inherit; cursor: pointer; }
 .btn:hover { background: var(--sr-gold-deep); }
 .btn[disabled] { opacity: .6; cursor: default; }
 .btn.ghost { background: transparent; color: var(--sr-gold-deep); border: 1px solid var(--sr-gold-soft); }
+.btn.danger { margin-left: 8px; background: transparent; color: #9b2c1f; border: 1px solid rgba(155, 44, 31, .35); }
+.btn.danger:hover { background: rgba(155, 44, 31, .08); }
 .link { background: none; border: 0; color: inherit; text-decoration: underline; padding: 0; }
 .muted { color: var(--sr-muted); }
 .small { font-size: .85rem; }

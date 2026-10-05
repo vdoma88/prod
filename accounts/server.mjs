@@ -9,7 +9,7 @@ import { openWatch, botSender } from './pulse-watch.mjs';
 import { openUptime, parseTargets } from './uptime.mjs';
 
 const env = process.env;
-const store = openStore(env.ACCOUNTS_DB_PATH || 'accounts.sqlite');
+const store = openStore(env.ACCOUNTS_DB_PATH || 'accounts.sqlite', { resetSecret: env.ACCOUNT_RESET_SECRET || '' });
 const pulse = openPulse(store.db);
 const handle = createApp({ store, pulse, env });
 const server = createServer((req, res) => { handle(req, res); });

@@ -29,6 +29,12 @@ if [ -f /etc/rodbot.env ] && [ -f /etc/sr-accounts.env ] && ! grep -q '^ROD_NOTI
     echo "Телеметрия в Telegram: секрет бота добавлен в /etc/sr-accounts.env"
   fi
 fi
+# Действующую одноразовую ссылку задания пароля админка должна уметь показать
+# повторно. Секрет создаётся один раз и не меняется при последующих обновлениях.
+if [ -f /etc/sr-accounts.env ] && ! grep -q '^ACCOUNT_RESET_SECRET=.\+' /etc/sr-accounts.env; then
+  printf '# Ссылки задания пароля: повторный показ до использования/истечения\nACCOUNT_RESET_SECRET=%s\n' "$(openssl rand -hex 32)" >> /etc/sr-accounts.env
+  echo "Общий вход: добавлен ACCOUNT_RESET_SECRET"
+fi
 # Бот лендинга (bot/) и общий вход (accounts/) — перезапуск, если они уже поставлены
 # (infra/vps/14-bot.sh, 15-accounts.sh). Telegram повторит вебхук, пришедший за эти секунды.
 if systemctl is-enabled --quiet rodbot 2>/dev/null; then systemctl restart rodbot; fi

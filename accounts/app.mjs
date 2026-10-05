@@ -124,6 +124,14 @@ export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchI
   const staffOf = (u) => u.role === 'admin' || u.role === 'curator';
   const withCourses = (u) => ({ user: u, courses: COURSES.map(c => ({ id: c.id, title: c.title, url: c.sso && c.staff && staffOf(u) ? new URL(c.staff, publicUrl(c)).href : publicUrl(c), ownLogin: !c.sso, enabled: !c.sso || u.role === 'admin' || u.courses.includes(c.id) })) });
   const resetLink = (token) => `${origin}${BASE}/#reset=${token}`;
+  const adminUser = (u) => {
+    const reset = store.activeReset(u.id);
+    return {
+      ...u,
+      passwordLink: reset ? resetLink(reset.token) : null,
+      passwordLinkExpiresAt: reset?.expiresAt || null,
+    };
+  };
 
   async function courseCall(c, pathAndQuery, body) {
     const res = await fetchImpl(internalBase(c) + pathAndQuery, {
@@ -173,27 +181,36 @@ export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchI
       const days = Math.min(30, Math.max(1, Number(new URL(req.url, 'http://x').searchParams.get('days')) || 7));
       return send(res, 200, pulse.summary(days));
     }
-    if (p === '/api/admin/users' && req.method === 'GET') { needAdmin(req); return send(res, 200, { users: store.users(), courses: SSO_COURSES.map(({ id, title }) => ({ id, title })) }); }
+    if (p === '/api/admin/users' && req.method === 'GET') { needAdmin(req); return send(res, 200, { users: store.users().map(adminUser), courses: SSO_COURSES.map(({ id, title }) => ({ id, title })) }); }
     if (p === '/api/admin/users') {
       checkWrite(req);
       const admin = needAdmin(req);
       const b = await readJson(req);
       const u = store.createUser({ email: b.email, name: b.name, role: b.role }, admin.id);
       const withAccess = b.courses ? store.updateUser(u.id, { courses: b.courses }, admin.id) : u;
-      return send(res, 201, { user: withAccess, link: resetLink(store.createReset(u.id, admin.id).token) });
+      const reset = store.createReset(u.id, admin.id);
+      return send(res, 201, { user: adminUser(withAccess), link: resetLink(reset.token), expiresAt: reset.expiresAt });
     }
     let m = /^\/api\/admin\/users\/([0-9a-f-]{36})$/.exec(p);
     if (m) {
       checkWrite(req);
       const admin = needAdmin(req);
       const b = await readJson(req);
-      return send(res, 200, { user: store.updateUser(m[1], { name: b.name, role: b.role, active: b.active, courses: b.courses }, admin.id) });
+      return send(res, 200, { user: adminUser(store.updateUser(m[1], { name: b.name, role: b.role, active: b.active, courses: b.courses }, admin.id)) });
+    }
+    m = /^\/api\/admin\/users\/([0-9a-f-]{36})\/delete$/.exec(p);
+    if (m) {
+      checkWrite(req);
+      const admin = needAdmin(req);
+      store.deleteUser(m[1], admin.id);
+      return send(res, 200, { ok: true });
     }
     m = /^\/api\/admin\/users\/([0-9a-f-]{36})\/reset-link$/.exec(p);
     if (m) {
       checkWrite(req);
       const admin = needAdmin(req);
-      return send(res, 200, { link: resetLink(store.createReset(m[1], admin.id).token) });
+      const reset = store.activeReset(m[1]) || store.createReset(m[1], admin.id);
+      return send(res, 200, { link: resetLink(reset.token), expiresAt: reset.expiresAt });
     }
     // Статусы уроков ученицы в курсе: админка спрашивает сам курс.
     m = /^\/api\/admin\/users\/([0-9a-f-]{36})\/lessons\/([a-z]+)$/.exec(p);

@@ -38,11 +38,18 @@ COOKIE_DOMAIN=.$DOMAIN
 TRUST_PROXY=1
 # Общий секрет с курсами (accounts/README.md, «Подключение курса»)
 SR_INTERNAL_SECRET=$(openssl rand -hex 24)
+# Отдельный секрет для воспроизводимых одноразовых ссылок задания пароля
+ACCOUNT_RESET_SECRET=$(openssl rand -hex 32)
 ENV
   chown root:sraccounts "$ENV_FILE"; chmod 640 "$ENV_FILE"
   ok "создан $ENV_FILE"
 else
   ok "$ENV_FILE уже есть — не трогаю"
+fi
+if ! grep -q '^ACCOUNT_RESET_SECRET=.' "$ENV_FILE"; then
+  printf '\n# Ссылки задания пароля: позволяет показывать действующую ссылку повторно\nACCOUNT_RESET_SECRET=%s\n' "$(openssl rand -hex 32)" >> "$ENV_FILE"
+  chown root:sraccounts "$ENV_FILE"; chmod 640 "$ENV_FILE"
+  ok "добавлен ACCOUNT_RESET_SECRET"
 fi
 
 log "Служба"
