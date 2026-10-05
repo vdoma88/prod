@@ -153,10 +153,11 @@ export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchI
     if (p === '/api/login') {
       checkWrite(req);
       const b = await readJson(req);
-      const key = clientIp(req) + ':' + String(b.email || '').toLowerCase();
+      const login = b.login ?? b.email;
+      const key = clientIp(req) + ':' + String(login || '').toLowerCase();
       if (limited(key)) throw new AccountError(429, 'Слишком много попыток. Подождите 15 минут.');
-      const u = store.checkPassword(b.email, b.password);
-      if (!u) { attempts.get(key).push(Date.now()); throw new AccountError(401, 'Неверная почта или пароль.'); }
+      const u = store.checkPassword(login, b.password);
+      if (!u) { attempts.get(key).push(Date.now()); throw new AccountError(401, 'Неверный логин или пароль.'); }
       attempts.delete(key);
       const s = store.createSession(u.id);
       store.audit(u.id, 'login', u.id);
