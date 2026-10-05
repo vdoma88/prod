@@ -145,20 +145,22 @@ async function adminView(box, admin) {
           courses: Object.fromEntries(courses.map(c => [c.id, d.get('c-' + c.id) === 'on'])),
         });
         await adminView(box, admin);
-        box.append(linkNote(`Создано: ${r.user.name}. Отправьте ей ссылку, чтобы задать пароль:`, r.link));
+        box.append(linkNote(`Создано: ${r.user.name}. Отправьте ей ссылку, чтобы задать пароль:`, r.link, r.expiresAt));
       })));
 }
 
-function linkNote(text, link) {
+function linkNote(text, link, expiresAt) {
   const copy = h('button', { class: 'btn ghost', type: 'button', onclick: async () => {
     try { await navigator.clipboard.writeText(link); copy.textContent = 'Скопировано'; } catch { /* выделить вручную */ }
   } }, 'Скопировать ссылку');
+  const until = expiresAt ? new Date(expiresAt).toLocaleString('ru-RU') : '';
   return h('div', { class: 'ok' }, h('div', null, text), h('code', null, link), h('div', null, copy),
-    h('div', { class: 'small muted' }, 'Ссылка действует 72 часа и один раз.'));
+    h('div', { class: 'small muted' }, until ? `Активна до ${until} и действует один раз.` : 'Ссылка действует 72 часа и один раз.'));
 }
 
 function userView(box, u, courses, admin, reload) {
   const note = h('div');
+  if (u.passwordLink) note.append(linkNote('Действующая ссылка для пароля:', u.passwordLink, u.passwordLinkExpiresAt));
   const checks = h('div', { class: 'checks' }, courses.map(c =>
     h('label', null, h('input', { type: 'checkbox', name: 'c-' + c.id, checked: u.courses.includes(c.id) }), c.title)));
   const lessons = h('div');
@@ -187,9 +189,20 @@ function userView(box, u, courses, admin, reload) {
       await reload();
     }),
     h('button', { class: 'btn ghost', type: 'button', onclick: async () => {
-      try { const r = await call(`admin/users/${u.id}/reset-link`, {}); note.replaceChildren(linkNote('Новая ссылка для пароля:', r.link)); }
+      try {
+        const r = await call(`admin/users/${u.id}/reset-link`, {});
+        u.passwordLink = r.link;
+        u.passwordLinkExpiresAt = r.expiresAt;
+        note.replaceChildren(linkNote('Действующая ссылка для пароля:', r.link, r.expiresAt));
+      }
       catch (e) { note.replaceChildren(h('p', { class: 'error' }, e.message)); }
-    } }, 'Ссылка для пароля'),
+    } }, u.passwordLink ? 'Показать ссылку для пароля' : 'Создать ссылку для пароля'),
+    u.id === admin.id ? h('p', { class: 'muted small' }, 'Свою учётную запись удалить из текущего кабинета нельзя.') :
+      h('button', { class: 'btn danger', type: 'button', onclick: async () => {
+        if (!confirm(`Удалить учётную запись «${u.name}» (${u.email})? Доступ к общему кабинету будет отозван сразу.`)) return;
+        try { await call(`admin/users/${u.id}/delete`, {}); await reload(); }
+        catch (e) { note.replaceChildren(h('p', { class: 'error' }, e.message)); }
+      } }, 'Удалить учётную запись'),
     note,
     u.courses.length ? [h('h3', { class: 'mt' }, 'Уроки'), tabs, lessons] : h('p', { class: 'muted small' }, 'Откройте курс, чтобы управлять уроками.')));
   box.scrollIntoView({ behavior: 'smooth', block: 'start' });
