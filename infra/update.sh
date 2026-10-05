@@ -9,8 +9,27 @@ cd "$(dirname "$0")/.."
 exec 9>/var/lock/belayarod-deploy.lock
 flock 9
 
-git pull --ff-only
+# На сервере всегда публикуем main. Раньше git pull обновлял текущую
+# ветку: если VPS случайно оставался на feature-ветке, скрипт успешно
+# пересобирал старый commit и live-проверка считала его ожидаемым.
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+  echo "Есть локальные изменения в /var/www/prod. Деплой остановлен, чтобы их не потерять." >&2
+  git status --short >&2
+  exit 1
+fi
+git fetch origin main
+CURRENT_BRANCH="$(git symbolic-ref --quiet --short HEAD || true)"
+if [ "$CURRENT_BRANCH" != "main" ]; then
+  echo "Переключаю репозиторий с ${CURRENT_BRANCH:-detached HEAD} на main"
+  git switch main
+fi
+git merge --ff-only origin/main
 EXPECTED_COMMIT="$(git rev-parse HEAD)"
+REMOTE_MAIN="$(git rev-parse origin/main)"
+if [ "$EXPECTED_COMMIT" != "$REMOTE_MAIN" ]; then
+  echo "Локальный main не совпадает с origin/main: $EXPECTED_COMMIT != $REMOTE_MAIN" >&2
+  exit 1
+fi
 node scripts/check.mjs --sources
 node scripts/build.mjs
 
