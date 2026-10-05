@@ -12,6 +12,20 @@ const RESET_HOURS = 72;
 const sha256 = (s) => createHash('sha256').update(s).digest('hex');
 export const normEmail = (v) => String(v || '').trim().toLowerCase();
 const validEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) && v.length <= 254;
+const TRANSLIT = {
+  а:'a', б:'b', в:'v', г:'g', д:'d', е:'e', ё:'e', ж:'zh', з:'z', и:'i', й:'y',
+  к:'k', л:'l', м:'m', н:'n', о:'o', п:'p', р:'r', с:'s', т:'t', у:'u', ф:'f',
+  х:'h', ц:'ts', ч:'ch', ш:'sh', щ:'sch', ъ:'', ы:'y', ь:'', э:'e', ю:'yu', я:'ya',
+};
+export function loginBase(name) {
+  const value = String(name || '').trim().toLowerCase();
+  const latin = [...value].map(ch => TRANSLIT[ch] ?? ch).join('');
+  return latin
+    .replace(/[^a-z0-9]+/g, '.')
+    .replace(/^\.+|\.+$/g, '')
+    .replace(/\.{2,}/g, '.')
+    .slice(0, 48);
+}
 
 export class AccountError extends Error {
   constructor(status, message) { super(message); this.status = status; }
@@ -91,13 +105,25 @@ export function openStore(path, { now = () => new Date(), resetSecret = '' } = {
     };
   }
 
+  function uniqueLogin(name) {
+    const base = loginBase(name);
+    if (!base) throw new AccountError(400, 'Не удалось создать логин из имени.');
+    let n = 1;
+    let email = `${base}@belayarod.ru`;
+    while (s.byEmail.get(email)) {
+      n += 1;
+      email = `${base}${n}@belayarod.ru`;
+    }
+    return email;
+  }
+
   function createUser({ email, name, role = 'student' }, actor = null) {
-    email = normEmail(email);
     name = String(name || '').trim();
-    if (!validEmail(email)) throw new AccountError(400, 'Проверьте почту.');
     if (!name || name.length > 120) throw new AccountError(400, 'Укажите имя (до 120 знаков).');
     if (!ROLES.includes(role)) throw new AccountError(400, 'Неизвестная роль.');
-    if (s.byEmail.get(email)) throw new AccountError(409, 'Такая почта уже есть.');
+    email = email == null || String(email).trim() === '' ? uniqueLogin(name) : normEmail(email);
+    if (!validEmail(email)) throw new AccountError(400, 'Проверьте логин.');
+    if (s.byEmail.get(email)) throw new AccountError(409, 'Такой логин уже есть.');
     const id = randomUUID();
     s.insert.run(id, email, name, role, iso());
     s.audit.run(iso(), actor, 'user.create', id);
@@ -138,8 +164,8 @@ export function openStore(path, { now = () => new Date(), resetSecret = '' } = {
     s.dropSessionsOf.run(id);
   }
 
-  function checkPassword(email, password) {
-    const u = s.byEmail.get(normEmail(email));
+  function checkPassword(login, password) {
+    const u = s.byEmail.get(normEmail(login));
     // Сравниваем даже для несуществующей почты — время ответа не выдаёт, есть ли она.
     const salt = u?.salt || 'x'.repeat(32);
     const expected = Buffer.from(u?.hash || '0'.repeat(128), 'hex');
