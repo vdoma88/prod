@@ -1,7 +1,7 @@
 // Хранилище общего входа: учётки, сессии, ссылки для пароля, доступ к курсам.
 // node:sqlite, как у бота, Таро и рун — без npm install.
 import { DatabaseSync } from 'node:sqlite';
-import { randomBytes, randomUUID, scryptSync, timingSafeEqual, createHash } from 'node:crypto';
+import { randomBytes, randomUUID, scryptSync, timingSafeEqual, createHash, createHmac } from 'node:crypto';
 import { SSO_COURSES } from './courses.mjs';
 
 export const ROLES = ['student', 'curator', 'admin'];
@@ -21,7 +21,7 @@ function digest(password, salt) {
   return scryptSync(String(password), salt, 64, { N: 16384, r: 8, p: 1 }).toString('hex');
 }
 
-export function openStore(path, { now = () => new Date() } = {}) {
+export function openStore(path, { now = () => new Date(), resetSecret = '' } = {}) {
   const db = new DatabaseSync(path);
   db.exec('PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;');
   db.exec(`
@@ -70,10 +70,13 @@ export function openStore(path, { now = () => new Date() } = {}) {
     session: q('SELECT user_id, expires_at FROM sessions WHERE token_hash = ?'),
     dropSession: q('DELETE FROM sessions WHERE token_hash = ?'),
     dropSessionsOf: q('DELETE FROM sessions WHERE user_id = ?'),
-    dropExpired: q('DELETE FROM sessions WHERE expires_at < ?'),
+    dropExpiredSessions: q('DELETE FROM sessions WHERE expires_at < ?'),
     addReset: q('INSERT INTO resets (token_hash, user_id, expires_at) VALUES (?, ?, ?)'),
     reset: q('SELECT user_id, expires_at FROM resets WHERE token_hash = ?'),
+    resetByUser: q('SELECT token_hash, user_id, expires_at FROM resets WHERE user_id = ? ORDER BY expires_at DESC LIMIT 1'),
     dropResetsOf: q('DELETE FROM resets WHERE user_id = ?'),
+    dropExpiredResets: q('DELETE FROM resets WHERE expires_at < ?'),
+    deleteUser: q('DELETE FROM users WHERE id = ?'),
     audit: q('INSERT INTO audit (at, actor, event, target) VALUES (?, ?, ?, ?)'),
     admins: q("SELECT count(*) AS n FROM users WHERE role = 'admin' AND active = 1"),
   };
@@ -162,13 +165,42 @@ export function openStore(path, { now = () => new Date() } = {}) {
 
   function dropSession(token) { if (token) s.dropSession.run(sha256(token)); }
 
+  function resetToken(userId, expiresAt) {
+    if (!resetSecret) return null;
+    const exp = Math.floor(new Date(expiresAt).getTime() / 1000);
+    const payload = `${userId}.${exp}`;
+    return `${payload}.${createHmac('sha256', resetSecret).update(payload).digest('base64url')}`;
+  }
+
+  function activeReset(userId) {
+    const row = s.resetByUser.get(userId);
+    if (!row) return null;
+    if (row.expires_at < iso()) { s.dropResetsOf.run(userId); return null; }
+    const token = resetToken(userId, row.expires_at);
+    if (!token || sha256(token) !== row.token_hash) return null;
+    return { token, expiresAt: row.expires_at };
+  }
+
   function createReset(userId, actor = null) {
     if (!s.byId.get(userId)) throw new AccountError(404, 'Учётная запись не найдена.');
-    const token = randomBytes(32).toString('base64url');
+    const expiresAt = later(RESET_HOURS * 3600e3);
+    const token = resetToken(userId, expiresAt) || randomBytes(32).toString('base64url');
     s.dropResetsOf.run(userId);
-    s.addReset.run(sha256(token), userId, later(RESET_HOURS * 3600e3));
+    s.addReset.run(sha256(token), userId, expiresAt);
     s.audit.run(iso(), actor, 'reset.issue', userId);
-    return { token, hours: RESET_HOURS };
+    return { token, hours: RESET_HOURS, expiresAt };
+  }
+
+  function deleteUser(id, actor = null) {
+    const u = s.byId.get(id);
+    if (!u) throw new AccountError(404, 'Учётная запись не найдена.');
+    if (actor && actor === id) throw new AccountError(409, 'Нельзя удалить свою учётную запись.');
+    if (u.role === 'admin' && u.active && s.admins.get().n <= 1) {
+      throw new AccountError(409, 'Это единственный администратор.');
+    }
+    s.audit.run(iso(), actor, 'user.delete', id);
+    s.deleteUser.run(id);
+    return publicUser(u);
   }
 
   function useReset(token, password) {
@@ -184,12 +216,12 @@ export function openStore(path, { now = () => new Date() } = {}) {
 
   return {
     db,
-    createUser, updateUser, setPassword, checkPassword,
-    createSession, sessionUser, dropSession, createReset, useReset,
+    createUser, updateUser, deleteUser, setPassword, checkPassword,
+    createSession, sessionUser, dropSession, createReset, activeReset, useReset,
     user: (id) => publicUser(s.byId.get(id)),
     userByEmail: (email) => publicUser(s.byEmail.get(normEmail(email))),
     users: () => s.all.all().map(publicUser),
     audit: (actor, event, target) => s.audit.run(iso(), actor, event, target),
-    cleanup: () => s.dropExpired.run(iso()),
+    cleanup: () => { const at = iso(); s.dropExpiredSessions.run(at); s.dropExpiredResets.run(at); },
   };
 }
