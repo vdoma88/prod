@@ -238,6 +238,21 @@ share_sr_secret() {
   ok "$file: подключён общий вход"
 }
 
+# share_notify_secret файл — дописать курсу ROD_NOTIFY_SECRET: тот же NOTIFY_SECRET,
+# что у бота «Сила Рода» (/etc/rodbot.env, bot/README.md → «Уведомления из курсов»).
+# Без него курс молча не шлёт Екатерине уведомления в Telegram.
+# Возвращает 0, если файл изменился.
+share_notify_secret() {
+  local file="$1" secret
+  [ -f /etc/rodbot.env ] && [ -f "$file" ] || return 1
+  secret="$(env_line /etc/rodbot.env NOTIFY_SECRET)"
+  [ -n "$secret" ] || return 1
+  [ "$(env_line "$file" ROD_NOTIFY_SECRET)" = "$secret" ] && return 1
+  sed -i '/^ROD_NOTIFY_SECRET=/d;/^# Уведомления в Telegram через бота/d' "$file"
+  printf '# Уведомления в Telegram через бота «Сила Рода» (bot/README.md)\nROD_NOTIFY_SECRET=%s\n' "$secret" >> "$file"
+  ok "$file: подключены уведомления в Telegram"
+}
+
 # close_sr_internal сайт — закрыть снаружи /sr-internal/ в уже стоящем сайте
 # nginx (файл не перезаписывается, см. nginx_site): строка перед каждым «location / {».
 close_sr_internal() {
