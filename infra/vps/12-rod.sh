@@ -91,6 +91,9 @@ ok "статика → server/public"
 log "Общий вход"
 share_sr_secret "$ENV_FILE" || ok "общий вход: $(grep -q '^SR_INTERNAL_SECRET=.' "$ENV_FILE" && echo подключён || echo ещё не поставлен — infra/vps/15-accounts.sh)"
 
+log "Уведомления в Telegram"
+share_notify_secret "$ENV_FILE" || ok "уведомления: $(grep -q '^ROD_NOTIFY_SECRET=.' "$ENV_FILE" && echo подключены || echo бот ещё не поставлен или без NOTIFY_SECRET — infra/vps/14-bot.sh)"
+
 log "PM2"
 cd "$APP/server" || die "нет $APP/server"
 install -d "$APP/logs"
