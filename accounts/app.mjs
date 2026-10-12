@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { timingSafeEqual } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { AccountError } from './store.mjs';
+import { AccountError, MIN_PASSWORD } from './store.mjs';
 import { COURSES, SSO_COURSES, courseById, LESSON_STATUSES } from './courses.mjs';
 import { openPulse, parseBatch } from './pulse.mjs';
 
@@ -187,8 +187,15 @@ export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchI
       checkWrite(req);
       const admin = needAdmin(req);
       const b = await readJson(req);
+      if (b.password && (typeof b.password !== 'string' || b.password.length < MIN_PASSWORD)) throw new AccountError(400, `Пароль — не короче ${MIN_PASSWORD} знаков.`);
       const u = store.createUser({ email: b.email, name: b.name, role: b.role }, admin.id);
       const withAccess = b.courses ? store.updateUser(u.id, { courses: b.courses }, admin.id) : u;
+      // Пароль можно задать сразу — тогда ссылка не нужна.
+      if (b.password) {
+        store.setPassword(u.id, b.password);
+        store.audit(admin.id, 'password.set', u.id);
+        return send(res, 201, { user: adminUser(store.user(u.id)) });
+      }
       const reset = store.createReset(u.id, admin.id);
       return send(res, 201, { user: adminUser(withAccess), link: resetLink(reset.token), expiresAt: reset.expiresAt });
     }
@@ -212,6 +219,20 @@ export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchI
       const admin = needAdmin(req);
       const reset = store.activeReset(m[1]) || store.createReset(m[1], admin.id);
       return send(res, 200, { link: resetLink(reset.token), expiresAt: reset.expiresAt });
+    }
+    // Пароль вручную — для тех, кто не справляется со ссылкой. Все входы
+    // ученицы и её ссылка для пароля при этом сбрасываются.
+    m = /^\/api\/admin\/users\/([0-9a-f-]{36})\/password$/.exec(p);
+    if (m) {
+      checkWrite(req);
+      const admin = needAdmin(req);
+      if (!store.user(m[1])) throw new AccountError(404, 'Учётная запись не найдена.');
+      const b = await readJson(req);
+      store.setPassword(m[1], b.password);
+      store.audit(admin.id, 'password.set', m[1]);
+      // Свой пароль: прежние входы сброшены, этот оставляем.
+      const own = m[1] === admin.id ? store.createSession(admin.id) : null;
+      return send(res, 200, { user: adminUser(store.user(m[1])) }, own ? { 'Set-Cookie': cookie(own.token, own.maxAge) } : {});
     }
     // Статусы уроков ученицы в курсе: админка спрашивает сам курс.
     m = /^\/api\/admin\/users\/([0-9a-f-]{36})\/lessons\/([a-z]+)$/.exec(p);
