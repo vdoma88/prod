@@ -162,6 +162,7 @@ export function openStore(path, { now = () => new Date(), resetSecret = '' } = {
     const salt = randomBytes(16).toString('hex');
     s.setPassword.run(salt, digest(password, salt), id);
     s.dropSessionsOf.run(id);
+    s.dropResetsOf.run(id); // пароль задан — старая ссылка больше не нужна
   }
 
   function checkPassword(login, password) {
@@ -235,7 +236,6 @@ export function openStore(path, { now = () => new Date(), resetSecret = '' } = {
     const u = s.byId.get(row.user_id);
     if (!u || !u.active) throw new AccountError(400, 'Учётная запись выключена.');
     setPassword(u.id, password);
-    s.dropResetsOf.run(u.id);
     s.audit.run(iso(), u.id, 'reset.use', u.id);
     return publicUser(u);
   }

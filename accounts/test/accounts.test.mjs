@@ -210,6 +210,35 @@ test('админ заводит ученицу, открывает курсы, �
 });
 
 
+test('админ задаёт и меняет пароль ученицы вручную', async (t) => {
+  const s = await server(); t.after(s.close);
+  await s.req('/account/api/login', { body: { email: 'kate@b.ru', password: PASS } });
+  assert.equal((await s.req('/account/api/admin/users', { body: { name: 'Коротко', password: 'short' } })).status, 400);
+  assert.equal((await s.req('/account/api/admin/users')).data.users.length, 1, 'с плохим паролем запись не создаётся');
+
+  const created = await s.req('/account/api/admin/users', { body: { name: 'Ольга', password: 'abcd-efgh-jkmn' } });
+  assert.equal(created.status, 201);
+  assert.equal(created.data.link, undefined, 'пароль задан — ссылка не нужна');
+  assert.equal(created.data.user.hasPassword, true);
+  const id = created.data.user.id;
+  assert.ok(s.store.checkPassword('olga@belayarod.ru', 'abcd-efgh-jkmn'));
+
+  await s.req(`/account/api/admin/users/${id}/reset-link`, { body: {} });
+  const changed = await s.req(`/account/api/admin/users/${id}/password`, { body: { password: 'новый-пароль-1' } });
+  assert.equal(changed.status, 200);
+  assert.equal(changed.data.user.passwordLink, null, 'ссылка для пароля сброшена');
+  assert.equal(s.store.checkPassword('olga@belayarod.ru', 'abcd-efgh-jkmn'), null, 'старый пароль не действует');
+  assert.ok(s.store.checkPassword('olga@belayarod.ru', 'новый-пароль-1'));
+  assert.equal((await s.req(`/account/api/admin/users/${id}/password`, { body: { password: '123' } })).status, 400);
+
+  assert.equal((await s.req(`/account/api/admin/users/${s.admin.id}/password`, { body: { password: 'kate-new-pass' } })).status, 200);
+  assert.equal((await s.req('/account/api/me')).status, 200, 'свой пароль сменила — из админки не выкинуло');
+
+  s.logout();
+  await s.req('/account/api/login', { body: { email: 'olga@belayarod.ru', password: 'новый-пароль-1' } });
+  assert.equal((await s.req(`/account/api/admin/users/${s.admin.id}/password`, { body: { password: 'взлом-пароля' } })).status, 403, 'ученице нельзя');
+});
+
 test('админ удаляет пользователя через общий кабинет', async (t) => {
   const s = await server(); t.after(s.close);
   await s.req('/account/api/login', { body: { email: 'kate@b.ru', password: PASS } });

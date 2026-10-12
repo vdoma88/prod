@@ -1,4 +1,4 @@
-// Общий вход «Сила Рода»: вход, «Мои курсы», пароль по ссылке и админка.
+// Общий вход «Сила Рода»: вход, «Мои курсы», пароль по ссылке или от администратора, админка.
 // Без innerHTML и inline-кода — страницы собираются через h() (строгий CSP).
 'use strict';
 
@@ -54,7 +54,7 @@ function loginView() {
       field('Логин', { name: 'login', type: 'text', autocomplete: 'username', autocapitalize: 'none', spellcheck: false, required: true }),
       field('Пароль', { name: 'password', type: 'password', autocomplete: 'current-password', required: true }),
     ], 'Войти', async (d) => { home(await call('login', { login: d.get('login'), password: d.get('password') })); }),
-    h('p', { class: 'muted small' }, 'Забыли пароль или ещё не задали его? Напишите куратору — он пришлёт ссылку.')));
+    h('p', { class: 'muted small' }, 'Забыли пароль или ещё не задали его? Напишите куратору — он пришлёт ссылку или новый пароль.')));
 }
 
 function resetView(token) {
@@ -159,13 +159,16 @@ async function adminView(box, admin) {
         h('label', { for: 'f-role' }, 'Роль'),
         h('select', { id: 'f-role', name: 'role' }, Object.entries(ROLE_TITLES).map(([v, t]) => h('option', { value: v }, t))),
         h('label', null, 'Открыть курсы'), courseChecks,
+        passwordField('f-password', 'Пароль — если не задать, будет ссылка, по которой ученица придумает его сама', false),
       ], 'Создать', async (d) => {
+        const password = d.get('password') || undefined;
         const r = await call('admin/users', {
-          name: d.get('name'), role: d.get('role'),
+          name: d.get('name'), role: d.get('role'), password,
           courses: Object.fromEntries(courses.map(c => [c.id, d.get('c-' + c.id) === 'on'])),
         });
         await adminView(box, admin);
-        box.append(linkNote(`Создано: ${r.user.name}. Логин: ${r.user.email}. Отправьте ссылку, чтобы задать пароль:`, r.link, r.expiresAt));
+        box.append(password ? credsNote(r.user, password)
+          : linkNote(`Создано: ${r.user.name}. Логин: ${r.user.email}. Отправьте ссылку, чтобы задать пароль:`, r.link, r.expiresAt));
       })));
 }
 
@@ -176,6 +179,29 @@ function linkNote(text, link, expiresAt) {
   const until = expiresAt ? new Date(expiresAt).toLocaleString('ru-RU') : '';
   return h('div', { class: 'ok' }, h('div', null, text), h('code', null, link), h('div', null, copy),
     h('div', { class: 'small muted' }, until ? `Активна до ${until} и действует один раз.` : 'Ссылка действует 72 часа и один раз.'));
+}
+
+// Пароль, который легко продиктовать: без похожих букв и цифр (l/1, o/0).
+function newPassword() {
+  const abc = 'abcdefghjkmnpqrstuvwxyz23456789';
+  const n = crypto.getRandomValues(new Uint32Array(12));
+  return [...n].map(x => abc[x % abc.length]).join('').replace(/(.{4})(?=.)/g, '$1-');
+}
+
+// Поле пароля с кнопкой «Придумать». Пароль виден: администратор его передаёт.
+function passwordField(id, label, required) {
+  const input = h('input', { id, name: 'password', type: 'text', autocomplete: 'off', autocapitalize: 'none', spellcheck: false, minlength: 10, maxlength: 200, required });
+  return [h('label', { for: id }, label),
+    h('div', { class: 'inline' }, input, h('button', { class: 'btn ghost', type: 'button', onclick: () => { input.value = newPassword(); input.focus(); } }, 'Придумать'))];
+}
+
+function credsNote(user, password) {
+  const text = `Вход: ${location.origin}${location.pathname}\nЛогин: ${user.email}\nПароль: ${password}`;
+  const copy = h('button', { class: 'btn ghost', type: 'button', onclick: async () => {
+    try { await navigator.clipboard.writeText(text); copy.textContent = 'Скопировано'; } catch { /* выделить вручную */ }
+  } }, 'Скопировать для ученицы');
+  return h('div', { class: 'ok' }, h('div', null, `Пароль задан: ${user.name}. Передайте ученице:`), h('code', null, text), h('div', null, copy),
+    h('div', { class: 'small muted' }, 'Прежние входы и ссылка для пароля больше не действуют.'));
 }
 
 function userView(box, u, courses, admin, reload) {
@@ -217,6 +243,14 @@ function userView(box, u, courses, admin, reload) {
       }
       catch (e) { note.replaceChildren(h('p', { class: 'error' }, e.message)); }
     } }, u.passwordLink ? 'Показать ссылку для пароля' : 'Создать ссылку для пароля'),
+    h('h3', { class: 'mt' }, u.hasPassword ? 'Сменить пароль' : 'Задать пароль'),
+    form(passwordField('f-upassword', 'Новый пароль (не короче 10 знаков)', true), 'Сохранить пароль', async (d) => {
+      const password = d.get('password');
+      const r = await call(`admin/users/${u.id}/password`, { password });
+      Object.assign(u, r.user);
+      note.replaceChildren(credsNote(r.user, password));
+      note.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }),
     u.id === admin.id ? h('p', { class: 'muted small' }, 'Свою учётную запись удалить из текущего кабинета нельзя.') :
       h('button', { class: 'btn danger', type: 'button', onclick: async () => {
         if (!confirm(`Удалить учётную запись «${u.name}» (${u.email})? Доступ к общему кабинету будет отозван сразу.`)) return;
