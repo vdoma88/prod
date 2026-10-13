@@ -223,3 +223,36 @@ test('доступность сайтов: «не отвечает», «снов
     assert.equal(sent(ADMIN).at(-1).text, `${title}\nРуны — runes.belayarod.ru/`);
   }
 });
+
+test('резервная копия курса: файл админам, а при BACKUP_CHAT_IDS — только туда', async () => {
+  const store = openStore(':memory:');
+  store.addAdmin(ADMIN, '2026-10-01T00:00:00Z');
+  const uploads = [];
+  const upload = async (chatId, file) => { uploads.push({ chatId, ...file }); return { ok: true }; };
+  const bytes = new Uint8Array([1, 2, 3]);
+
+  const toAdmins = createBot({ store, tg: async () => ({ ok: true }), upload });
+  assert.deepEqual(await toAdmins.sendBackup({ name: '../rod 2026-10-13.sql.gz', bytes, caption: 'Связь с Родом' }), { ok: true, sent: 1 });
+  assert.equal(uploads[0].chatId, ADMIN);
+  assert.equal(uploads[0].name, '_rod_2026-10-13.sql.gz', 'без пути и пробелов');
+
+  const toOwner = createBot({ store, tg: async () => ({ ok: true }), upload, backupChatIds: [777] });
+  await toOwner.sendBackup({ name: 'a.json.gz', bytes });
+  assert.deepEqual(uploads.slice(1).map(u => u.chatId), [777], 'админам не уходит');
+
+  assert.deepEqual(await toAdmins.sendBackup({ name: 'a.gz', bytes: new Uint8Array() }), { ok: false, error: 'empty backup' });
+  const nobody = createBot({ store: openStore(':memory:'), tg: async () => ({ ok: true }), upload });
+  assert.deepEqual(await nobody.sendBackup({ name: 'a.gz', bytes }), { ok: false, error: 'no recipients' });
+});
+
+test('sendDocument уходит multipart-формой с именем файла', async () => {
+  let seen;
+  const fetchImpl = async (url, init) => { seen = { url, form: init.body }; return new Response(JSON.stringify({ ok: true }), { status: 200 }); };
+  const send = (await import('../telegram.mjs')).telegramUpload('T', { fetchImpl });
+  const res = await send(5, { name: 'rod.sql.gz', bytes: new Uint8Array([7]), caption: 'копия' });
+  assert.equal(res.ok, true);
+  assert.match(seen.url, /\/botT\/sendDocument$/);
+  assert.equal(seen.form.get('chat_id'), '5');
+  assert.equal(seen.form.get('caption'), 'копия');
+  assert.equal(seen.form.get('document').name, 'rod.sql.gz');
+});

@@ -94,6 +94,22 @@ share_sr_secret "$ENV_FILE" || ok "общий вход: $(grep -q '^SR_INTERNAL_
 log "Уведомления в Telegram"
 share_notify_secret "$ENV_FILE" || ok "уведомления: $(grep -q '^ROD_NOTIFY_SECRET=.' "$ENV_FILE" && echo подключены || echo бот ещё не поставлен или без NOTIFY_SECRET — infra/vps/14-bot.sh)"
 
+log "Резервная копия в Telegram"
+# Каждую ночь: дамп базы и прогресс учениц с текстами шагов — через бота
+# «Сила Рода» (terapy: server/scripts/backup.js, bot/README.md → «Резервные копии»).
+# Бот, обновлённый git pull, но ещё не перезапущенный, отвечает на /backup 404.
+if systemctl is-active --quiet rodbot 2>/dev/null &&
+   [ "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:4310/tg/rod-bot/backup)" = 404 ]; then
+  systemctl restart rodbot && ok "бот перезапущен — принимает резервные копии"
+fi
+cat > /etc/cron.d/rodology-backup <<CRON
+# Резервная копия «Связи с Родом» в Telegram — ставит infra/vps/12-rod.sh
+PATH=/usr/local/bin:/usr/bin:/bin
+40 3 * * * root cd $APP/server && $(command -v node) scripts/backup.js >> /var/log/rodology-backup.log 2>&1
+CRON
+chmod 644 /etc/cron.d/rodology-backup
+ok "каждую ночь в 3:40 по часам сервера; вручную: cd $APP/server && npm run backup; журнал /var/log/rodology-backup.log"
+
 log "PM2"
 cd "$APP/server" || die "нет $APP/server"
 install -d "$APP/logs"
