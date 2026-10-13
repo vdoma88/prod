@@ -44,3 +44,37 @@ export function telegramClient(token, { fetchImpl = fetch, retryDelayMs = 1000 }
     return last;
   };
 }
+
+/**
+ * Отправка файла (sendDocument) — для резервных копий курсов. Отдельно от
+ * call(): тело — multipart, а не JSON. Те же повторы на сетевой обрыв и 5xx.
+ * @returns {(chatId: number, file: { name: string, bytes: Uint8Array, caption?: string }) => Promise<{ ok: boolean, status?: number, description?: string }>}
+ */
+export function telegramUpload(token, { fetchImpl = fetch, retryDelayMs = 1000, timeoutMs = 120000 } = {}) {
+  return async function sendDocument(chatId, { name, bytes, caption }) {
+    if (!token) return { ok: false, description: 'TELEGRAM_BOT_TOKEN не задан' };
+    let last = { ok: false, description: 'нет ответа' };
+    for (let attempt = 1; attempt <= CALL_ATTEMPTS; attempt++) {
+      const form = new FormData();
+      form.set('chat_id', String(chatId));
+      if (caption) form.set('caption', caption);
+      form.set('document', new Blob([bytes]), name);
+      const abort = new AbortController();
+      const timer = setTimeout(() => abort.abort(), timeoutMs);
+      try {
+        const res = await fetchImpl(`https://api.telegram.org/bot${token}/sendDocument`, { method: 'POST', body: form, signal: abort.signal });
+        const body = await res.json().catch(() => ({}));
+        if (res.ok) return { ok: true, status: res.status };
+        last = { ok: false, status: res.status, description: body.description };
+        if (res.status < 500) return last;
+      } catch (error) {
+        last = { ok: false, description: String(error?.message || error) };
+      } finally {
+        clearTimeout(timer);
+      }
+      if (attempt < CALL_ATTEMPTS) await wait(attempt * retryDelayMs);
+    }
+    console.error(`Telegram sendDocument: не удалось после ${CALL_ATTEMPTS} попыток — ${last.description}`);
+    return last;
+  };
+}

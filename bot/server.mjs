@@ -7,7 +7,7 @@
 import { createServer } from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
 import { openStore } from './store.mjs';
-import { telegramClient } from './telegram.mjs';
+import { telegramClient, telegramUpload } from './telegram.mjs';
 import { createBot } from './logic.mjs';
 
 const env = process.env;
@@ -29,7 +29,9 @@ for (const id of (env.ADMIN_CHAT_IDS || '').split(',').map(s => Number(s.trim())
   store.addAdmin(id, new Date().toISOString());
 }
 const tg = telegramClient(env.TELEGRAM_BOT_TOKEN);
-const bot = createBot({ store, tg, adminCode: env.ADMIN_CODE || '' });
+// Резервные копии курсов (POST ${PATH}/backup) — в BACKUP_CHAT_IDS, иначе админам.
+const backupChatIds = (env.BACKUP_CHAT_IDS || '').split(',').map(s => Number(s.trim())).filter(Boolean);
+const bot = createBot({ store, tg, upload: telegramUpload(env.TELEGRAM_BOT_TOKEN), backupChatIds, adminCode: env.ADMIN_CODE || '' });
 
 const equal = (given, expected) => {
   const a = Buffer.from(String(given || ''));
@@ -73,6 +75,39 @@ function notify(req, res) {
   });
 }
 
+// Резервная копия курса: тело — сам файл, имя и подпись — в заголовках
+// (X-Backup-Name, X-Backup-Caption в encodeURIComponent). Тот же секрет и та же
+// проверка адреса, что у /notify. Telegram принимает от бота файлы до 50 МБ.
+const BACKUP_LIMIT = 45 * 1024 * 1024;
+function backup(req, res) {
+  const reply = (status, data) => {
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(data));
+  };
+  if (!NOTIFY_SECRET) return reply(503, { ok: false, error: 'NOTIFY_SECRET не задан' });
+  if (!LOOPBACK.has(req.socket.remoteAddress) || !equal(req.headers['x-notify-secret'], NOTIFY_SECRET)) {
+    return reply(401, { ok: false });
+  }
+  const chunks = [];
+  let size = 0;
+  req.on('data', chunk => {
+    size += chunk.length;
+    if (size > BACKUP_LIMIT) { reply(413, { ok: false, error: 'больше 45 МБ' }); req.destroy(); return; }
+    chunks.push(chunk);
+  });
+  req.on('end', async () => {
+    if (size > BACKUP_LIMIT) return;
+    const decode = (v) => { try { return decodeURIComponent(String(v || '')); } catch { return ''; } };
+    try {
+      const result = await bot.sendBackup({ name: decode(req.headers['x-backup-name']), caption: decode(req.headers['x-backup-caption']), bytes: Buffer.concat(chunks) });
+      reply(result.ok ? 200 : 400, result);
+    } catch (error) {
+      console.error('Резервная копия:', error);
+      reply(500, { ok: false });
+    }
+  });
+}
+
 const server = createServer((req, res) => {
   const url = req.url.split('?')[0];
   if (req.method === 'GET' && url === `${PATH}/health`) {
@@ -80,6 +115,7 @@ const server = createServer((req, res) => {
     return res.end(JSON.stringify({ ok: true, ...store.stats() }));
   }
   if (req.method === 'POST' && url === `${PATH}/notify`) return notify(req, res);
+  if (req.method === 'POST' && url === `${PATH}/backup`) return backup(req, res);
   if (req.method !== 'POST' || url !== PATH) {
     res.writeHead(404);
     return res.end();

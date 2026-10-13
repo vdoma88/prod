@@ -31,7 +31,7 @@ const routeKeyboard = r => ({
 });
 const displayName = from => [from?.first_name, from?.last_name].filter(Boolean).join(' ').trim() || 'Без имени';
 
-export function createBot({ store, tg, now = () => new Date(), adminCode = '' }) {
+export function createBot({ store, tg, upload = null, backupChatIds = [], now = () => new Date(), adminCode = '' }) {
   const send = (chatId, text, replyMarkup) =>
     tg('sendMessage', { chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true, ...(replyMarkup ? { reply_markup: replyMarkup } : {}) });
 
@@ -230,5 +230,26 @@ export function createBot({ store, tg, now = () => new Date(), adminCode = '' })
     return sent;
   }
 
-  return { handleUpdate, tick, notifyCourse, notifySite };
+  /**
+   * Резервная копия курса (файл) → в BACKUP_CHAT_IDS, а если их нет — всем
+   * привязанным админам. Имя файла — только латиница, цифры, точка, дефис:
+   * его видит получатель, и в нём не должно оказаться пути или разметки.
+   * Возвращает { ok, sent } или { ok: false, error }.
+   */
+  async function sendBackup({ name, bytes, caption }) {
+    if (!upload) return { ok: false, error: 'upload not configured' };
+    const safe = String(name || '').replace(/[^\w.-]+/g, '_').replace(/^\.+/, '').slice(0, 120);
+    if (!safe || !bytes?.length) return { ok: false, error: 'empty backup' };
+    const to = backupChatIds.length ? backupChatIds : store.admins();
+    if (!to.length) return { ok: false, error: 'no recipients' };
+    const text = String(caption || '').slice(0, 1000);
+    let sent = 0;
+    for (const chatId of to) {
+      const res = await upload(chatId, { name: safe, bytes, caption: text });
+      if (res.ok) sent++;
+    }
+    return sent ? { ok: true, sent } : { ok: false, error: 'telegram refused' };
+  }
+
+  return { handleUpdate, tick, notifyCourse, notifySite, sendBackup };
 }
