@@ -110,8 +110,14 @@ nginx_site rodology "$APP/deploy/nginx.rodology.conf" "$HOST_NAME"
 wait_http "https://$HOST_NAME/api/health" 10
 
 log "Готово: https://$HOST_NAME"
+# При общем входе свой вход курса выключен (terapy/server/src/lib/sr.js):
+# подсказка про admin из /root/rodology-admin.txt только сбивала с толку.
+if grep -q '^SR_INTERNAL_SECRET=.' "$ENV_FILE"; then
+  echo "  Вход — через общий кабинет https://$DOMAIN/account/: куратор и ученицы входят там, учениц заводят там же."
+else
+  echo "  Вход специалиста: admin и пароль из /root/rodology-admin.txt (система попросит сменить)."
+fi
 cat <<NEXT
-  Вход специалиста: admin и пароль из /root/rodology-admin.txt (система попросит сменить).
   Журнал: pm2 logs $PM2_NAME
   Почта: впишите RESEND_API_KEY в $ENV_FILE и pm2 restart $PM2_NAME --update-env
 NEXT
