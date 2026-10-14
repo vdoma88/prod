@@ -12,7 +12,8 @@
 # спокойное время. terapy переносит 12-rod.sh при следующем запуске; когда в
 # PM2 ничего не осталось, его демон останавливается.
 #
-# Повторный запуск ничего не меняет. Дальше школа обновляется как обычно —
+# Повторный запуск ничего не меняет, а если юнит в репозитории изменился —
+# применяет его и перезапускает школу. Дальше школа обновляется как обычно —
 # deploy/update.sh в flame-app сам перезапускает службу.
 # shellcheck source-path=SCRIPTDIR source=lib.sh
 cd "$(dirname "$0")" && . ./lib.sh
@@ -33,12 +34,23 @@ ok "школа собрана, .env.local на месте"
 log "Служба systemd"
 install_unit "$SCRIPT_DIR/systemd/$UNIT.service"
 if systemctl is-active -q "$UNIT" && ! pm2_has "$UNIT"; then
-  ok "школа уже служба systemd $UNIT — ничего не меняю"
+  if [ "$UNIT_CHANGED" = 1 ]; then
+    systemctl restart "$UNIT"
+    ok "юнит $UNIT обновлён — школа перезапущена"
+  else
+    ok "школа уже служба systemd $UNIT — ничего не меняю"
+  fi
 else
   flame_back_to_pm2() { (cd "$APP" && pm2 start "$NEXT_BIN" --name "$UNIT" -- start >/dev/null); }
   pm2_to_systemd "$UNIT" "$UNIT" "http://127.0.0.1:$PORT/" flame_back_to_pm2
 fi
 wait_http "http://127.0.0.1:$PORT/"
+# Школа слушает только 127.0.0.1. nginx с proxy_pass на localhost:3000 сперва
+# стучится на ::1 и пишет в журнал ошибку на каждый запрос — подсказываем.
+if grep -rqs 'proxy_pass[[:space:]]*http://localhost:3000' /etc/nginx/sites-enabled/; then
+  warn "в nginx proxy_pass на localhost:3000 — замените на 127.0.0.1:3000: grep -rn localhost:3000 /etc/nginx/sites-enabled/"
+fi
+wait_http "https://plamya.$DOMAIN/" 10
 pm2_retire
 
 log "Готово"

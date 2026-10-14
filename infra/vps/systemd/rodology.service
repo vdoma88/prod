@@ -12,6 +12,9 @@ Type=simple
 User=root
 WorkingDirectory=/var/www/rodology/server
 Environment=NODE_ENV=production
+# Только localhost: снаружи — через nginx (terapy читает HOST с октября 2026;
+# более старая версия его не знает и слушает все адреса, как раньше).
+Environment=HOST=127.0.0.1
 # server/.env подхватывает сам сервер (dotenv из рабочей папки).
 ExecStart=/usr/bin/node /var/www/rodology/server/src/index.js
 Restart=always

@@ -110,8 +110,15 @@ wait_http() {
 }
 
 # install_unit файл — положить юнит в /etc/systemd/system и включить автозапуск.
+# UNIT_CHANGED=1, если юнит новый или изменился (службу надо перезапустить).
+# shellcheck disable=SC2034  # читают скрипты, подключающие lib.sh
+UNIT_CHANGED=0
 install_unit() {
-  install -m 644 "$1" "/etc/systemd/system/$(basename "$1")"
+  local dest
+  dest="/etc/systemd/system/$(basename "$1")"
+  # shellcheck disable=SC2034
+  if cmp -s "$1" "$dest"; then UNIT_CHANGED=0; else UNIT_CHANGED=1; fi
+  install -m 644 "$1" "$dest"
   systemctl daemon-reload
   systemctl enable "$(basename "$1")" >/dev/null 2>&1
 }
