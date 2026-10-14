@@ -13,7 +13,9 @@ User=root
 WorkingDirectory=/var/www/flame-app
 Environment=NODE_ENV=production
 # Next читает .env.local из рабочей папки сам; порт по умолчанию — 3000.
-ExecStart=/usr/bin/node /var/www/flame-app/node_modules/next/dist/bin/next start
+# -H 127.0.0.1: снаружи школа доступна только через nginx (HTTPS, заголовки,
+# лимиты), а не по http://IP:3000 — как руны, Таро, бот и общий вход.
+ExecStart=/usr/bin/node /var/www/flame-app/node_modules/next/dist/bin/next start -H 127.0.0.1
 Restart=always
 RestartSec=3
 # Обычно ~200 МБ; выше 700 МБ — утечка: служба перезапустится, а не съест
