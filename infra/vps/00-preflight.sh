@@ -4,7 +4,7 @@
 #   sudo bash /var/www/flame-app/deploy/sila-roda.sh preflight
 #   (или напрямую: sudo bash infra/vps/00-preflight.sh)
 #
-# Показывает: память и swap, диск, Node.js, nginx/certbot/pm2/PostgreSQL,
+# Показывает: память и swap, диск, Node.js, nginx/certbot/PostgreSQL,
 # занятые порты, DNS всех адресов и что уже установлено. В конце — что
 # делать дальше. Запускать можно сколько угодно раз.
 # shellcheck source-path=SCRIPTDIR source=lib.sh
@@ -41,7 +41,6 @@ if node_ok; then ok "Node.js $(node -v)"; else problem "Node.js $(node -v 2>/dev
 for bin in nginx certbot git curl; do
   if command -v "$bin" >/dev/null 2>&1; then ok "$bin"; else problem "нет $bin (apt-get install -y $bin)"; fi
 done
-if command -v pm2 >/dev/null 2>&1; then ok "pm2 $(pm2 -v 2>/dev/null)"; else problem "нет pm2 (нужен terapy): npm i -g pm2"; fi
 if systemctl is-active --quiet postgresql; then ok "PostgreSQL работает"; else problem "PostgreSQL не запущен (нужен terapy)"; fi
 if dpkg -s python3-certbot-nginx >/dev/null 2>&1; then ok "плагин certbot для nginx"; else problem "нет python3-certbot-nginx"; fi
 
@@ -64,7 +63,13 @@ if [ -d /opt/runes/.git ]; then ok "Руны: /opt/runes ($(systemctl is-active 
 if [ -d /opt/polkas/app/.git ]; then ok "Таро: /opt/polkas/app ($(systemctl is-active polkas 2>/dev/null || true))"; else printf '  Таро: нет\n'; fi
 if [ -d /var/www/rodology/.git ]; then ok "terapy: /var/www/rodology"; else printf '  terapy: нет\n'; fi
 if [ -d /var/www/flame-app ]; then ok "школа: /var/www/flame-app"; else warn "школа не найдена в /var/www/flame-app"; fi
-command -v pm2 >/dev/null 2>&1 && pm2 jlist 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{for(const p of JSON.parse(s))console.log(`  pm2: ${p.name} — ${p.pm2_env.status}`)}catch{}})' 2>/dev/null || true
+for unit in flame-school rodology runes polkas rodbot sr-accounts; do
+  if [ -f "/etc/systemd/system/$unit.service" ]; then printf '  служба %s: %s\n' "$unit" "$(systemctl is-active "$unit" 2>/dev/null || true)"; fi
+done
+# PM2 больше не нужен; если его демон жив — что-то ещё не перенесено (16-systemd.sh, 12-rod.sh)
+if pgrep -f 'PM2 v.*God Daemon' >/dev/null 2>&1; then
+  pm2 jlist 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{for(const p of JSON.parse(s))console.log(`  ещё в PM2: ${p.name} — ${p.pm2_env.status}`)}catch{}})' 2>/dev/null || true
+fi
 for f in /etc/nginx/sites-enabled/*; do [ -e "$f" ] && printf '  nginx: %s\n' "$(basename "$f")"; done
 
 log "Итог"

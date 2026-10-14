@@ -91,15 +91,94 @@ require_port_free() {
   die "Порт $port занят процессом «$owner»${exe:+ ($exe)}. Школа «Язык Пламени» занимает 3000, остальным нужны свои порты (infra/DOMAINS.md)."
 }
 
-# wait_http url [секунд] — ждёт ответа 2xx/3xx от локального процесса.
-wait_http() {
-  local url="$1" tries="${2:-30}" code
+# http_up url [секунд] — ждёт ответа 2xx/3xx; 0 — дождался, 1 — нет. Код в HTTP_CODE.
+HTTP_CODE=""
+http_up() {
+  local url="$1" tries="${2:-30}"
   for _ in $(seq "$tries"); do
-    code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "$url" || true)"
-    case "$code" in 2??|3??) ok "$url отвечает ($code)"; return 0 ;; esac
+    HTTP_CODE="$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "$url" || true)"
+    case "$HTTP_CODE" in 2??|3??) return 0 ;; esac
     sleep 1
   done
-  die "$url не отвечает (последний код: ${code:-нет}). Смотрите журнал службы."
+  return 1
+}
+
+# wait_http url [секунд] — ждёт ответа 2xx/3xx от локального процесса.
+wait_http() {
+  if http_up "$1" "${2:-30}"; then ok "$1 отвечает ($HTTP_CODE)"; return 0; fi
+  die "$1 не отвечает (последний код: ${HTTP_CODE:-нет}). Смотрите журнал службы."
+}
+
+# install_unit файл — положить юнит в /etc/systemd/system и включить автозапуск.
+install_unit() {
+  install -m 644 "$1" "/etc/systemd/system/$(basename "$1")"
+  systemctl daemon-reload
+  systemctl enable "$(basename "$1")" >/dev/null 2>&1
+}
+
+# pm2_has имя — процесс есть в PM2. Любая команда pm2 поднимает его демон,
+# поэтому сперва проверяем, что демон уже работает: после переноса школы и
+# terapy в systemd его быть не должно.
+pm2_has() {
+  command -v pm2 >/dev/null 2>&1 && pgrep -f 'PM2 v.*God Daemon' >/dev/null 2>&1 &&
+    pm2 describe "$1" >/dev/null 2>&1
+}
+
+# pm2_to_systemd имя_pm2 служба url функция_отката
+#
+# Школа и terapy раньше жили в PM2; теперь, как руны, Таро, бот и общий вход, —
+# службы systemd. Если процесс ещё в PM2: убрать его оттуда, запустить службу
+# и дождаться ответа. Не ответила за минуту — служба выключается, процесс
+# возвращается в PM2 (функция_отката), скрипт останавливается. Процесса в PM2
+# нет — просто перезапуск службы (обычное обновление).
+pm2_to_systemd() {
+  local name="$1" unit="$2" url="$3" rollback="$4"
+  if pm2_has "$name"; then
+    log "Перенос $name из PM2 в systemd ($unit)"
+    pm2 delete "$name" >/dev/null
+    pm2 save --force >/dev/null 2>&1 || true
+    systemctl restart "$unit"
+    if http_up "$url" 60; then
+      ok "$name теперь служба $unit ($url отвечает)"
+    else
+      warn "$unit не ответила за минуту (код ${HTTP_CODE:-нет}) — возвращаю PM2"
+      journalctl -u "$unit" -n 30 --no-pager >&2 || true
+      systemctl disable --now "$unit" >/dev/null 2>&1 || true
+      "$rollback"
+      pm2 save >/dev/null 2>&1 || true
+      die "$name оставлен в PM2, как было. Журнал службы — выше."
+    fi
+  else
+    systemctl restart "$unit"
+  fi
+}
+
+# pm2_retire — когда в PM2 не осталось процессов, остановить его демон
+# (~80 МБ) и убрать из автозапуска. Сам пакет pm2 не удаляется.
+pm2_retire() {
+  command -v pm2 >/dev/null 2>&1 || return 0
+  if ! pgrep -f 'PM2 v.*God Daemon' >/dev/null 2>&1; then
+    systemctl disable pm2-root.service >/dev/null 2>&1 || true
+    return 0
+  fi
+  local left
+  left="$(pm2 jlist 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(JSON.parse(s).length)}catch{console.log("?")}})')"
+  if [ "$left" != 0 ]; then
+    ok "в PM2 ещё есть процессы ($left) — PM2 пока остаётся: pm2 list"
+    return 0
+  fi
+  pm2 kill >/dev/null 2>&1 || true
+  systemctl disable pm2-root.service >/dev/null 2>&1 || true
+  ok "PM2 больше не нужен: демон остановлен и убран из автозапуска"
+}
+
+# restart_rod — перезапуск «Связи с Родом», где бы она ни жила (systemd или PM2).
+restart_rod() {
+  if [ -f /etc/systemd/system/rodology.service ]; then
+    systemctl restart rodology
+  else
+    (cd /var/www/rodology/server && pm2 restart rodology-platform --update-env >/dev/null)
+  fi
 }
 
 # github_https_url репозиторий — адрес с тем же доступом, что у школы.

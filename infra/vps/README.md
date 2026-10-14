@@ -8,12 +8,13 @@
 |---|---|---|---|
 | `preflight` | `00-preflight.sh` | Проверяет память, диск, программы, порты, DNS. **Ничего не меняет** | да |
 | `swap` | `01-swap.sh` | Swap 2 ГБ, `vm.swappiness=10`; отключает лишние службы (fwupd, ModemManager, udisks2) | да |
-| `packages` | `02-packages.sh` | Недостающие nginx, certbot, PostgreSQL, Node.js 22, PM2 | да |
+| `packages` | `02-packages.sh` | Недостающие nginx, certbot, PostgreSQL, Node.js 22 | да |
 | `runes` | `10-runes.sh` | Руны → `runes.belayarod.ru`, порт 4173, служба `runes` | да — это и обновление |
 | `taro` | `11-taro.sh` | Таро → `taro.belayarod.ru`, **порт 3100**, служба `polkas` | да — это и обновление |
-| `rod` | `12-rod.sh` | terapy → `rod.belayarod.ru`, порт 5000, PM2 `rodology-platform` | да — это и обновление |
+| `rod` | `12-rod.sh` | terapy → `rod.belayarod.ru`, порт 5000, служба `rodology` (из PM2 переносит сама) | да — это и обновление |
 | `plamya-cert` | `13-plamya-cert.sh` | Сертификат для `plamya.belayarod.ru` заранее; адрес пока ведёт на школу | да |
 | — | `14-bot.sh` | Telegram-бот лендинга → `belayarod.ru/tg/rod-bot`, порт 4310, служба `rodbot` (`bot/README.md`). Запуск: `sudo bash /var/www/prod/infra/vps/14-bot.sh` | да — это и обновление |
+| `systemd` | `16-systemd.sh` | Школа из PM2 → служба systemd `flame-school` (порт 3000); при неудаче возвращает в PM2. Запуск: `sudo bash /var/www/flame-app/deploy/sila-roda.sh systemd` | да |
 | — | `15-accounts.sh` | Общий вход для курсов → `belayarod.ru/account/`, порт 4320, служба `sr-accounts` (`accounts/README.md`). Первый администратор: `sudo ADMIN_EMAIL=почта ADMIN_NAME="Имя" bash /var/www/prod/infra/vps/15-accounts.sh` | да — это и обновление |
 
 Все скрипты запускаются от root и останавливаются при первой ошибке с объяснением.
@@ -59,8 +60,8 @@ IP сервера печатает шаг `preflight`. Сейчас `belayarod.r
 ## 2. Память
 
 С октября 2026 у VPS 2 ГБ ОЗУ (было 1 ГБ). На нём работают шесть приложений
-на Node.js — школа (Next.js, PM2), terapy (PM2), руны, Таро, бот, общий вход
-(systemd) — плюс PostgreSQL и nginx. Замер 14.10.2026: занято ~0,8 ГБ,
+на Node.js — школа (Next.js), terapy, руны, Таро, бот, общий вход — все
+службы systemd — плюс PostgreSQL и nginx. Замер 14.10.2026: занято ~0,8 ГБ,
 доступно ~1,1 ГБ. Больше всех ест школа (~190 МБ), затем terapy (~120 МБ);
 бот, вход, руны и Таро — по 15–65 МБ каждый.
 
@@ -68,16 +69,17 @@ IP сервера печатает шаг `preflight`. Сейчас `belayarod.r
    Swap нужен и при 2 ГБ: сборки Next.js и Vite дают пики памяти. Тот же шаг
    отключает службы образа Ubuntu, которые VPS не нужны (fwupd, ModemManager,
    udisks2, ~50 МБ).
-2. **Школа — без обёртки npm.** В PM2 она запускается напрямую
-   (`node_modules/next/dist/bin/next start`), а не `pm2 start npm -- start`:
-   npm висел отдельным процессом на 40–75 МБ. Переключение старой установки —
-   `deploy/pm2-direct.sh` в flame-app.
+2. **Без PM2.** Школа и terapy — службы systemd `flame-school` и `rodology`
+   (юниты в `infra/vps/systemd/`), как остальные приложения. Школа запускается
+   напрямую через Next (раньше — `pm2 start npm -- start`: npm висел отдельным
+   процессом на 40–75 МБ), а без приложений в PM2 не нужен и его демон (~80 МБ).
+   Перенос со старой установки: школа — шаг `systemd` (`16-systemd.sh`),
+   terapy — `12-rod.sh`; при неудаче оба возвращают процесс в PM2.
 3. **Бот и общий вход — отдельные процессы намеренно.** Слияние сэкономило бы
    ~30 МБ, но у них разные системные пользователи, каталоги данных и секреты
    (токен Telegram и пароли всех курсов), и падение бота не должно ронять вход.
 4. Если памяти снова станет мало — тариф 4 ГБ (панель Beget → VPS → изменить
-   конфигурацию); следующий запас — перевести школу и terapy с PM2 на systemd
-   (демон PM2 ~80 МБ).
+   конфигурацию).
 
 ## 3. Программы
 
@@ -86,7 +88,7 @@ sudo bash /var/www/flame-app/deploy/sila-roda.sh packages
 ```
 
 Если Node старше 22.13, скрипт спросит разрешение обновить его и перезапустить
-PM2. Школа при этом будет недоступна несколько секунд. Лучше делать это вечером.
+приложения. Школа при этом будет недоступна несколько секунд. Лучше делать это вечером.
 
 ## 4. Приложения и сертификаты
 
@@ -142,6 +144,6 @@ sudo bash /var/www/flame-app/deploy/sila-roda.sh plamya-cert
 |---|---|
 | Скрипт остановился на DNS | `getent hosts rod.belayarod.ru` — запись ещё не разошлась |
 | Порт занят | `ss -ltnp 'sport = :3100'` — кто его держит |
-| 502 на сайте | `journalctl -u runes -n 50`, `journalctl -u polkas -n 50`, `pm2 logs rodology-platform` |
+| 502 на сайте | `journalctl -u runes -n 50`, `journalctl -u polkas -n 50`, `journalctl -u rodology -n 50` |
 | certbot не выпускает | DNS указывает не сюда; `nginx -t`; лимит Let's Encrypt — 5 попыток в час на имя |
-| Школа перестала открываться | `pm2 list`, `pm2 logs flame-school` — после смены Node |
+| Школа перестала открываться | `systemctl status flame-school`, `journalctl -u flame-school -n 50` |

@@ -1,0 +1,27 @@
+# Школа «Язык Пламени» (vdoma88/flame-app) → plamya.belayarod.ru, порт 3000.
+# Ставит infra/vps/16-systemd.sh; раньше процесс жил в PM2 под тем же именем.
+[Unit]
+Description=Язык Пламени — школа (Next.js, порт 3000)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+# root — как было в PM2: файлы школы (.next, public/uploads, бэкапы) принадлежат
+# root. Отдельный пользователь — следующий шаг, с переносом прав на файлы.
+User=root
+WorkingDirectory=/var/www/flame-app
+Environment=NODE_ENV=production
+# Next читает .env.local из рабочей папки сам; порт по умолчанию — 3000.
+ExecStart=/usr/bin/node /var/www/flame-app/node_modules/next/dist/bin/next start
+Restart=always
+RestartSec=3
+# Обычно ~200 МБ; выше 700 МБ — утечка: служба перезапустится, а не съест
+# память соседей (как max_memory_restart у PM2).
+MemoryMax=700M
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

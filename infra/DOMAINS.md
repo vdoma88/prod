@@ -6,8 +6,8 @@
 | Адрес | Проект | Репозиторий | Процесс | Порт | Nginx-конфиг |
 |---|---|---|---|---|---|
 | `belayarod.ru` | Лендинг «Сила Рода» + `/brand/` | `vdoma88/prod` | — (статика) | — | `infra/nginx/belayarod.ru.conf` |
-| `plamya.belayarod.ru` | Школа «Язык Пламени» | `vdoma88/flame-app` | PM2 `flame-school` | 3000 | свой, из flame-app (сменить `server_name`) |
-| `rod.belayarod.ru` | «Связь с Родом» / Родовая карта пути | `vdoma88/terapy` | PM2 | 5000 | `deploy/nginx.rodology.conf` |
+| `plamya.belayarod.ru` | Школа «Язык Пламени» | `vdoma88/flame-app` | служба `flame-school` | 3000 | свой, из flame-app (сменить `server_name`) |
+| `rod.belayarod.ru` | «Связь с Родом» / Родовая карта пути | `vdoma88/terapy` | служба `rodology` | 5000 | `deploy/nginx.rodology.conf` |
 | `taro.belayarod.ru` | Карты Таро | `vdoma88/tarot` | systemd `polkas` | **3100** | `server/deploy/nginx.conf` |
 | `runes.belayarod.ru` | Руны | `vdoma88/runes-belaya` | systemd `runes` | 4173 | `deploy/nginx.example.conf` |
 | `belayarod.ru/tg/rod-bot` | Telegram-бот лендинга (вебхук) | `vdoma88/prod`, `bot/` | systemd `rodbot` | 4310 | `infra/nginx/belayarod.ru.conf` |

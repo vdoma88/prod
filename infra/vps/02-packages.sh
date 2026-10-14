@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# Программы для всех проектов сервера: nginx, certbot, PostgreSQL, Node.js 22, PM2.
+# Программы для всех проектов сервера: nginx, certbot, PostgreSQL, Node.js 22.
 #
 #   sudo bash infra/vps/02-packages.sh
 #
 # Ставит только то, чего нет; уже установленное не обновляет (apt --no-upgrade).
 # Исключение — Node.js: Таро и руны работают на встроенном node:sqlite, ему
 # нужен Node 22.13+. Школа (Next.js 16) и terapy на Node 22 тоже работают.
-# Обновление Node общее: процессы PM2 (школа) перезапускаются на новой
-# версии — несколько секунд недоступности, поэтому скрипт спрашивает.
+# Обновление Node общее: все приложения (службы systemd) перезапускаются на
+# новой версии — несколько секунд недоступности, поэтому скрипт спрашивает.
+# PM2 больше не ставится: школа и terapy — службы systemd (16-systemd.sh, 12-rod.sh).
 # shellcheck source-path=SCRIPTDIR source=lib.sh
 cd "$(dirname "$0")" && . ./lib.sh
 need_root
@@ -33,24 +34,19 @@ if node_ok; then
   ok "$(node -v) — обновлять не нужно"
 else
   warn "сейчас $(node -v 2>/dev/null || echo 'Node не установлен'), нужен 22.13+"
-  confirm "Поставить Node.js 22 из NodeSource и перезапустить процессы PM2 (школа будет недоступна несколько секунд)?" ||
+  confirm "Поставить Node.js 22 из NodeSource и перезапустить приложения (школа будет недоступна несколько секунд)?" ||
     die "отменено"
   curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
   apt-get install -y nodejs
   node_ok || die "после установки node -v = $(node -v) — ожидался 22.13+"
   ok "Node.js $(node -v), $(command -v node)"
-  if command -v pm2 >/dev/null 2>&1; then
-    pm2 update
-    pm2 save
-    ok "процессы PM2 перезапущены на новом Node. Проверьте школу: https://$DOMAIN"
+  for unit in flame-school rodology runes polkas rodbot sr-accounts; do
+    if systemctl is-active -q "$unit" 2>/dev/null; then systemctl restart "$unit"; ok "$unit перезапущена"; fi
+  done
+  # Если что-то ещё не перенесено из PM2
+  if pgrep -f 'PM2 v.*God Daemon' >/dev/null 2>&1; then
+    pm2 update && pm2 save
+    ok "процессы PM2 перезапущены на новом Node"
   fi
+  ok "проверьте школу: https://plamya.$DOMAIN"
 fi
-
-log "PM2"
-if command -v pm2 >/dev/null 2>&1; then
-  ok "pm2 $(pm2 -v)"
-else
-  npm install -g pm2
-  ok "pm2 установлен"
-fi
-pm2 list
