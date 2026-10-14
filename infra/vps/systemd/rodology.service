@@ -1,0 +1,26 @@
+# «Связь с Родом» (vdoma88/terapy) → rod.belayarod.ru, порт 5000.
+# Ставит и обновляет infra/vps/12-rod.sh; раньше процесс жил в PM2 как
+# rodology-platform (server/ecosystem.config.js).
+[Unit]
+Description=Связь с Родом — terapy (Express, порт 5000)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+# root — как было в PM2: вложения учениц (server/storage) принадлежат root.
+User=root
+WorkingDirectory=/var/www/rodology/server
+Environment=NODE_ENV=production
+# server/.env подхватывает сам сервер (dotenv из рабочей папки).
+ExecStart=/usr/bin/node /var/www/rodology/server/src/index.js
+Restart=always
+RestartSec=3
+# В PM2 был max_memory_restart 400M; обычно ~120 МБ.
+MemoryMax=450M
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

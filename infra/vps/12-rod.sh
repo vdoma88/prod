@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
-# «Связь с Родом» (terapy) → https://rod.belayarod.ru  (vdoma88/terapy, порт 5000, PM2 «rodology-platform»)
+# «Связь с Родом» (terapy) → https://rod.belayarod.ru  (vdoma88/terapy, порт 5000, служба systemd «rodology»)
 #
 #   sudo bash infra/vps/12-rod.sh
 #
 # Первый запуск: база и пользователь PostgreSQL со случайным паролем,
 # server/.env с новыми секретами, схема и начальные данные, сборка клиента,
-# PM2, nginx, сертификат. Пароль первого специалиста (admin) печатается
+# служба systemd, nginx, сертификат. Пароль первого специалиста (admin) печатается
 # один раз — скрипт сохраняет его в /root/rodology-admin.txt.
 # Повторный: git pull → схема без потери данных → сборка → перезапуск.
+# Если terapy ещё в PM2 (rodology-platform) — переносит её в systemd, при
+# неудаче возвращает в PM2.
 # Как в terapy/deploy/DEPLOY_BEGET.md, без удаления nginx «default» и без ufw.
 # shellcheck source-path=SCRIPTDIR source=lib.sh
 cd "$(dirname "$0")" && . ./lib.sh
@@ -16,7 +18,8 @@ need_root
 HOST_NAME="rod.$DOMAIN"
 APP=/var/www/rodology
 PORT=5000
-PM2_NAME=rodology-platform
+PM2_NAME=rodology-platform  # прежнее имя в PM2 — для переноса и отката
+UNIT=rodology
 DB_NAME=rodology
 DB_USER=rodology_user
 
@@ -24,7 +27,6 @@ log "Проверки"
 require_node
 require_dns "$HOST_NAME"
 require_port_free "$PORT" node
-command -v pm2 >/dev/null 2>&1 || { npm install -g pm2; ok "pm2 установлен"; }
 systemctl is-active --quiet postgresql || die "PostgreSQL не запущен: systemctl start postgresql"
 
 log "Код"
@@ -110,16 +112,13 @@ CRON
 chmod 644 /etc/cron.d/rodology-backup
 ok "каждую ночь в 3:40 по часам сервера; вручную: cd $APP/server && npm run backup; журнал /var/log/rodology-backup.log"
 
-log "PM2"
+log "Служба systemd"
 cd "$APP/server" || die "нет $APP/server"
-install -d "$APP/logs"
-if pm2 describe "$PM2_NAME" >/dev/null 2>&1; then
-  pm2 restart "$PM2_NAME" --update-env
-else
-  pm2 start ecosystem.config.js
-fi
-pm2 save
+install_unit "$SCRIPT_DIR/systemd/$UNIT.service"
+rod_back_to_pm2() { (cd "$APP/server" && install -d "$APP/logs" && pm2 start ecosystem.config.js >/dev/null); }
+pm2_to_systemd "$PM2_NAME" "$UNIT" "http://127.0.0.1:$PORT/api/health" rod_back_to_pm2
 wait_http "http://127.0.0.1:$PORT/api/health"
+pm2_retire
 
 log "nginx и HTTPS"
 nginx_site rodology "$APP/deploy/nginx.rodology.conf" "$HOST_NAME"
@@ -134,6 +133,6 @@ else
   echo "  Вход специалиста: admin и пароль из /root/rodology-admin.txt (система попросит сменить)."
 fi
 cat <<NEXT
-  Журнал: pm2 logs $PM2_NAME
-  Почта: впишите RESEND_API_KEY в $ENV_FILE и pm2 restart $PM2_NAME --update-env
+  Журнал: journalctl -u $UNIT -n 100 --no-pager
+  Почта: впишите RESEND_API_KEY в $ENV_FILE и systemctl restart $UNIT
 NEXT
