@@ -19,6 +19,7 @@
     </a>
     <nav class="desktop-nav portal-desktop-nav" aria-label="Основная навигация">
       <a href="#about">Обо мне</a>
+      <a href="#start">С чего начать</a>
       <a href="#services">Практики</a>
       <a href="courses.html">Курсы</a>
       <span class="portal-nav-separator" aria-hidden="true"></span>
@@ -31,7 +32,7 @@
     <button class="menu-btn" aria-label="Открыть меню" aria-expanded="false"><span></span><span></span></button>
   </div>
   <nav class="mobile-nav" hidden>
-    <a href="#about">Обо мне</a><a href="#services">Практики</a><a href="courses.html">Курсы</a><a class="nav-login" href="https://belayarod.ru/account/">Войти в кабинет</a>
+    <a href="#about">Обо мне</a><a href="#start">С чего начать</a><a href="#services">Практики</a><a href="courses.html">Курсы</a><a class="nav-login" href="https://belayarod.ru/account/">Войти в кабинет</a>
   </nav>
 </header>
 <main class="archaic-layout archaic-home portal-home">
@@ -53,9 +54,9 @@
     <h1>Сила<br>Рода</h1>
     <div class="portal-intro-rule" aria-hidden="true"></div>
     <p class="portal-intro-subtitle">Пространство<br>Екатерины Белой</p>
-    <p class="portal-intro-copy">Авторские практики, личное сопровождение и онлайн-курсы.<br>Работаю с родом, Таро и рунами,<br>огнём, воском и телом.</p>
-    <a class="portal-intro-cta" href="#services">Подобрать формат <span aria-hidden="true">→</span></a>
-    <p class="portal-intro-note">Личные встречи · Камерные группы</p>
+    <p class="portal-intro-copy">Онлайн и вживую. <br>Работаю с родом, Таро и рунами, <br>огнём, воском и телом.</p>
+    <a class="portal-intro-cta" href="#start">Подобрать формат <span aria-hidden="true">→</span></a>
+    <button class="portal-intro-note portal-intro-consult" type="button" data-open-request data-service="Индивидуальные консультации">Начать с консультации →</button>
   </aside>
 
   <div class="portal-choices">
@@ -123,6 +124,95 @@
   </div>
 </section>
 
+<section class="section start-section" id="start"><div class="container">
+ <div class="section-head reveal"><div><div class="section-kicker">С ЧЕГО НАЧАТЬ</div><h2>Подберём формат за минуту</h2></div><p>Не нужно разбираться в названиях практик. Два коротких вопроса — и станет понятно, с чего начать.</p></div>
+ <div class="quiz reveal" data-quiz>
+  <ol class="quiz-progress" aria-hidden="true"><li class="is-on"></li><li></li><li></li></ol>
+  <div class="quiz-step" data-quiz-step="1">
+   <p class="quiz-count">ШАГ 1 ИЗ 3</p>
+   <h3 class="quiz-question" tabindex="-1">Что сейчас ближе всего?</h3>
+   <div class="quiz-options">
+    <button class="quiz-option" type="button" data-quiz-answer="rod"><b>Хожу по кругу в сценариях семьи</b><span>Одни и те же истории повторяются — в отношениях, деньгах, решениях.</span></button>
+    <button class="quiz-option" type="button" data-quiz-answer="support"><b>Нужна опора в сложный период</b><span>Хочется ясности и спокойствия, а не ещё одного совета.</span></button>
+    <button class="quiz-option" type="button" data-quiz-answer="study"><b>Хочу освоить инструмент для себя</b><span>Таро, руны или свечи — с практикой и куратором.</span></button>
+    <button class="quiz-option" type="button" data-quiz-answer="body"><b>Нужна перезагрузка через тело и огонь</b><span>Выдохнуть, согреться, вернуться в себя.</span></button>
+   </div>
+  </div>
+  <div class="quiz-step" data-quiz-step="2" hidden></div>
+  <div class="quiz-step" data-quiz-step="3" hidden></div>
+ </div>
+ <p class="quiz-alt reveal">Удобнее в переписке? <a href="https://t.me/BelrodConBOT?start=quiz" target="_blank" rel="noopener">Подобрать формат в боте @BelrodConBOT →</a></p>
+</div></section>
+
+<section class="section" id="services"><div class="container">
+ <div class="section-head reveal"><div><div class="section-kicker">ВСЕ ФОРМАТЫ</div><h2>Практики и курсы</h2></div><p>Если выбор уже есть — откройте нужный формат. Если нет — начните с консультации: это самый простой вход.</p></div>
+ <div class="catalog-tabs reveal" role="group" aria-label="Показать форматы" data-catalog-tabs hidden>
+  <button type="button" aria-pressed="true" data-filter="all">Все</button>
+  <button type="button" aria-pressed="false" data-filter="personal">Личная работа</button>
+  <button type="button" aria-pressed="false" data-filter="live">Живые встречи и тело</button>
+  <button type="button" aria-pressed="false" data-filter="study">Обучение</button>
+ </div>
+ <div class="services-grid" id="catalog-grid" aria-live="polite">
+<a class="service-card reveal" href="consultations.html" data-group="personal">
+ <img src="assets/archaic/consult-cozy.jpg" srcset="assets/archaic/consult-cozy-560.jpg 560w, assets/archaic/consult-cozy.jpg 1120w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 780px" width="1120" height="1400" alt="Уютное пространство для индивидуальной консультации с креслами, чаем и живой зеленью" loading="lazy" decoding="async"><span class="service-meta">ОНЛАЙН / ВЖИВУЮ · 1:1</span><span class="service-tag">Простой старт</span>
+ <h3>Индивидуальная консультация</h3><p>Одна встреча без обязательств: разобрать запрос, вернуть ясность и понять, нужен ли следующий шаг вообще.</p><span class="card-arrow">↗</span>
+</a>
+<a class="service-card reveal" href="therapy.html" data-group="personal">
+ <img src="assets/archaic/therapy.webp" srcset="assets/archaic/therapy-560.webp 560w, assets/archaic/therapy.webp 1120w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 390px" width="1120" height="1400" alt="" loading="lazy" decoding="async"><span class="service-meta">3 МЕСЯЦА · 1:1 · ОНЛАЙН / ВЖИВУЮ</span><span class="service-tag">Главная программа</span>
+ <h3>Связь с Родом</h3><p>Три месяца спокойной глубокой работы, чтобы перестать ходить по кругу и собрать собственную опору.</p><span class="card-arrow">↗</span>
+</a>
+<a class="service-card reveal" href="game.html" data-group="live">
+ <img src="assets/archaic/game.webp" srcset="assets/archaic/game-560.webp 560w, assets/archaic/game.webp 1120w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 390px" width="1120" height="1400" alt="" loading="lazy" decoding="async"><span class="service-meta">1:1 / ГРУППА · ВЖИВУЮ</span>
+ <h3>Игра «Сила Рода»</h3><p>Живой игровой маршрут, который помогает увидеть сценарий, ресурс и следующий шаг без тяжёлого разбора.</p><span class="card-arrow">↗</span>
+</a>
+<a class="service-card reveal" href="mystery.html" data-group="live">
+ <img src="assets/archaic/mystery.webp" srcset="assets/archaic/mystery-560.webp 560w, assets/archaic/mystery.webp 1120w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 390px" width="1120" height="1400" alt="" loading="lazy" decoding="async"><span class="service-meta">ВЖИВУЮ · ДО 15 УЧАСТНИЦ · 120 МИНУТ</span>
+ <h3>Мистерия «Сила Рода»</h3><p>Камерный женский круг с огнём, солью, воском и ритмом — пространство для паузы, тишины и внутренней собранности.</p><span class="card-arrow">↗</span>
+</a>
+<a class="service-card reveal" href="offerings.html" data-group="personal">
+ <img src="assets/archaic/offerings.webp" srcset="assets/archaic/offerings-560.webp 560w, assets/archaic/offerings.webp 1120w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 390px" width="1120" height="1400" alt="" loading="lazy" decoding="async"><span class="service-meta">ИНДИВИДУАЛЬНО · РИТУАЛ</span>
+ <h3>Подношения духам предков</h3><p>Персонально согласованный ритуал благодарности и памяти — без мрачности, давления и шаблонного сценария.</p><span class="card-arrow">↗</span>
+</a>
+<a class="service-card reveal" href="massage.html" data-group="live">
+ <img src="assets/archaic/massage.webp" srcset="assets/archaic/massage-560.webp 560w, assets/archaic/massage.webp 1120w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 390px" width="1120" height="1400" alt="" loading="lazy" decoding="async"><span class="service-meta">ВЖИВУЮ · ИНДИВИДУАЛЬНО</span>
+ <h3>Огненный массаж</h3><p>Телесный формат тепла и расслабления — только после обсуждения безопасности и противопоказаний.</p><span class="card-arrow">↗</span>
+</a>
+<a class="service-card reveal" href="candle-course.html" data-group="study">
+ <img src="assets/archaic/candles.webp" srcset="assets/archaic/candles-560.webp 560w, assets/archaic/candles.webp 1120w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 390px" width="1120" height="1400" alt="" loading="lazy" decoding="async"><span class="service-meta">ОНЛАЙН-КУРС</span>
+ <h3>Свечные практики</h3><p>От материала к практике: воск, фитиль, форма, безопасность и осмысленная работа с живым огнём.</p><span class="card-arrow">↗</span>
+</a>
+<a class="service-card reveal" href="tarot-course.html" data-group="study">
+ <img src="assets/archaic/quiet-cards-1024.webp" srcset="assets/archaic/quiet-cards-640.webp 640w, assets/archaic/quiet-cards-1024.webp 1024w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 390px" width="1024" height="1536" alt="" loading="lazy" decoding="async"><span class="service-meta">ОНЛАЙН-КУРС</span>
+ <h3>Карты Таро</h3><p>Не заучивать трактовки, а понимать систему: структура колоды, язык символов и логика расклада.</p><span class="card-arrow">↗</span>
+</a>
+<a class="service-card reveal" href="runes.html" data-group="study">
+ <img src="assets/archaic/runes.webp" srcset="assets/archaic/runes-560.webp 560w, assets/archaic/runes.webp 1120w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 390px" width="1120" height="1400" alt="" loading="lazy" decoding="async"><span class="service-meta">ОНЛАЙН-КУРС · С КУРАТОРОМ</span>
+ <h3>Руны</h3><p>Старший и Младший футарк: история знаков, практика и проверка знаний — в своём темпе и с куратором.</p><span class="card-arrow">↗</span>
+</a>
+</div>
+ <p class="catalog-note reveal">Стоимость и ближайшие даты Екатерина пришлёт в ответ на запрос. Запрос ни к чему не обязывает.</p>
+</div></section>
+
+<section class="section flagship" id="flagship"><div class="container flagship-grid">
+ <div class="panel flagship-main reveal">
+  <div class="section-kicker">ГЛАВНАЯ ПРОГРАММА · 3 МЕСЯЦА</div>
+  <h2>Связь с Родом</h2>
+  <p class="flagship-lead">Для тех, у кого одна и та же тема возвращается снова, а короткого разговора уже мало. Не набор встреч, а путь с ритмом: увидеть → понять → закрепить.</p>
+  <ol class="flagship-steps">
+   <li><small>01 · ПЕРВЫЙ МЕСЯЦ</small><b>Увидеть</b><span>Собираем текущую картину, повторяющиеся реакции и точки напряжения.</span></li>
+   <li><small>02 · ВТОРОЙ МЕСЯЦ</small><b>Понять</b><span>Углубляемся в личную историю, связи и то, что поддерживает привычный сценарий.</span></li>
+   <li><small>03 · ТРЕТИЙ МЕСЯЦ</small><b>Закрепить</b><span>Переводим выводы в собственные опоры, решения и устойчивый новый ритм.</span></li>
+  </ol>
+  <div class="flagship-actions"><button class="primary-btn" type="button" data-open-request data-service="Связь с Родом">ОБСУДИТЬ СОПРОВОЖДЕНИЕ →</button><a class="ap-text-action" href="therapy.html">Подробнее о программе ↗</a></div>
+ </div>
+ <aside class="panel flagship-side reveal">
+  <div class="section-kicker">ЖИВОЙ ВХОД В ТЕМУ РОДА</div>
+  <p class="flagship-side-lead">Если хочется начать не с разговора, а с опыта:</p>
+  <a class="flagship-link" href="mystery.html"><b>Мистерия «Сила Рода»</b><span>Женский круг до 15 участниц: огонь, соль, воск, бубен. 120 минут.</span></a>
+  <a class="flagship-link" href="game.html"><b>Игра «Сила Рода»</b><span>Увидеть сценарий, ресурс и следующий шаг через символы и вопросы. Индивидуально или в группе.</span></a>
+ </aside>
+</div></section>
+
 <section class="section about-section" id="about"><div class="container about-grid">
  <div class="panel about-copy reveal">
   <div class="section-kicker">ОБ АВТОРЕ</div><h2>Екатерина Белая</h2>
@@ -133,82 +223,14 @@
  <aside class="ap-author-quote ap-author-quote--symbol"><img src="assets/archaic/root-symbol.webp" srcset="assets/archaic/root-symbol-560.webp 560w, assets/archaic/root-symbol.webp 1120w" sizes="(max-width: 900px) calc(100vw - 22px), 600px" width="1120" height="1400" alt="Родовой знак: корни и пламя в рельефной графике на фактурной бумаге" loading="lazy" decoding="async"><div class="ap-author-quote-copy"><div class="section-kicker">ОПОРА И ПРИСУТСТВИЕ</div><p>Там, где твои корни — твоя сила.</p><a href="#start" class="ap-text-action">Понять, с чего начать →</a></div></aside>
 </div></section>
 
-<section class="section" id="services"><div class="container">
- <div class="section-head reveal"><div><div class="section-kicker">МИР ПРАКТИК</div><h2>Выберите свой вход</h2></div><p>Не каталог услуг, а девять разных входов в работу. Выберите по тому, что откликается именно сейчас.</p></div>
- <div class="services-grid">
-<a class="service-card service-card--featured reveal" href="therapy.html">
- <img src="assets/archaic/therapy.webp" srcset="assets/archaic/therapy-560.webp 560w, assets/archaic/therapy.webp 1120w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 390px" width="1120" height="1400" alt="" loading="lazy" decoding="async"><span class="service-meta">3 МЕСЯЦА · ИНДИВИДУАЛЬНО</span>
- <h3>Связь с Родом</h3><p>Три месяца спокойной глубокой работы, чтобы перестать ходить по кругу и собрать собственную опору.</p><span class="card-arrow">↗</span>
-</a>
-<a class="service-card service-card--featured reveal" href="mystery.html">
- <img src="assets/archaic/mystery.webp" srcset="assets/archaic/mystery-560.webp 560w, assets/archaic/mystery.webp 1120w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 390px" width="1120" height="1400" alt="" loading="lazy" decoding="async"><span class="service-meta">ДО 15 УЧАСТНИЦ · 120 МИНУТ</span>
- <h3>Мистерия «Сила Рода»</h3><p>Камерный женский круг с огнём, солью, воском и ритмом — пространство для паузы, тишины и внутренней собранности.</p><span class="card-arrow">↗</span>
-</a>
-<a class="service-card reveal" href="game.html">
- <img src="assets/archaic/game.webp" srcset="assets/archaic/game-560.webp 560w, assets/archaic/game.webp 1120w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 390px" width="1120" height="1400" alt="" loading="lazy" decoding="async"><span class="service-meta">1:1 / ГРУППА</span>
- <h3>Игра «Сила Рода»</h3><p>Живой игровой маршрут, который помогает увидеть сценарий, ресурс и следующий шаг без тяжёлого разбора.</p><span class="card-arrow">↗</span>
-</a>
-<a class="service-card reveal" href="offerings.html">
- <img src="assets/archaic/offerings.webp" srcset="assets/archaic/offerings-560.webp 560w, assets/archaic/offerings.webp 1120w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 390px" width="1120" height="1400" alt="" loading="lazy" decoding="async"><span class="service-meta">РИТУАЛЬНАЯ ПРАКТИКА</span>
- <h3>Подношения духам предков</h3><p>Персонально согласованный ритуал благодарности и памяти — без мрачности, давления и шаблонного сценария.</p><span class="card-arrow">↗</span>
-</a>
-<a class="service-card reveal" href="candle-course.html">
- <img src="assets/archaic/candles.webp" srcset="assets/archaic/candles-560.webp 560w, assets/archaic/candles.webp 1120w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 390px" width="1120" height="1400" alt="" loading="lazy" decoding="async"><span class="service-meta">АВТОРСКАЯ ПРОГРАММА</span>
- <h3>Свечные практики</h3><p>От материала к практике: воск, фитиль, форма, безопасность и осмысленная работа с живым огнём.</p><span class="card-arrow">↗</span>
-</a>
-<a class="service-card reveal" href="tarot-course.html">
- <img src="assets/archaic/quiet-cards-1024.webp" srcset="assets/archaic/quiet-cards-640.webp 640w, assets/archaic/quiet-cards-1024.webp 1024w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 390px" width="1024" height="1536" alt="" loading="lazy" decoding="async"><span class="service-meta">АВТОРСКАЯ ПРОГРАММА</span>
- <h3>Карты Таро</h3><p>Не заучивать трактовки, а понимать систему: структура колоды, язык символов и логика расклада.</p><span class="card-arrow">↗</span>
-</a>
-<a class="service-card reveal" href="runes.html">
- <img src="assets/archaic/runes.webp" srcset="assets/archaic/runes-560.webp 560w, assets/archaic/runes.webp 1120w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 390px" width="1120" height="1400" alt="" loading="lazy" decoding="async"><span class="service-meta">АВТОРСКИЙ КУРС · ОНЛАЙН</span>
- <h3>Руны</h3><p>Старший и Младший футарк: история знаков, практика и проверка знаний — в своём темпе и с куратором.</p><span class="card-arrow">↗</span>
-</a>
-<a class="service-card reveal" href="massage.html">
- <img src="assets/archaic/massage.webp" srcset="assets/archaic/massage-560.webp 560w, assets/archaic/massage.webp 1120w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 390px" width="1120" height="1400" alt="" loading="lazy" decoding="async"><span class="service-meta">ОФЛАЙН · ИНДИВИДУАЛЬНО</span>
- <h3>Огненный массаж</h3><p>Индивидуальный телесный формат тепла и расслабления — только после обсуждения безопасности и противопоказаний.</p><span class="card-arrow">↗</span>
-</a>
-<a class="service-card service-card--wide reveal" href="consultations.html">
- <img src="assets/archaic/consult-cozy.jpg" srcset="assets/archaic/consult-cozy-560.jpg 560w, assets/archaic/consult-cozy.jpg 1120w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 780px" width="1120" height="1400" alt="Уютное пространство для индивидуальной консультации с креслами, чаем и живой зеленью" loading="lazy" decoding="async"><span class="service-meta">ОНЛАЙН / ОФЛАЙН · 1:1</span>
- <h3>Индивидуальные консультации</h3><p>Самая простая точка входа: разобрать запрос, вернуть ясность и понять, нужен ли следующий шаг вообще.</p><span class="card-arrow">↗</span>
-</a></div>
-</div></section>
-
-<section class="section start-section" id="start"><div class="container">
- <div class="section-head reveal"><div><div class="section-kicker">С ЧЕГО НАЧАТЬ</div><h2>Выберите по своему запросу</h2></div><p>Не выбирайте «правильную услугу». Выберите состояние или задачу, с которой хотите разобраться.</p></div>
- <div class="start-grid">
-  <a class="start-card reveal" href="consultations.html"><span class="start-index">01</span><div><small>ХОЧУ РАЗОБРАТЬСЯ В СИТУАЦИИ</small><h3>Индивидуальная консультация</h3><p>Спокойно разложить запрос по полочкам и понять следующий шаг.</p></div><b>↗</b></a>
-  <a class="start-card reveal" href="therapy.html"><span class="start-index">02</span><div><small>НУЖНА ГЛУБОКАЯ ЛИЧНАЯ РАБОТА</small><h3>Связь с Родом</h3><p>Последовательное индивидуальное сопровождение на протяжении трёх месяцев.</p></div><b>↗</b></a>
-  <a class="start-card reveal" href="mystery.html"><span class="start-index">03</span><div><small>ХОЧУ ГРУППОВОЕ ПЕРЕЖИВАНИЕ</small><h3>Мистерия «Сила Рода»</h3><p>Камерный круг с огнём, солью, воском, бубном и символическим артефактом.</p></div><b>↗</b></a>
-  <a class="start-card reveal" href="candle-course.html"><span class="start-index">04</span><div><small>ХОЧУ ПРАКТИЧЕСКИЙ ИНСТРУМЕНТ</small><h3>Свечные практики</h3><p>Материал, техника, безопасность и осознанная работа с огнём.</p></div><b>↗</b></a>
-  <a class="start-card reveal" href="tarot-course.html"><span class="start-index">05</span><div><small>ХОЧУ РАБОТАТЬ С СИМВОЛАМИ</small><h3>Карты Таро</h3><p>Понимание структуры колоды, языка образов и практики раскладов.</p></div><b>↗</b></a>
-  <a class="start-card reveal" href="runes.html"><span class="start-index">06</span><div><small>ХОЧУ ИЗУЧАТЬ ДРЕВНИЕ ЗНАКИ</small><h3>Руны</h3><p>Старший и Младший футарк — от истории к собственной практике.</p></div><b>↗</b></a>
-  <a class="start-card reveal" href="offerings.html"><span class="start-index">07</span><div><small>ИЩУ РИТУАЛЬНЫЙ ФОРМАТ</small><h3>Подношения духам предков</h3><p>Персонально согласованная церемониальная практика.</p></div><b>↗</b></a>
-  <a class="start-card reveal" href="massage.html"><span class="start-index">08</span><div><small>ХОЧУ ТЕЛЕСНЫЙ ФОРМАТ</small><h3>Огненный массаж</h3><p>Только индивидуально и после предварительного обсуждения условий и противопоказаний.</p></div><b>↗</b></a>
-  <button class="start-card start-card--request reveal" type="button" data-open-request data-service="Подбор подходящего формата"><span class="start-index">09</span><div><small>НЕ ЗНАЮ, ЧТО ВЫБРАТЬ</small><h3>Подберём формат вместе</h3><p>Коротко опишите, что сейчас важно — без необходимости разбираться в названиях практик.</p></div><b>→</b></button>
- </div>
-</div></section>
-
-<section class="format-rail reveal" aria-label="Доступные форматы"><div class="container format-rail-inner"><span>ИНДИВИДУАЛЬНО</span><i></i><span>В ГРУППЕ</span><i></i><span>ОНЛАЙН</span><i></i><span>ОФЛАЙН</span></div></section>
-
-<section class="section home-courses"><div class="container">
-  <div class="section-head reveal"><div><div class="section-kicker">АВТОРСКИЕ ПРОГРАММЫ</div><h2>Четыре маршрута для практики</h2></div><p>Для тех, кто хочет идти глубже и работать с материалом последовательно — в своём темпе и с доступом в личный кабинет.</p></div>
-  <div class="home-course-grid">
-    <a class="home-course home-course--rod reveal" href="therapy.html"><img src="assets/archaic/therapy.webp" srcset="assets/archaic/therapy-560.webp 560w, assets/archaic/therapy.webp 1120w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 390px" width="1120" height="1400" alt="" loading="lazy" decoding="async"><div><small>01 · РОД</small><h3>Связь с Родом</h3><span>3 месяца · личный маршрут</span></div></a>
-    <a class="home-course home-course--fire reveal" href="candle-course.html"><img src="assets/archaic/candles.webp" srcset="assets/archaic/candles-560.webp 560w, assets/archaic/candles.webp 1120w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 390px" width="1120" height="1400" alt="" loading="lazy" decoding="async"><div><small>02 · ОГОНЬ</small><h3>Язык Пламени</h3><span>воск · техника · практика</span></div></a>
-    <a class="home-course home-course--tarot reveal" href="tarot-course.html"><img src="assets/archaic/quiet-cards-1024.webp" srcset="assets/archaic/quiet-cards-640.webp 640w, assets/archaic/quiet-cards-1024.webp 1024w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 390px" width="1024" height="1536" alt="" loading="lazy" decoding="async"><div><small>03 · СИМВОЛ</small><h3>Карты Таро</h3><span>система · расклады · практика</span></div></a>
-    <a class="home-course home-course--runes reveal" href="runes.html"><img src="assets/archaic/runes.webp" srcset="assets/archaic/runes-560.webp 560w, assets/archaic/runes.webp 1120w" sizes="(max-width: 700px) calc(100vw - 44px), (max-width: 1000px) 50vw, 390px" width="1120" height="1400" alt="" loading="lazy" decoding="async"><div><small>04 · ЗНАК</small><h3>Руны</h3><span>футарк · практика · дневник</span></div></a>
-  </div>
-  <div class="home-courses-foot reveal"><a class="course-link-large" href="courses.html">ОТКРЫТЬ «МОИ КУРСЫ» →</a></div>
-</div></section>
-
 <section class="section" id="faq"><div class="container">
- <div class="section-head reveal"><div><div class="section-kicker">КОРОТКО О ГЛАВНОМ</div><h2>Вопросы и ответы</h2></div><p>Если ответа нет — оставьте запрос, и обсудим лично.</p></div>
+ <div class="section-head reveal"><div><div class="section-kicker">КОРОТКО О ГЛАВНОМ</div><h2>Вопросы и ответы</h2></div><p>Если ответа нет — напишите, обсудим лично.</p></div>
  <div class="faq-grid">
-  <div class="faq-item reveal"><button class="faq-question">Как понять, какой формат подходит?<span>+</span></button><div class="faq-answer">Можно начать с индивидуальной консультации или выбрать направление, которое уже откликается. Если сомневаетесь, достаточно написать «нужна помощь с выбором».</div></div>
-  <div class="faq-item reveal"><button class="faq-question">Есть онлайн и офлайн форматы?<span>+</span></button><div class="faq-answer">Да. На каждой странице отдельно указано, как проходит выбранное направление.</div></div>
+  <div class="faq-item reveal"><button class="faq-question">Как понять, какой формат подходит?<span>+</span></button><div class="faq-answer">Ответьте на два вопроса в <a href="#start">подборе</a> — он подскажет, с чего начать. Или начните с индивидуальной консультации: это одна встреча, после которой можно ничего больше не брать. Если сомневаетесь, достаточно написать «нужна помощь с выбором».</div></div>
+  <div class="faq-item reveal"><button class="faq-question">Сколько это стоит?<span>+</span></button><div class="faq-answer">Стоимость зависит от формата и длительности. Напишите, что вас интересует, — в ответ Екатерина пришлёт цену и ближайшие даты. Запрос ни к чему не обязывает.</div></div>
+  <div class="faq-item reveal"><button class="faq-question">Где проходят живые встречи?<span>+</span></button><div class="faq-answer">Консультации, сопровождение «Связь с Родом» и курсы доступны онлайн — из любого города. Мистерия, игра, массаж и подношения проходят вживую в разных городах: место и дату обсуждаем при записи, возможен выезд по запросу.</div></div>
   <div class="faq-item reveal"><button class="faq-question">Нужен опыт подобных практик?<span>+</span></button><div class="faq-answer">Для большинства направлений специальная подготовка не требуется. Для отдельных практик условия и допуск обсуждаются заранее.</div></div>
-  <div class="faq-item reveal"><button class="faq-question">Где узнать даты и стоимость?<span>+</span></button><div class="faq-answer">Даты и стоимость зависят от направления. Откройте нужную страницу и отправьте запрос — выбранная услуга подставится автоматически.</div></div>
+  <div class="faq-item reveal"><button class="faq-question">Как записаться?<span>+</span></button><div class="faq-answer">Нажмите «Написать» или «Оставить запрос» — откроется Telegram с уже набранным сообщением, останется нажать «Отправить». Если удобнее, формат поможет подобрать бот <a href="https://t.me/BelrodConBOT?start=faq" target="_blank" rel="noopener">@BelrodConBOT</a>.</div></div>
  </div>
 </div></section>
 
@@ -224,13 +246,13 @@
   <label class="request-label" for="request-service">НАПРАВЛЕНИЕ</label>
   <select id="request-service"><option>Связь с Родом</option><option>Мистерия «Сила Рода»</option><option>Игра «Сила Рода»</option><option>Подношения духам предков</option><option>Свечные практики</option><option>Карты Таро</option><option>Руны</option><option>Огненный массаж</option><option>Индивидуальные консультации</option><option>Подбор подходящего формата</option></select>
   <label class="request-label" for="request-message">ЧТО ВАЖНО УЧЕСТЬ</label>
-  <textarea id="request-message" placeholder="Коротко опишите запрос, удобный формат или интересующую дату"></textarea>
+  <textarea id="request-message" maxlength="700" placeholder="Коротко опишите запрос, удобный формат или интересующую дату"></textarea>
   <div class="request-actions">
    <button class="request-action primary" id="share-request" type="button">ОТКРЫТЬ TELEGRAM</button>
    <button class="request-action" id="copy-request" type="button">СКОПИРОВАТЬ ТЕКСТ</button>
   </div>
   <div class="request-status" id="request-status" aria-live="polite"></div>
-  <p class="request-note">Откроется чат с Екатериной в Telegram — <a href="https://t.me/BelayaKatrin" target="_blank" rel="noopener">@BelayaKatrin</a>. Текст заявки скопируется сам: вставьте его в сообщение.</p>
+  <p class="request-note">Откроется чат с Екатериной в Telegram — <a href="https://t.me/BelayaKatrin" target="_blank" rel="noopener">@BelayaKatrin</a>. Текст заявки уже будет в строке сообщения — останется нажать «Отправить».</p>
  </div>
 </dialog>
 <button class="mobile-sticky-cta" type="button" data-open-request data-service="Подбор подходящего формата">ОСТАВИТЬ ЗАПРОС →</button><script src="brand/sr-pulse.js"></script>
