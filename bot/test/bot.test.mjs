@@ -171,6 +171,13 @@ test('проверка и сообщение из курса — свои заг
   assert.match(sent(ADMIN).at(-1).text, /^💬 <b>Новое сообщение<\/b> · Таро\nОльга$/);
 });
 
+test('подробности отчёта — строками под главной, с экранированием', async () => {
+  const { bot, sent } = setup({ start: '2026-10-01T12:00:00Z' });
+  await linkAdmin(bot);
+  await bot.notifyCourse({ course: 'rod', student: 'Анна', item: 'отправила отчёт · Шаг 3', lines: ['• День: 4', '• Ощущения: «<тепло>»', '', null, '🎙 голосовых: 1'] });
+  assert.match(sent(ADMIN).at(-1).text, /^📝 <b>Новое ДЗ на проверку<\/b> · Связь с Родом\nАнна — отправила отчёт · Шаг 3\n• День: 4\n• Ощущения: «&lt;тепло&gt;»\n🎙 голосовых: 1$/);
+})
+
 test('адрес /notify: без секрета выключен, с чужим секретом — 401, с верным — 200', async () => {
   const { spawn } = await import('node:child_process');
   const { once } = await import('node:events');

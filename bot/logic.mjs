@@ -141,6 +141,9 @@ export function createBot({ store, tg, upload = null, backupChatIds = [], now = 
     if (!title) return { ok: false, error: 'unknown kind' };
     if (!student) return { ok: false, error: 'student required' };
     const item = String(event?.item || '').trim().slice(0, 300);
+    // Подробности строками: что именно ученица написала и приложила
+    const lines = (Array.isArray(event?.lines) ? event.lines : []).slice(0, 12)
+      .map(l => escapeHtml(String(l ?? '').trim().slice(0, 300))).filter(Boolean);
     const url = typeof event?.url === 'string' && /^https:\/\/[a-z0-9.-]+\.belayarod\.ru\//i.test(event.url) ? event.url : null;
     const admins = store.admins();
     if (!admins.length) console.error('Событие из курса без получателя: ни один админ не привязан (см. bot/README.md)');
@@ -150,13 +153,16 @@ export function createBot({ store, tg, upload = null, backupChatIds = [], now = 
     for (const admin of admins) {
       const res = await tg('sendMessage', {
         chat_id: admin,
-        text: M.courseNotice({ title, course, student: escapeHtml(student), item: item && escapeHtml(item) }),
+        text: M.courseNotice({ title, course, student: escapeHtml(student), item: item && escapeHtml(item), lines }),
         parse_mode: 'HTML',
         disable_web_page_preview: true,
         disable_notification: silent,
         ...(url ? { reply_markup: { inline_keyboard: [[{ text: M.REVIEW_BUTTON, url }]] } } : {}),
       });
       if (res.ok) sent++;
+      // 4xx (бот заблокирован, чат не найден) telegramClient не пишет в журнал —
+      // без этой строки отказ был бы не виден, а курс получил бы «ок»
+      else console.error(`Событие из курса не дошло до ${admin}: ${res.status || ''} ${res.description || ''}`);
     }
     return { ok: true, sent };
   }
