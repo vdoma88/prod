@@ -263,3 +263,106 @@
   .svc-tarot .course-photo:nth-child(4),
   .svc-runes .course-photo:nth-child(4){grid-column:1/-1}
 }
+
+/* Главная как воронка: первый экран → подбор → каталог с фильтром →
+   главная программа → об авторе → вопросы → заявка. */
+.portal-intro .portal-intro-consult{bottom:80px;min-height:44px;padding:0;display:inline-flex;align-items:center;border:0;background:none;color:#fffdf6;font:500 17px/1.2 var(--serif);text-decoration:underline;text-decoration-color:rgba(241,200,134,.8);text-underline-offset:5px;cursor:pointer}
+.portal-intro .portal-intro-consult:hover{color:#f1c886}
+.portal-intro .portal-intro-consult:focus-visible{outline:2px solid #f1c886;outline-offset:4px}
+@media(max-width:900px){.portal-intro .portal-intro-consult{bottom:24px}}
+@media(max-width:640px){.portal-intro .portal-intro-consult{bottom:20px;font-size:16px}}
+
+/* Подбор формата */
+.quiz{position:relative;padding:34px 38px 30px;border:1px solid var(--line);border-radius:28px;background:linear-gradient(145deg,rgba(255,253,249,.94),rgba(248,239,229,.86));box-shadow:var(--shadow)}
+.quiz-progress{display:flex;gap:6px;margin:0 0 22px;padding:0;list-style:none}
+.quiz-progress li{flex:1;height:2px;border-radius:2px;background:rgba(120,79,37,.16);transition:background .3s}
+.quiz-progress li.is-on{background:#b87a34}
+.quiz-count{font-size:9px;font-weight:600;letter-spacing:.2em;color:#9f6429}
+.quiz-question{margin-top:6px!important;font-size:38px!important;line-height:1.02!important;outline:none}
+.quiz-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:22px}
+.quiz-option{min-height:96px;padding:18px 20px;display:flex;flex-direction:column;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:18px;background:#fffaf4;text-align:left;cursor:pointer;transition:border-color .2s,transform .2s,background .2s}
+.quiz-option:hover{border-color:rgba(184,122,52,.45);background:#fffdf9;transform:translateY(-2px)}
+.quiz-option b{font:500 24px/1.08 var(--serif);color:#33251d}
+.quiz-option span{font-size:13px;line-height:1.5;color:#776557}
+.quiz-meta{margin-top:10px!important;font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#9f6429}
+.quiz-text{max-width:640px;margin-top:10px!important;font-size:15px;line-height:1.65;color:#5f4d3f}
+.quiz-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 26px;margin-top:22px}
+.quiz-actions .primary-btn{min-height:52px}
+.quiz .primary-btn,.flagship .primary-btn,.final-cta .primary-btn{color:#fff9ef}
+.quiz-also{margin-top:14px!important;font-size:13px;color:#776557}
+.quiz-also a,.quiz-alt a,.catalog-note a,.faq-answer a{color:#9f6429;text-decoration:underline;text-underline-offset:3px}
+.quiz-back{min-height:44px;margin-top:14px;padding:0;border:0;background:none;font-size:12px;letter-spacing:.06em;color:#776557;cursor:pointer}
+.quiz-back:hover{color:#9f6429}
+.quiz-alt{margin-top:16px!important;text-align:center;font-size:13px;color:#776557}
+.quiz-alt a{display:inline-flex;align-items:center;min-height:44px}
+@media(prefers-reduced-motion:reduce){.quiz-option,.quiz-progress li{transition:none}.quiz-option:hover{transform:none}}
+
+/* Каталог с фильтром */
+.catalog-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 20px}
+.catalog-tabs[hidden]{display:none}
+.catalog-tabs button{min-height:44px;padding:0 18px;border:1px solid #d7ae70;border-radius:999px;background:rgba(255,250,244,.7);color:#6b4a2b;font-size:12px;font-weight:600;letter-spacing:.04em;cursor:pointer;transition:background .2s,color .2s}
+.catalog-tabs button:hover{background:#fffaf4}
+.catalog-tabs button[aria-pressed="true"]{background:linear-gradient(180deg,#c58b43,#a86427);border-color:#c58b43;color:#fff9ef}
+.archaic-home .service-card[hidden]{display:none}
+.archaic-home .service-meta{position:absolute}
+.service-tag{position:absolute;top:54px;left:22px;padding:7px 10px;border-radius:20px;background:#f3e6d3;color:#7a4a1f;font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+.catalog-note{margin-top:18px!important;text-align:center;font-size:13px;color:#776557}
+@media(max-width:700px){
+ .catalog-tabs{flex-wrap:nowrap;overflow-x:auto;margin-left:-11px;margin-right:-11px;padding:0 11px 4px;scrollbar-width:none}
+ .catalog-tabs::-webkit-scrollbar{display:none}
+ .catalog-tabs button{flex:0 0 auto}
+}
+
+/* Главная программа */
+.flagship-grid{display:grid;grid-template-columns:1.35fr .65fr;gap:16px}
+.flagship-main{padding:44px}
+.flagship-main h2{margin-top:6px!important;font-size:55px!important;line-height:1!important}
+.flagship-lead{max-width:680px;margin-top:14px!important;font-size:16px;line-height:1.7;color:#5f4d3f}
+.flagship-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:26px 0 0;padding:0;list-style:none}
+.flagship-steps li{padding:18px;border:1px solid var(--line);border-radius:18px;background:#fffaf4}
+.flagship-steps small{display:block;font-size:9px;font-weight:600;letter-spacing:.14em;color:#9f6429}
+.flagship-steps b{display:block;margin-top:8px;font:500 28px/1 var(--serif);color:#33251d}
+.flagship-steps span{display:block;margin-top:8px;font-size:13px;line-height:1.55;color:#776557}
+.flagship-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 26px;margin-top:26px}
+.flagship-side{padding:34px 30px;display:flex;flex-direction:column;gap:12px;background:linear-gradient(160deg,#33261d,#241a14);color:#f3e6d3;border-color:rgba(215,174,112,.25)}
+.flagship-side .section-kicker{color:#d7ae70}
+.flagship-side-lead{font:500 26px/1.15 var(--serif);color:#f3e6d3}
+.flagship-link{display:block;margin-top:4px;padding:18px;border:1px solid rgba(215,174,112,.3);border-radius:18px;transition:border-color .2s,background .2s}
+.flagship-link:hover{border-color:#d7ae70;background:rgba(255,250,244,.05)}
+.flagship-link b{display:block;font:500 24px/1.05 var(--serif);color:#fffaf4}
+.flagship-link span{display:block;margin-top:6px;font-size:13px;line-height:1.5;color:#c9b59c}
+.flagship-link:focus-visible{outline:2px solid #d7ae70;outline-offset:3px}
+
+@media(max-width:900px){
+ .flagship-grid{grid-template-columns:1fr}
+ .quiz-options{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+ .quiz{padding:24px 18px 20px;border-radius:22px}
+ .quiz-question{font-size:30px!important}
+ .quiz-option{min-height:0;padding:15px 16px}
+ .quiz-option b{font-size:21px}
+ .quiz-actions .primary-btn{width:100%}
+ .flagship-main{padding:24px 20px}
+ .flagship-main h2{font-size:39px!important}
+ .flagship-lead{font-size:14px}
+ .flagship-steps{grid-template-columns:1fr}
+ .flagship-actions .primary-btn{width:100%}
+ .flagship-side{padding:24px 20px}
+}
+
+/* Невысокие экраны ноутбуков (до 900 px): левая панель — колонкой, а не
+   по координатам макета, иначе текст уходит под кнопку. */
+@media(min-width:901px) and (max-height:899px){
+ .portal-intro{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:28px 36px 30px 8.5%}
+ .portal-intro>*{position:relative!important;top:auto!important;left:auto!important;bottom:auto!important}
+ .portal-intro .portal-intro-symbol{align-self:center;width:38px;height:51px;margin:0 0 16px;transform:none}
+ .archaic-layout .portal-intro h1{font-size:min(156px,15vh)}
+ .portal-intro .portal-intro-rule{margin:20px 0 18px}
+ .portal-intro .portal-intro-subtitle{font-size:min(37px,4.6vh)}
+ .portal-intro .portal-intro-copy{width:auto;max-width:300px;margin-top:12px;font-size:15px}
+ .portal-intro .portal-intro-cta{width:min(342px,100%);height:60px;margin-top:20px}
+ .portal-intro .portal-intro-consult{margin-top:6px}
+}
+.archaic-layout .final-cta p{margin:0 auto 24px}
+.archaic-layout .final-cta p.final-cta-alt{margin:18px auto 0}
