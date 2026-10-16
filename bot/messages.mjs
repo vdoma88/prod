@@ -142,7 +142,9 @@ export const SITE_EVENTS = {
 };
 export const SITE_BUTTON = 'Открыть сводку';
 
-export function courseNotice({ title, course, student, item }) {
+// lines — подробности события строками под главной (ответы отчёта, вложения),
+// уже экранированные; без них — прежние две строки.
+export function courseNotice({ title, course, student, item, lines = [] }) {
   return `${title} · ${course}
-${student}${item ? ` — ${item}` : ''}`;
+${student}${item ? ` — ${item}` : ''}${lines.length ? `\n${lines.join('\n')}` : ''}`;
 }
