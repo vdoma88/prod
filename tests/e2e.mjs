@@ -60,6 +60,50 @@ try {
     await context.close();
   }
 
+  console.log('Компактная главная');
+  await check('каталог, подробности и существующая форма заявки', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 375, height: 812 } });
+    const p = await ctx.newPage();
+    await p.goto(`${origin}/index.html`);
+    assert.equal(await p.locator('[data-compact-service]:visible').count(), 6);
+    await p.locator('#bc-more').click();
+    assert.equal(await p.locator('[data-compact-service]:visible').count(), 9);
+    await p.locator('[data-filter="group"]').click();
+    assert.equal(await p.locator('[data-compact-service]:visible').count(), 2);
+    await p.locator('[data-filter="all"]').click();
+    const expected = { consult: 'Индивидуальные консультации', ancestors: 'Подношения духам предков', tarot: 'Карты Таро' };
+    for (const [id, name] of Object.entries(expected)) {
+      await p.locator(`[data-compact-service="${id}"]`).click();
+      assert.equal(await p.locator('#bc-service-detail').isVisible(), true);
+      await p.locator('#bc-inquire').click();
+      assert.equal(await p.locator('#request-dialog').isVisible(), true);
+      assert.equal(await p.locator('#request-service').inputValue(), name);
+      await p.keyboard.press('Escape');
+      await p.locator('#bc-back').click();
+      assert.equal(await p.locator(`[data-compact-service="${id}"]`).evaluate(e => e === document.activeElement), true);
+    }
+    await p.locator('#bc-more').click();
+    for (const width of [320, 375, 736, 1440]) {
+      await p.setViewportSize({ width, height: 900 });
+      const overflow = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      assert.ok(overflow <= 0, `главная: прокрутка ${overflow}px при ${width}px`);
+    }
+    assert.equal(await p.locator('.portal-symbol-svg').evaluate(e => getComputedStyle(e).color), 'rgb(181, 45, 40)');
+    assert.equal(await p.locator('.bc-emblem img').evaluate(e => e.complete && e.naturalWidth > 0), true);
+    await ctx.close();
+  });
+  await check('без JavaScript доступны все направления и изображения', async () => {
+    const ctx = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 375, height: 812 } });
+    const p = await ctx.newPage();
+    await p.goto(`${origin}/index.html`);
+    assert.equal(await p.locator('[data-compact-service]:visible').count(), 9);
+    assert.equal(await p.locator('.bc-filters').isVisible(), false);
+    assert.equal(await p.locator('[data-compact-service="consult"]').getAttribute('href'), 'consultations.html');
+    await p.locator('[data-compact-service="consult"]').click();
+    assert.match(p.url(), /\/consultations\.html$/);
+    await ctx.close();
+  });
+
   console.log('Страница 404');
   await check('на вложенном адресе — с оформлением и без битых ссылок', async () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
