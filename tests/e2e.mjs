@@ -71,7 +71,7 @@ try {
     await p.locator('[data-filter="group"]').click();
     assert.equal(await p.locator('[data-compact-service]:visible').count(), 2);
     await p.locator('[data-filter="all"]').click();
-    const expected = { consult: 'Индивидуальные консультации', ancestors: 'Подношения духам предков', tarot: 'Карты Таро' };
+    const expected = { consult: 'Индивидуальные консультации', ancestors: 'Подношения духам предков', tarot: 'Карта как зеркало' };
     for (const [id, name] of Object.entries(expected)) {
       await p.locator(`[data-compact-service="${id}"]`).click();
       assert.equal(await p.locator('#bc-service-detail').isVisible(), true);
@@ -159,7 +159,7 @@ try {
   });
   await check('«Другие курсы» не показывают текущий курс', async () => {
     const titles = await page.locator('sr-courses').first().locator('.course b').allTextContents();
-    assert.deepEqual(titles, ['Связь с Родом', 'Карты Таро', 'Руны']);
+    assert.deepEqual(titles, ['Связь с Родом', 'Карта как зеркало', 'Руны']);
   });
   await context.close();
 
@@ -234,3 +234,4 @@ if (failures.length) {
   process.exit(1);
 }
 console.log('\nВсё прошло.');
+

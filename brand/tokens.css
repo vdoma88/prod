@@ -1,4 +1,4 @@
-/* Сила Рода · общие дизайн-токены v1.2.0
+/* Сила Рода · общие дизайн-токены v1.2.1
    Семейная палитра всех проектов Екатерины Белой. Приложения подключают
    файл и берут отсюда общие цвета и шрифты, а собственный характер
    держат через --sr-accent (свой цвет у каждого курса, см. ниже).
@@ -70,3 +70,4 @@
 [data-sr-product="plamya"] { --sr-accent: var(--sr-plamya); --sr-bg-1: #fffaf6; --sr-bg-2: #f8ece4; --sr-bg-3: #f0ddd0; }
 [data-sr-product="taro"] { --sr-accent: var(--sr-taro); --sr-bg-1: #fcfaf3; --sr-bg-2: #f2ede0; --sr-bg-3: #e6dfca; }
 [data-sr-product="runes"] { --sr-accent: var(--sr-runes); --sr-bg-1: #fdf9fb; --sr-bg-2: #f5ecf0; --sr-bg-3: #eadbe3; }
+

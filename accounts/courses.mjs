@@ -13,7 +13,7 @@
 export const COURSES = [
   { id: 'rod', title: 'Связь с Родом', url: 'https://rod.belayarod.ru/', staff: '/admin', internal: 'http://127.0.0.1:5000', sso: true },
   { id: 'plamya', title: 'Язык Пламени', url: 'https://plamya.belayarod.ru/', internal: 'http://127.0.0.1:3000', sso: false },
-  { id: 'taro', title: 'Таро', url: 'https://taro.belayarod.ru/', staff: '/cabinet.html', internal: 'http://127.0.0.1:3100', sso: true },
+  { id: 'taro', title: 'Карта как зеркало', url: 'https://taro.belayarod.ru/', staff: '/cabinet.html', internal: 'http://127.0.0.1:3100', sso: true },
   { id: 'runes', title: 'Руны', url: 'https://runes.belayarod.ru/', staff: '/#curator', internal: 'http://127.0.0.1:4173', sso: true },
 ];
 
@@ -25,3 +25,4 @@ export const courseById = (id) => SSO_COURSES.find(c => c.id === id) || null;
 
 // Статусы урока — как во flame (lesson_access.status).
 export const LESSON_STATUSES = ['locked', 'open', 'done'];
+
