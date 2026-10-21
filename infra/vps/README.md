@@ -16,6 +16,7 @@
 | — | `14-bot.sh` | Telegram-бот лендинга → `belayarod.ru/tg/rod-bot`, порт 4310, служба `rodbot` (`bot/README.md`). Запуск: `sudo bash /var/www/prod/infra/vps/14-bot.sh` | да — это и обновление |
 | `systemd` | `16-systemd.sh` | Школа из PM2 → служба systemd `flame-school` (порт 3000); при неудаче возвращает в PM2. Запуск: `sudo bash /var/www/flame-app/deploy/sila-roda.sh systemd` | да |
 | — | `15-accounts.sh` | Общий вход для курсов → `belayarod.ru/account/`, порт 4320, служба `sr-accounts` (`accounts/README.md`). Первый администратор: `sudo ADMIN_EMAIL=почта ADMIN_NAME="Имя" bash /var/www/prod/infra/vps/15-accounts.sh` | да — это и обновление |
+| — | `17-ca.sh` | Скомпрометированные сертификаты eMudhra (октябрь 2026): обновляет `ca-certificates`, службам на Node — `NODE_OPTIONS=--use-openssl-ca` и перезапуск, certifi в venv, проверка до и после. Запуск: `sudo bash /var/www/prod/infra/vps/17-ca.sh` | да |
 
 Все скрипты запускаются от root и останавливаются при первой ошибке с объяснением.
 
