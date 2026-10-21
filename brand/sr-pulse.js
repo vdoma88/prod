@@ -1,4 +1,4 @@
-/*! Сила Рода · телеметрия v1.2.0 · https://github.com/vdoma88/prod/tree/main/brand */
+/*! Сила Рода · телеметрия v1.2.1 · https://github.com/vdoma88/prod/tree/main/brand */
 // Телеметрия belayarod.ru и курсов на поддоменах: как сайт на самом деле
 // работает у посетителей — прежде всего на iPhone, где ни одна проверка не
 // заменяет живой Safari. Приём и сводка — accounts/pulse.mjs в prod, смотреть
@@ -149,3 +149,4 @@
   addEventListener('pagehide', leave);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') leave(); });
 })();
+

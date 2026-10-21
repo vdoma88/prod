@@ -1,4 +1,4 @@
-/*! Сила Рода · общий бренд v1.2.0 · https://github.com/vdoma88/prod/tree/main/brand */
+/*! Сила Рода · общий бренд v1.2.1 · https://github.com/vdoma88/prod/tree/main/brand */
 // Общие элементы для всех проектов Екатерины Белой: лендинга belayarod.ru
 // и четырёх учебных приложений. Подключается одним тегом:
 //
@@ -21,7 +21,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '1.2.0';
+  const VERSION = '1.2.1';
   if (!window.customElements || window.customElements.get('sr-brand-bar')) return;
 
   const script = document.currentScript;
@@ -48,8 +48,8 @@
     },
     {
       id: 'taro',
-      title: 'Карты Таро',
-      note: 'Колода, расклады, книга «Карта как зеркало»',
+      title: 'Карта как зеркало',
+      note: 'Таро и метафорические ассоциативные карты · 48 уроков',
       url: 'https://taro.belayarod.ru/',
       about: '/tarot-course.html',
       accent: '#76603d',
@@ -238,3 +238,4 @@
     projects: Object.freeze(PROJECTS.map(project => Object.freeze({ ...project }))),
   });
 })();
+
