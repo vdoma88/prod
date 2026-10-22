@@ -32,7 +32,7 @@
   border: 1px solid #a4b4a2;
   border-radius: 16px;
   box-shadow: 0 12px 45px #142d2140;
-  font: 15px/1.45 system-ui, sans-serif;
+  font: 15px/1.45 'Manrope', system-ui, sans-serif;
   text-transform: none;
   letter-spacing: normal;
   text-align: left;
@@ -49,7 +49,7 @@
   border-radius: 8px;
   color: #23382b;
   background: white;
-  font: 15px/1.4 system-ui, sans-serif;
+  font: 15px/1.4 'Manrope', system-ui, sans-serif;
 }
 .sr-copy-panel textarea { min-height: 110px; resize: vertical; }
 .sr-copy-panel label { display: block; margin: 10px 0 4px; font-size: 13px; font-weight: 600; }
@@ -63,7 +63,7 @@
   min-height: 40px;
   background: #f4f5ef;
   color: #263f2d;
-  font: 600 13px/1.2 system-ui, sans-serif;
+  font: 600 13px/1.2 'Manrope', system-ui, sans-serif;
   text-decoration: none;
   cursor: pointer;
   text-transform: none;
@@ -84,3 +84,12 @@
 @media(max-width: 600px) {
   .sr-copy-panel { left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 48vh; padding: 12px; }
 }
+
+/* Устаревшие правки и история версий */
+.sr-copy-panel .sr-copy-stale-box { margin: 8px 0; padding: 8px 10px; border-radius: 10px; background: #fff4e0; border: 1px solid #e8c88a; }
+.sr-copy-panel .sr-copy-warn { margin: 0 0 6px; font-size: 13px; color: #7a4b08; }
+.sr-copy-panel .sr-copy-stale { margin: 0 0 8px; padding-left: 18px; font-size: 12px; color: #6b5a40; }
+.sr-copy-panel .sr-copy-history-box { margin: 8px 0 0; max-height: 220px; overflow: auto; }
+.sr-copy-panel .sr-copy-history { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.sr-copy-panel .sr-copy-history li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 0; border-bottom: 1px solid #e6e0d4; }
+.sr-copy-panel .sr-copy-history li button { padding: 4px 10px; min-height: 32px; }

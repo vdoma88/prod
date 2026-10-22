@@ -62,3 +62,52 @@ test('Landing copy: public GET; only signed-in admin can POST with same-origin p
   assert.equal((await post(adminSession.token,update)).status, 409);
   assert.equal((await (await read('/account/api/landing?page=index.html')).json()).changes[key], 'Ручная редактура');
 });
+
+test('Landing copy: правка с исходным текстом, история версий и возврат', () => {
+  const store = openStore(':memory:');
+  const editor = openLanding(store.db);
+  const key = '#top>div:nth-of-type(1)>h1:nth-of-type(1)~0';
+  const v1 = editor.save('index.html', 0, {[key]: {text: 'Первый', base: 'Ваш запрос.'}}, 'admin-id');
+  assert.deepEqual(v1.changes[key], {text: 'Первый', base: 'Ваш запрос.'});
+  // лишние поля и не-строки — отказ
+  assert.throws(() => editor.save('index.html', 1, {[key]: {text: 'x', base: 'y', html: '<b>'}}, 'a'), e => e.status === 400);
+  assert.throws(() => editor.save('index.html', 1, {[key]: {text: 'x', base: 5}}, 'a'), e => e.status === 400);
+  editor.save('index.html', 1, {[key]: {text: 'Второй', base: 'Ваш запрос.'}}, 'admin-id');
+  const h = editor.history('index.html');
+  assert.equal(h.current.revision, 2);
+  assert.deepEqual(h.versions.map(v => v.revision), [1]);
+  assert.equal(h.versions[0].count, 1);
+  // возврат версии 1 — новая версия 3 с текстом «Первый», история не теряется
+  const back = editor.restore('index.html', 2, 1, 'admin-id');
+  assert.equal(back.revision, 3);
+  assert.equal(back.changes[key].text, 'Первый');
+  assert.deepEqual(editor.history('index.html').versions.map(v => v.revision), [2, 1]);
+  // версия 0 — исходные тексты страницы
+  assert.equal(Object.keys(editor.restore('index.html', 3, 0, 'admin-id').changes).length, 0);
+  assert.throws(() => editor.restore('index.html', 4, 99, 'a'), e => e.status === 404);
+  assert.throws(() => editor.restore('index.html', 1, 1, 'a'), e => e.status === 409);
+  store.db.close();
+});
+
+test('Landing copy: история и возврат — только администратору', async t => {
+  const store = openStore(':memory:');
+  const admin = store.createUser({email:'admin@sample.ru',name:'Редактор',role:'admin'});
+  const student = store.createUser({email:'student@sample.ru',name:'Читатель'});
+  const srv = createServer(createApp({store, env:{PUBLIC_ORIGIN:'https://belayarod.ru'}}));
+  await new Promise(resolve => srv.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => srv.close(() => {store.db.close(); resolve();})));
+  const base = 'http://127.0.0.1:' + srv.address().port + '/account/api/admin/landing';
+  const as = (user) => ({Cookie: 'sr_session=' + store.createSession(user.id).token});
+  const write = (user, path, body) => fetch(base + path, {method:'POST', headers:{...as(user), Origin:'https://belayarod.ru', 'Content-Type':'application/json', 'X-SR':'1'}, body: JSON.stringify(body)});
+  const key = '#top>h1:nth-of-type(1)~0';
+  assert.equal((await write(admin, '', {page:'index.html', revision:0, changes:{[key]:{text:'A', base:'Б'}}})).status, 200);
+  assert.equal((await write(admin, '', {page:'index.html', revision:1, changes:{}})).status, 200);
+  assert.equal((await fetch(base + '/history?page=index.html', {headers: as(student)})).status, 403);
+  const h = await (await fetch(base + '/history?page=index.html', {headers: as(admin)})).json();
+  assert.equal(h.current.revision, 2);
+  assert.equal(h.versions[0].updatedBy, 'Редактор');
+  assert.equal((await write(student, '/restore', {page:'index.html', revision:2, to:1})).status, 403);
+  const restored = await write(admin, '/restore', {page:'index.html', revision:2, to:1});
+  assert.equal(restored.status, 200);
+  assert.equal((await restored.json()).changes[key].text, 'A');
+});
