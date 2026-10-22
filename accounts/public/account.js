@@ -96,6 +96,10 @@ function home(me) {
     : h('div', { class: 'course off' }, h('strong', null, c.title), h('span', { class: 'muted small' }, 'Пока закрыт')));
   const parts = [
     h('h1', null, `Здравствуйте, ${me.user.name}`),
+    me.user.role === 'admin' ? h('section', { class: 'card' },
+      h('h2', null, 'Редактирование лендинга'),
+      h('p', { class: 'muted' }, 'Меняйте тексты прямо на страницах сайта и публикуйте их без GitHub.'),
+      h('a', { class: 'btn', href: '/?edit=1' }, 'Редактировать тексты сайта →')) : null,
     h('section', null, h('h2', null, staff ? 'Кабинеты курсов' : 'Мои курсы'), h('div', { class: 'courses' }, cards)),
   ];
   if (me.user.role === 'admin') {
