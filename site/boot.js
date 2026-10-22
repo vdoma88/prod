@@ -10,4 +10,11 @@
   setTimeout(function () {
     if (!root.classList.contains('app-ready')) root.classList.add('reveal-all');
   }, 4000);
+  // Все страницы site/ загружают boot.js. После основных скриптов применяем
+  // опубликованные тексты; панель редактора доступна только администратору.
+  window.addEventListener('load', function () {
+    var loader = document.createElement('script');
+    loader.src = '/landing-editor.js';
+    document.head.appendChild(loader);
+  });
 })();
