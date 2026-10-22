@@ -11,7 +11,7 @@ const MAX_FIELDS = 250;
 const MAX_FIELD_LENGTH = 3000;
 const MAX_JSON_BYTES = 55 * 1024;
 // DOM text-node addresses, not HTML, selectors to evaluate, or script.
-const VALID_KEY = /^[a-z0-9#.:()>~_-]{1,240}$/;
+const VALID_KEY = /^[a-z0-9#.:()>~_-]{1,240}$/i;
 
 export function openLanding(db) {
   db.exec(`
