@@ -55,7 +55,7 @@ export function openLanding(db) {
     if (pairs.length > MAX_FIELDS) throw new AccountError(413, 'Слишком много текстовых полей.');
     const safe = Object.create(null);
     for (const [key, value] of pairs) {
-      if (!VALID_KEY.test(key) || typeof value !== 'string' || value.length > MAX_FIELD_LENGTH || value.includes('\u0000')) {
+      if (!VALID_KEY.test(key) || !/~[0-9]+$/.test(key) || typeof value !== 'string' || value.length > MAX_FIELD_LENGTH || value.includes('\u0000')) {
         throw new AccountError(400, 'Некорректное текстовое поле.');
       }
       safe[key] = value;
