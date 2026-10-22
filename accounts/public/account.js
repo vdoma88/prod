@@ -109,7 +109,7 @@ function home(me) {
     adminView(box, me.user);
     pulseView(pulse, 7);
   }
-  show(...parts);
+  show(...parts.filter(Boolean));
 }
 
 // ─── Админка ───
