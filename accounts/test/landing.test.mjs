@@ -17,7 +17,7 @@ test('Landing copy: persists plain-text changes and rejects invalid pages and ke
   assert.equal(editor.get('therapy.html').revision, 0);
   assert.throws(() => editor.save('index.html', 0, {[key]:'Конфликт'}, 'admin-id'), e => e.status === 409);
   assert.throws(() => editor.save('../private', 0, {}, 'admin-id'), e => e.status === 400);
-  assert.throws(() => editor.save('index.html', 1, {'__proto__':'anything'}, 'admin-id'), e => e.status === 400);
+  assert.throws(() => editor.save('index.html', 1, {['__proto__']:'anything'}, 'admin-id'), e => e.status === 400);
   assert.throws(() => editor.save('index.html', 1, {[key]: {html:'<h1>x</h1>'}}, 'admin-id'), e => e.status === 400);
   assert.throws(() => editor.save('index.html', 1, {[key]:'x'.repeat(3001)}, 'admin-id'), e => e.status === 400);
   editor.save('index.html', 1, {}, 'admin-id');
