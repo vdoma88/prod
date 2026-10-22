@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { AccountError, MIN_PASSWORD } from './store.mjs';
 import { COURSES, SSO_COURSES, courseById, LESSON_STATUSES } from './courses.mjs';
 import { openPulse, parseBatch } from './pulse.mjs';
+import { openLanding } from './landing.mjs';
 
 const BASE = '/account';
 const COOKIE = 'sr_session';
@@ -28,6 +29,7 @@ const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; font-src '
 
 export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchImpl = fetch }) {
   const origin = String(env.PUBLIC_ORIGIN || 'http://127.0.0.1:4320').replace(/\/$/, '');
+  const landing = openLanding(store.db);
   const secure = env.COOKIE_SECURE ? env.COOKIE_SECURE === '1' : origin.startsWith('https://');
   const cookieDomain = env.COOKIE_DOMAIN || '';
   const secret = env.SR_INTERNAL_SECRET || '';
@@ -148,6 +150,20 @@ export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchI
   }
 
   async function api(req, res, p) {
+    // Public read, authenticated admin write: same-origin, plain-text overrides only.
+    if (p === '/api/landing' && req.method === 'GET') {
+      const page = new URL(req.url, 'http://x').searchParams.get('page');
+      return send(res, 200, landing.get(page));
+    }
+    if (p === '/api/admin/landing') {
+      checkWrite(req);
+      const admin = needAdmin(req);
+      const body = await readJson(req);
+      const result = landing.save(body.page, body.revision, body.changes, admin.id);
+      store.audit(admin.id, 'landing.publish', result.page + '@' + result.revision);
+      return send(res, 200, result);
+    }
+
     if (p === '/api/me' && req.method === 'GET') return send(res, 200, withCourses(need(req)));
 
     if (p === '/api/login') {
