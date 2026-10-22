@@ -155,10 +155,29 @@ export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchI
       const page = new URL(req.url, 'http://x').searchParams.get('page');
       return send(res, 200, landing.get(page));
     }
-    if (p === '/api/admin/landing') {
+    if (p === '/api/admin/landing/history' && req.method === 'GET') {
+      needAdmin(req);
+      const page = new URL(req.url, 'http://x').searchParams.get('page');
+      const h = landing.history(page);
+      const who = (id) => (id && store.user(id)?.name) || '';
+      return send(res, 200, {
+        ...h,
+        current: h.current && { ...h.current, updatedBy: who(h.current.updatedBy) },
+        versions: h.versions.map(v => ({ ...v, updatedBy: who(v.updatedBy) })),
+      });
+    }
+    if (p === '/api/admin/landing/restore') {
       checkWrite(req);
       const admin = needAdmin(req);
       const body = await readJson(req);
+      const result = landing.restore(body.page, body.revision, body.to, admin.id);
+      store.audit(admin.id, 'landing.restore', result.page + '@' + result.revision + '<' + body.to);
+      return send(res, 200, result);
+    }
+    if (p === '/api/admin/landing') {
+      checkWrite(req);
+      const admin = needAdmin(req);
+      const body = await readJson(req, 128 * 1024);
       const result = landing.save(body.page, body.revision, body.changes, admin.id);
       store.audit(admin.id, 'landing.publish', result.page + '@' + result.revision);
       return send(res, 200, result);
