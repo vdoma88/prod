@@ -1,5 +1,11 @@
 /* Admin-only floating editor; never loaded into normal visitor rendering. */
 .sr-copy-editing .sr-copy-target {
+  /* Prevent existing generic span rules from changing the landing layout. */
+  display: inline !important;
+  font: inherit !important;
+  letter-spacing: inherit !important;
+  text-transform: inherit !important;
+  color: inherit !important;
   cursor: text !important;
   outline: 1px dashed #9d723f;
   outline-offset: 3px;
