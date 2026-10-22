@@ -1,0 +1,86 @@
+/* Admin-only floating editor; never loaded into normal visitor rendering. */
+.sr-copy-editing .sr-copy-target {
+  /* Prevent existing generic span rules from changing the landing layout. */
+  display: inline !important;
+  font: inherit !important;
+  letter-spacing: inherit !important;
+  text-transform: inherit !important;
+  color: inherit !important;
+  cursor: text !important;
+  outline: 1px dashed #9d723f;
+  outline-offset: 3px;
+  border-radius: 2px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.sr-copy-editing .sr-copy-target:hover,
+.sr-copy-editing .sr-copy-target.sr-copy-active {
+  outline: 2px solid #3c754e;
+  background: rgba(220, 240, 212, .6);
+}
+.sr-copy-panel {
+  position: fixed;
+  z-index: 2147483000;
+  right: 16px;
+  bottom: 16px;
+  width: min(360px, calc(100vw - 32px));
+  max-height: min(85vh, 760px);
+  overflow: auto;
+  padding: 18px;
+  background: #fffdf8;
+  color: #2c342d;
+  border: 1px solid #a4b4a2;
+  border-radius: 16px;
+  box-shadow: 0 12px 45px #142d2140;
+  font: 15px/1.45 system-ui, sans-serif;
+  text-transform: none;
+  letter-spacing: normal;
+  text-align: left;
+}
+.sr-copy-panel *, .sr-copy-panel *::before, .sr-copy-panel *::after { box-sizing: border-box; }
+.sr-copy-panel .sr-copy-title { display: block; font-size: 17px; margin: 0 0 8px; }
+.sr-copy-panel .sr-copy-muted { margin: 8px 0; font-size: 13px; color: #536354; }
+.sr-copy-panel select, .sr-copy-panel textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 10px;
+  margin: 6px 0;
+  border: 1px solid #aab9ac;
+  border-radius: 8px;
+  color: #23382b;
+  background: white;
+  font: 15px/1.4 system-ui, sans-serif;
+}
+.sr-copy-panel textarea { min-height: 110px; resize: vertical; }
+.sr-copy-panel label { display: block; margin: 10px 0 4px; font-size: 13px; font-weight: 600; }
+.sr-copy-panel button, .sr-copy-panel a.sr-copy-exit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #9fb4a0;
+  border-radius: 8px;
+  padding: 9px 12px;
+  min-height: 40px;
+  background: #f4f5ef;
+  color: #263f2d;
+  font: 600 13px/1.2 system-ui, sans-serif;
+  text-decoration: none;
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.sr-copy-panel button.sr-copy-primary { background: #285c3c; color: white; border-color: #285c3c; }
+.sr-copy-panel button:disabled { opacity: .45; cursor: not-allowed; }
+.sr-copy-panel button:focus-visible, .sr-copy-panel a:focus-visible,
+.sr-copy-panel select:focus-visible, .sr-copy-panel textarea:focus-visible {
+  outline: 3px solid #c6a365; outline-offset: 2px;
+}
+.sr-copy-panel .sr-copy-actions { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+.sr-copy-panel .sr-copy-editor { margin: 8px 0; padding: 10px; background: #f4f4ec; border-radius: 10px; }
+.sr-copy-panel .sr-copy-editor[hidden] { display: none; }
+.sr-copy-panel .sr-copy-editor button { margin: 4px 4px 4px 0; }
+.sr-copy-panel .sr-copy-status { font-size: 13px; margin: 8px 0 0; min-height: 16px; }
+.sr-copy-panel .sr-copy-error { color: #aa3127; }
+@media(max-width: 600px) {
+  .sr-copy-panel { left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 48vh; padding: 12px; }
+}
