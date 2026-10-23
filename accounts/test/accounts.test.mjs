@@ -316,3 +316,36 @@ test('страница отдаётся со строгим CSP', async (t) => {
   assert.equal((await s.req('/account/../bot/server.mjs', { raw: true })).status, 404);
   assert.equal((await s.req('/account/store.mjs', { raw: true })).status, 404);
 });
+
+test('ученицы онлайн: одна панель на все курсы', async (t) => {
+  const s = await server({
+    env: { COURSE_ROD_INTERNAL: 'http://rod.test', COURSE_PLAMYA_INTERNAL: 'http://plamya.test' },
+    courses: {
+      rod: (url) => [200, { online: [{ id: 'c1', name: 'Анна', screen: 'Шаг 2', device: 'iPhone · Safari', localTime: '21:05', idleMin: 0 }] }],
+      plamya: () => [200, { online: [{ name: 'Мария', screen: 'Урок 1.1', idleMin: 3, extra: '<b>x</b>' }] }],
+      taro: () => [404, 'страница приложения'],
+    },
+  }); t.after(s.close);
+  assert.equal((await s.req('/account/api/staff/online')).status, 401);
+  // ученица списка не видит
+  const st = s.store.createUser({ email: 'st@b.ru', name: 'Ученица' });
+  s.store.setPassword(st.id, PASS);
+  await s.req('/account/api/login', { body: { email: 'st@b.ru', password: PASS } });
+  assert.equal((await s.req('/account/api/staff/online')).status, 403);
+  s.logout();
+  await s.req('/account/api/login', { body: { email: 'kate@b.ru', password: PASS } });
+  const { status, data } = await s.req('/account/api/staff/online');
+  assert.equal(status, 200);
+  const by = Object.fromEntries(data.courses.map(c => [c.id, c.online]));
+  assert.equal(by.rod[0].name, 'Анна');
+  assert.equal(by.rod[0].screen, 'Шаг 2');
+  assert.deepEqual(by.plamya[0], { name: 'Мария', screen: 'Урок 1.1', device: null, localTime: null, idleMin: 3, id: null }, 'лишние поля отбрасываются');
+  assert.equal(by.taro, null, 'курс ещё не умеет — null');
+  assert.equal(by.runes, null, 'курс не ответил — null');
+  assert.ok(s.calls.filter(c => c.url.endsWith('/sr-internal/online')).every(c => c.secret === 'inner-secret'));
+  // курсам — тот же список, только с секретом
+  const ask = (secret) => fetch(s.base + '/account/internal/online', { headers: secret ? { 'X-SR-Secret': secret } : {} });
+  assert.equal((await ask()).status, 401);
+  assert.equal((await ask('wrong')).status, 401);
+  assert.equal((await (await ask('inner-secret')).json()).courses.length, 4);
+});

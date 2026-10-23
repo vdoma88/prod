@@ -102,6 +102,11 @@ function home(me) {
       h('a', { class: 'btn', href: '/?edit=1' }, 'Редактировать тексты сайта →')) : null,
     h('section', null, h('h2', null, staff ? 'Кабинеты курсов' : 'Мои курсы'), h('div', { class: 'courses' }, cards)),
   ];
+  if (staff) {
+    const online = h('section');
+    parts.push(h('div', { class: 'pad' }), online);
+    onlineView(online);
+  }
   if (me.user.role === 'admin') {
     const box = h('section');
     const pulse = h('section');
@@ -320,6 +325,40 @@ async function lessonsView(box, u, c) {
         g.items.map(row))
     : h('div', null, g.items.map(row)));
   box.replaceChildren(err, lessons.length ? h('div', null, body) : h('p', { class: 'muted' }, 'В курсе нет уроков.'));
+}
+
+// ─── Ученицы онлайн на всех курсах (accounts/app.mjs → allOnline) ───
+// Опрос раз в 20 секунд, пока вкладка на виду и панель на странице.
+
+async function onlineView(box) {
+  let data;
+  try { data = await call('staff/online'); } catch (e) { box.replaceChildren(h('h2', null, 'Ученицы онлайн'), h('p', { class: 'error' }, e.message)); return; }
+  const courses = data.courses.filter(c => c.online);
+  const total = courses.reduce((n, c) => n + c.online.length, 0);
+  const silent = data.courses.filter(c => !c.online).map(c => c.title);
+  const person = (e) => {
+    const idle = e.idleMin != null && e.idleMin >= 1;
+    return h('div', { class: 'who' },
+      h('span', { class: 'dot ' + (idle ? 'idle' : 'on'), role: 'img', 'aria-label': idle ? 'Без действий' : 'Активна' }),
+      h('span', null,
+        h('strong', null, e.name),
+        h('span', { class: 'muted small block' }, e.screen || 'экран не известен'),
+        e.device || e.localTime ? h('span', { class: 'muted small block' }, [e.device, e.localTime && `у неё ${e.localTime}`].filter(Boolean).join(' · ')) : null,
+        e.idleMin != null ? h('span', { class: 'small block ' + (idle ? 'status-open' : 'status-done') }, idle ? `без действий ${e.idleMin} мин` : 'активна') : null));
+  };
+  box.replaceChildren(
+    h('h2', null, `Ученицы онлайн · ${total}`),
+    courses.length
+      ? h('div', { class: 'card' }, courses.map(c => h('div', { class: 'group' },
+          h('h3', null, `${c.title} · ${c.online.length}`),
+          c.online.length ? h('div', { class: 'online' }, c.online.map(person)) : h('p', { class: 'muted small' }, 'Сейчас никого.'))))
+      : h('p', { class: 'muted' }, 'Курсы пока не сообщают, кто онлайн.'),
+    silent.length ? h('p', { class: 'muted small' }, `Не сообщают: ${silent.join(', ')}.`) : null);
+  setTimeout(function again() {
+    if (!box.isConnected) return;
+    if (document.hidden) return setTimeout(again, 20000);
+    onlineView(box);
+  }, 20000);
 }
 
 // ─── Телеметрия лендинга (brand/sr-pulse.js → accounts/pulse.mjs) ───
