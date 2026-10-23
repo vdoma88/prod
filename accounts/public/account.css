@@ -64,3 +64,12 @@ th { font-size: .8rem; color: var(--sr-muted); font-weight: 500; }
 .inline input { flex: 1; min-width: 0; }
 .inline .btn { margin-top: 0; white-space: nowrap; }
 .ok code { white-space: pre-line; }
+/* Ученицы онлайн */
+.online { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); margin-top: 6px; }
+.who { display: flex; gap: 10px; align-items: flex-start; }
+.who strong { display: block; }
+.block { display: block; }
+.dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 7px; flex: none; }
+.dot.on { background: #2f6b3a; } .dot.idle { background: #c9952d; }
+.group h3 { margin: 0; }
+.card > .group:first-child { border-top: 0; padding-top: 0; }

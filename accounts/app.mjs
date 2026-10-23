@@ -149,6 +149,36 @@ export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchI
     return { connected: true, ...data };
   }
 
+  // ─── Кто сейчас на курсах ───
+  // Каждый курс отвечает на /sr-internal/online своим списком учениц онлайн
+  // (у себя он знает, кто открыл вкладку и что у неё на экране). Здесь списки
+  // собираются в одну панель — её показывают этот кабинет и кабинеты кураторов
+  // в курсах (/internal/online). Курс, который не отвечает или ещё не умеет,
+  // помечается online: null. Ответ держится 10 секунд: панели в нескольких
+  // кабинетах опрашивают раз в 20 секунд, и курсам незачем отвечать каждой.
+  const clip = (v, n) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, n) : null);
+  const onlineEntry = (e) => ({
+    name: clip(e?.name, 120) || 'Без имени', screen: clip(e?.screen, 160), device: clip(e?.device, 60),
+    localTime: clip(e?.localTime, 10), idleMin: Number.isInteger(e?.idleMin) && e.idleMin >= 0 ? e.idleMin : null,
+    id: clip(e?.id, 64),
+  });
+  async function courseOnline(c) {
+    const res = await fetchImpl(internalBase(c) + '/sr-internal/online', {
+      headers: { 'X-SR-Secret': secret }, signal: AbortSignal.timeout(2500),
+    }).catch(() => null);
+    if (!res?.ok || !/json/.test(res.headers.get('content-type') || '')) return null;
+    const data = await res.json().catch(() => null);
+    return Array.isArray(data?.online) ? data.online.slice(0, 200).map(onlineEntry) : null;
+  }
+  let onlineCache = null;
+  async function allOnline() {
+    if (onlineCache && Date.now() - onlineCache.at < 10_000) return onlineCache.data;
+    const lists = await Promise.all(COURSES.map(courseOnline));
+    const data = { courses: COURSES.map((c, i) => ({ id: c.id, title: c.title, online: lists[i] })) };
+    onlineCache = { at: Date.now(), data };
+    return data;
+  }
+
   async function api(req, res, p) {
     // Public read, authenticated admin write: same-origin, plain-text overrides only.
     if (p === '/api/landing' && req.method === 'GET') {
@@ -212,6 +242,10 @@ export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchI
     }
 
     // ─── Админка ───
+    if (p === '/api/staff/online' && req.method === 'GET') {
+      if (!staffOf(need(req))) throw new AccountError(403, 'Это видят только куратор и администратор.');
+      return send(res, 200, await allOnline());
+    }
     if (p === '/api/admin/pulse' && req.method === 'GET') {
       needAdmin(req);
       const days = Math.min(30, Math.max(1, Number(new URL(req.url, 'http://x').searchParams.get('days')) || 7));
@@ -299,6 +333,8 @@ export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchI
       const { user, courses } = withCourses(u);
       return send(res, 200, { user: { id: user.id, email: user.email, name: user.name, role: user.role }, courses: courses.filter(c => c.enabled && !c.ownLogin).map(c => c.id) });
     }
+    // Одна панель «Ученицы онлайн» на все курсы — для кабинетов кураторов в курсах
+    if (p === '/internal/online' && req.method === 'GET') return send(res, 200, await allOnline());
     return send(res, 404, { error: 'нет такого адреса' });
   }
 
