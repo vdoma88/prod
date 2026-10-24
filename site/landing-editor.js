@@ -26,6 +26,7 @@
   const editing = new URLSearchParams(location.search).get('edit') === '1';
   const original = new Map();
   const byBase = new Map();
+  let visual = null;
   // saved/draft — тексты по адресу на этой странице; stale — правки, которым
   // нет места на странице (хранятся как есть, пока их не убрали)
   let saved = {}, draft = {}, stale = {}, dropStale = false, revision = 0, chosen = null, active = null;
@@ -83,6 +84,7 @@
   function resolve(changes) {
     const placed = {}, lost = {};
     for (const [key, value] of Object.entries(changes || {})) {
+      if (key.startsWith('@')) continue; // image/block overrides handled by landing-visual.js
       const legacy = typeof value === 'string';
       const text = legacy ? value : value && value.text;
       if (typeof text !== 'string') continue;
@@ -119,12 +121,13 @@
     const { placed, lost } = resolve(data.changes);
     saved = placed; draft = {...placed}; stale = lost; dropStale = false;
     apply(saved);
+    visual?.load(data.changes);
   }
   const staleCount = () => Object.keys(stale).length;
   function dirty() {
     const changed = [...new Set([...Object.keys(saved), ...Object.keys(draft)])]
       .filter(key => saved[key] !== draft[key]).length;
-    return changed + (dropStale ? staleCount() : 0);
+    return changed + (dropStale ? staleCount() : 0) + (visual?.diff() || 0);
   }
   function message(text, isError = false) {
     status.textContent = text;
@@ -178,7 +181,7 @@
   function payload() {
     const out = dropStale ? {} : {...stale};
     for (const [key, text] of Object.entries(draft)) out[key] = {text, base: original.get(key).base};
-    return out;
+    return {...out, ...(visual?.payload() || {})};
   }
   async function publish() {
     if (chosen) applyField();
@@ -212,7 +215,7 @@
       const list = el('ul', 'sr-copy-history');
       if (h.current) list.append(row(h.current, true));
       h.versions.forEach(v => list.append(row(v, false)));
-      const original0 = el('li'); original0.append(el('span', '', 'Исходные тексты из кода (без правок)'));
+      const original0 = el('li'); original0.append(el('span', '', 'Исходные тексты и изображения из кода (без правок)'));
       if (h.current) { const b = el('button', '', 'Вернуть'); b.type = 'button'; b.addEventListener('click', () => restore(0)); original0.append(b); }
       list.append(original0);
       historyBox.append(list);
@@ -230,8 +233,8 @@
   function makePanel() {
     const link = el('link'); link.rel = 'stylesheet'; link.href = '/landing-editor.css'; document.head.append(link);
     panel = el('section', 'sr-copy-panel'); panel.setAttribute('aria-label', 'Редактор текстов лендинга');
-    const title = el('strong','sr-copy-title','✎ Редактирование текстов');
-    const hint = el('p','sr-copy-muted','Нажмите на выделенный текст на странице. Ссылки, изображения и оформление не изменяются.');
+    const title = el('strong','sr-copy-title','✎ Редактор сайта');
+    const hint = el('p','sr-copy-muted','Нажимайте на тексты или изображения. Управление фотографиями и блоками — ниже.');
     const choose = el('select','sr-copy-pages');
     choose.setAttribute('aria-label','Страница лендинга');
     pages.forEach(([path, name]) => { const option = el('option','',name); option.value = path; choose.append(option); });
@@ -253,7 +256,7 @@
     const actions = el('div','sr-copy-actions');
     saveButton = el('button','sr-copy-primary','Опубликовать'); saveButton.type = 'button'; saveButton.addEventListener('click',publish);
     const cancel = el('button','','Отменить правки'); cancel.type = 'button';
-    cancel.addEventListener('click',() => { draft = {...saved}; dropStale = false; apply(draft); unselect(); refresh(); message('Неопубликованные правки отменены.'); });
+    cancel.addEventListener('click',() => { draft = {...saved}; dropStale = false; apply(draft); visual?.cancel(); unselect(); refresh(); message('Неопубликованные правки отменены.'); });
     const historyButton = el('button','','История версий'); historyButton.type = 'button'; historyButton.addEventListener('click', showHistory);
     const exit = el('a','sr-copy-exit','Завершить'); exit.href = location.pathname;
     exit.addEventListener('click',event => { if (dirty() && !confirm('Завершить без публикации?')) event.preventDefault(); });
@@ -288,6 +291,7 @@
   }
   async function start() {
     const keys = collect();
+    visual = window.SRLandingVisual?.create() || null;
     try {
       // Запрос уже отправлен из boot.js; если нет — свой
       const early = window.__srLanding;
@@ -302,6 +306,7 @@
       if (me.user?.role !== 'admin') return;
     } catch { return; } // Never show editing controls to unauthenticated visitors.
     decorate(keys); makePanel();
+    visual?.enable({panel,api,changed:refresh,message});
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',start,{once:true});
   else start();

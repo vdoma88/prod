@@ -21,7 +21,12 @@
         .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
       // Ошибку разберёт сам редактор; здесь — только чтобы не было «unhandled rejection»
       window.__srLanding['catch'](function () {});
+      var visual = document.createElement('script');
+      visual.async = false;
+      visual.src = '/landing-visual.js';
+      document.head.appendChild(visual);
       var loader = document.createElement('script');
+      loader.async = false;
       loader.src = '/landing-editor.js';
       document.head.appendChild(loader);
     }

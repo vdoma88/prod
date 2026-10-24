@@ -60,6 +60,48 @@ try {
     await context.close();
   }
 
+  console.log('Редактор фотографий и объектов');
+  await check('редактирование фото и блоков: предпросмотр, публикация, показ посетителям',async()=>{
+    const ctx=await browser.newContext({viewport:{width:1440,height:900}});
+    let published={page:'index.html',revision:0,changes:{}};
+    await ctx.route('**/account/api/**',async route=>{
+      const url=new URL(route.request().url()), pathname=url.pathname;
+      if(pathname==='/account/api/me')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user:{role:'admin',name:'Admin'}})});
+      if(pathname==='/account/api/landing')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(published)});
+      if(pathname==='/account/api/admin/landing'&&route.request().method()==='POST'){
+        const next=route.request().postDataJSON();
+        assert.equal(next.revision,published.revision);
+        published={page:'index.html',revision:published.revision+1,changes:next.changes};
+        return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(published)});
+      }
+      return route.fulfill({status:404,contentType:'application/json',body:'{}'});
+    });
+    const p=await ctx.newPage();
+    p.on('pageerror',err=>{throw err;});
+    await p.goto(origin+'/?edit=1',{waitUntil:'load'});
+    await p.locator('.sr-visual-editor select').first().waitFor({timeout:5000});
+    const imageKey=await p.locator('.bc-emblem img').getAttribute('data-sr-visual-key');
+    assert.match(imageKey,/^@image:/);
+    await p.locator('.sr-visual-editor select').first().selectOption(imageKey);
+    await p.locator('.sr-visual-options input[type=range]').first().evaluate(input=>{
+      input.value='125';input.dispatchEvent(new Event('input',{bubbles:true}));
+    });
+    assert.match(await p.locator('.bc-emblem img').evaluate(e=>e.style.transform),/scale\(1\.25\)/);
+    const blockKey=await p.locator('#services').getAttribute('data-sr-visual-key');
+    assert.match(blockKey,/^@block:/);
+    await p.locator('.sr-visual-editor select').first().selectOption(blockKey);
+    await p.locator('.sr-visual-options input[type=checkbox]').check();
+    assert.equal(await p.locator('#services').evaluate(e=>e.style.display),'none');
+    await p.locator('.sr-copy-actions button.sr-copy-primary').click();
+    assert.equal(published.revision,1);
+    assert.equal(published.changes[imageKey].zoom,125);
+    assert.equal(published.changes[blockKey].hidden,true);
+    await p.goto(origin+'/',{waitUntil:'load'});
+    await p.waitForFunction(()=>document.querySelector('#services')?.style.display==='none');
+    assert.match(await p.locator('.bc-emblem img').evaluate(e=>e.style.transform),/scale\(1\.25\)/);
+    await ctx.close();
+  });
+
   console.log('Компактная главная');
   await check('каталог, подробности и существующая форма заявки', async () => {
     const ctx = await browser.newContext({ viewport: { width: 375, height: 812 } });
