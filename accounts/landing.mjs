@@ -38,7 +38,7 @@ function cleanVisual(key, value) {
       !numberIn(value.zoom, 50, 180) || !numberIn(value.x, -80, 80) || !numberIn(value.y, -80, 80) ||
       !numberIn(value.order, -1, 1)) return null;
   if (type === 'image') {
-    if (typeof value.src !== 'string' || !MEDIA_SRC.test(value.src) ||
+    if (typeof value.src !== 'string' || value.src.includes('..') || !MEDIA_SRC.test(value.src) ||
         typeof value.alt !== 'string' || value.alt.length > 300 ||
         !['cover','contain','fill'].includes(value.fit) ||
         !numberIn(value.focusX,0,100) || !numberIn(value.focusY,0,100)) return null;
