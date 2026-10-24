@@ -93,3 +93,18 @@
 .sr-copy-panel .sr-copy-history { list-style: none; margin: 0; padding: 0; font-size: 13px; }
 .sr-copy-panel .sr-copy-history li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 0; border-bottom: 1px solid #e6e0d4; }
 .sr-copy-panel .sr-copy-history li button { padding: 4px 10px; min-height: 32px; }
+
+
+/* Photo, SVG and block edit controls. Editor UI only, live site styles unaffected. */
+.sr-visual-editor {margin: 14px 0; padding: 12px; border: 1px solid #c4d0bd; background: #f6f8f2; border-radius: 12px;}
+.sr-visual-editor h3 {font-size: 15px; font-weight: 700; margin: 0 0 6px;}
+.sr-visual-editor .sr-visual-options {margin-top: 10px; padding-top: 8px; border-top: 1px solid #d5dfd0;}
+.sr-visual-editor .sr-visual-options[hidden], .sr-visual-editor [hidden] {display: none !important;}
+.sr-visual-editor input[type="range"] {width: 100%; margin: 8px 0 12px; accent-color: #285c3c;}
+.sr-visual-editor input[type="checkbox"] {width: 20px; height: 20px; accent-color: #285c3c; margin-left: 12px; vertical-align: middle;}
+.sr-visual-editor input[type="file"] {padding: 8px 0; font-size: 12px; background: transparent; width: 100%; border: 0;}
+.sr-visual-editor input[type="text"] {width: 100%; border: 1px solid #aab9ac; background: #fff; color: #263f2d; padding: 9px; border-radius: 7px;}
+.sr-visual-editor .sr-copy-primary {margin: 7px 0;}
+.sr-visual-editing .sr-visual-target {cursor: pointer; outline: 1px dashed rgba(46,121,78,.65); outline-offset: 1px;}
+.sr-visual-editing .sr-visual-target.sr-visual-selected {outline: 3px solid #285c3c; outline-offset: 3px;}
+.sr-visual-editing .sr-copy-target {position: relative;}
