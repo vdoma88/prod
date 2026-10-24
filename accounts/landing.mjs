@@ -22,6 +22,29 @@ const MAX_JSON_BYTES = 110 * 1024;
 const KEEP_HISTORY = 30;
 // DOM text-node addresses, not HTML, selectors to evaluate, or script.
 const VALID_KEY = /^[a-z0-9#.:()>~_-]{1,240}$/i;
+const VISUAL_KEY = /^@(image|block|svg):[a-z0-9#.:()>~_-]{1,240}$/i;
+const MEDIA_SRC = /^(?:\/account\/media\/[a-f0-9]{64}\.(?:jpg|png|webp)|\/?assets\/[a-z0-9_./-]+\.(?:jpg|jpeg|png|webp)(?:\?v=[a-z0-9._-]+)?)$/i;
+const numberIn = (v, min, max) => Number.isInteger(v) && v >= min && v <= max;
+function cleanVisual(key, value) {
+  const match = VISUAL_KEY.exec(key);
+  if (!match || !value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const type = match[1].toLowerCase();
+  const required = ['type','base','hidden','zoom','x','y','order'];
+  const imageOnly = ['src','alt','fit','focusX','focusY'];
+  const keys = Object.keys(value).sort();
+  const expected = (type === 'image' ? [...required,...imageOnly] : required).sort();
+  if (JSON.stringify(keys) !== JSON.stringify(expected) || value.type !== type ||
+      typeof value.base !== 'string' || value.base.length > 350 || typeof value.hidden !== 'boolean' ||
+      !numberIn(value.zoom, 50, 180) || !numberIn(value.x, -80, 80) || !numberIn(value.y, -80, 80) ||
+      !numberIn(value.order, -1, 1)) return null;
+  if (type === 'image') {
+    if (typeof value.src !== 'string' || !MEDIA_SRC.test(value.src) ||
+        typeof value.alt !== 'string' || value.alt.length > 300 ||
+        !['cover','contain','fill'].includes(value.fit) ||
+        !numberIn(value.focusX,0,100) || !numberIn(value.focusY,0,100)) return null;
+  }
+  return Object.fromEntries(expected.map(k => [k, value[k]]));
+}
 
 const plainText = (v) => typeof v === 'string' && v.length <= MAX_FIELD_LENGTH && !v.includes('\u0000');
 
@@ -97,9 +120,10 @@ export function openLanding(db) {
     if (pairs.length > MAX_FIELDS) throw new AccountError(413, 'Слишком много текстовых полей.');
     const safe = Object.create(null);
     for (const [key, value] of pairs) {
-      const clean = cleanValue(value);
-      if (!VALID_KEY.test(key) || !/~[0-9]+$/.test(key) || clean === null) {
-        throw new AccountError(400, 'Некорректное текстовое поле.');
+      const visual = key.startsWith('@');
+      const clean = visual ? cleanVisual(key, value) : cleanValue(value);
+      if ((!visual && (!VALID_KEY.test(key) || !/~[0-9]+$/.test(key))) || clean === null) {
+        throw new AccountError(400, 'Некорректный фрагмент страницы.');
       }
       safe[key] = clean;
     }
