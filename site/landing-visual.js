@@ -28,7 +28,8 @@
         if(node.closest('dialog,#bc-service-detail,[data-sr-noedit]'))continue;
         const type=node.localName==='img'?'image':node.localName==='svg'?'svg':'block';
         const key='@'+type+':'+keyOf(node);
-        if(items.has(key)||key.length>248)continue;
+        // Адрес элемента — не длиннее 240 знаков, как принимает сервер (accounts/landing.mjs, VISUAL_KEY)
+        if(items.has(key)||key.length-type.length-2>240)continue;
         const base=type==='image'?(node.getAttribute('src')||''):node.localName+'#'+(node.id||'')+'.'+[...node.classList].filter(c=>!['is-visible','is-open'].includes(c)).join('.');
         if(type==='image'&&!base)continue;
         const record={node,key,type,base,src:base,alt:node.getAttribute('alt')||'',label:(type==='image'?'Изображение: ':type==='svg'?'Графика: ':'Блок: ')+labelOf(node),
@@ -92,8 +93,10 @@
     async function optimize(file){
       if(!file || !['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('Выберите JPG, PNG или WebP.');
       if(file.size>15*1024*1024)throw Error('Исходный файл должен быть меньше 15 МБ.');
-      const url=URL.createObjectURL(file);
-      try {
+      // Файл — data:, а не blob:: политика безопасности сайта (img-src 'self' data:,
+      // infra/nginx/snippets/sila-roda-headers.conf) blob: не пропускает, и фото не открывалось
+      const url=await new Promise((ok,bad)=>{const reader=new FileReader();reader.onload=()=>ok(reader.result);reader.onerror=()=>bad(Error('Не удалось прочитать файл.'));reader.readAsDataURL(file);});
+      {
         const image=await new Promise((ok,bad)=>{const img=new Image();img.onload=()=>ok(img);img.onerror=()=>bad(Error('Не удалось открыть фотографию.'));img.src=url;});
         const ratio=Math.min(1,2200/Math.max(image.naturalWidth,image.naturalHeight));
         const canvas=document.createElement('canvas');
@@ -101,14 +104,17 @@
         canvas.height=Math.max(1,Math.round(image.naturalHeight*ratio));
         const ctx=canvas.getContext('2d');if(!ctx)throw Error('Не удалось обработать изображение.');
         ctx.drawImage(image,0,0,canvas.width,canvas.height);
-        let blob;
+        // Safari (iPhone, Mac) не сохраняет в WebP и молча отдаёт PNG — снимок
+        // в 2200 точек тогда больше 3 МБ. Нет WebP — сжимаем в JPEG.
+        let blob, type='image/webp';
         for(const quality of [.85,.65,.5]) {
-          blob=await new Promise(ok=>canvas.toBlob(ok,'image/webp',quality));
+          blob=await new Promise(ok=>canvas.toBlob(ok,type,quality));
+          if(blob && blob.type!==type && type==='image/webp'){type='image/jpeg';blob=await new Promise(ok=>canvas.toBlob(ok,type,quality));}
           if(blob && blob.size<=3*1024*1024)break;
         }
         if(!blob || blob.size>3*1024*1024)throw Error('После оптимизации фото больше 3 МБ.');
         return await new Promise((ok,bad)=>{const reader=new FileReader();reader.onload=()=>ok(reader.result);reader.onerror=()=>bad(Error('Не удалось прочитать файл.'));reader.readAsDataURL(blob);});
-      } finally {URL.revokeObjectURL(url);}
+      }
     }
     function labelled(text,control){const label=mk('label','',text);label.append(control);return label;}
     function slider(name,min,max,step){const e=mk('input');e.type='range';e.min=min;e.max=max;e.step=step;e.addEventListener('input',()=>set(name,Number(e.value)));return e;}

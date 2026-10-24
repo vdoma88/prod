@@ -102,6 +102,46 @@ try {
     await ctx.close();
   });
 
+  await check('загрузка фото в Safari: WebP не сохраняется — уходит JPEG, а не огромный PNG',async()=>{
+    const ctx=await browser.newContext({viewport:{width:1440,height:900}});
+    // Как Safari: toBlob('image/webp') молча отдаёт PNG
+    await ctx.addInitScript(()=>{
+      const orig=HTMLCanvasElement.prototype.toBlob;
+      HTMLCanvasElement.prototype.toBlob=function(cb,type,q){return orig.call(this,cb,type==='image/webp'?'image/png':type,q);};
+    });
+    let uploaded=null;
+    await ctx.route('**/account/api/**',async route=>{
+      const pathname=new URL(route.request().url()).pathname;
+      if(pathname==='/account/api/me')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user:{role:'admin',name:'Admin'}})});
+      if(pathname==='/account/api/landing')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({page:'index.html',revision:0,changes:{}})});
+      if(pathname==='/account/api/admin/landing/media'){
+        uploaded=route.request().postDataJSON().image;
+        return route.fulfill({status:201,contentType:'application/json',body:JSON.stringify({url:'/account/media/'+'a'.repeat(64)+'.jpg',bytes:1})});
+      }
+      return route.fulfill({status:404,contentType:'application/json',body:'{}'});
+    });
+    const p=await ctx.newPage();
+    p.on('pageerror',err=>{throw err;});
+    await p.goto(origin+'/?edit=1',{waitUntil:'load'});
+    await p.locator('.sr-visual-editor select').first().waitFor({timeout:5000});
+    const imageKey=await p.locator('.bc-emblem img').getAttribute('data-sr-visual-key');
+    await p.locator('.sr-visual-editor select').first().selectOption(imageKey);
+    // Фото с шумом: в PNG оно было бы много больше 3 МБ
+    const png=await p.evaluate(async()=>{
+      const c=document.createElement('canvas');c.width=1800;c.height=1200;const x=c.getContext('2d');
+      const d=x.createImageData(c.width,c.height);for(let i=0;i<d.data.length;i++)d.data[i]=(i%4===3)?255:(Math.random()*255)|0;x.putImageData(d,0,0);
+      const blob=await new Promise(ok=>c.toBlob(ok,'image/png'));const buf=new Uint8Array(await blob.arrayBuffer());
+      let s='';for(let i=0;i<buf.length;i+=0x8000)s+=String.fromCharCode(...buf.subarray(i,i+0x8000));return btoa(s);
+    });
+    await p.locator('.sr-visual-editor input[type=file]').setInputFiles({name:'photo.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')});
+    await p.locator('.sr-visual-editor .sr-copy-primary',{hasText:'Загрузить изображение'}).click();
+    await p.waitForFunction(()=>document.querySelector('.bc-emblem img')?.getAttribute('src')?.startsWith('/account/media/'),null,{timeout:15000})
+      .catch(async e=>{throw new Error(e.message+' · '+await p.locator('.sr-copy-panel [role=status], .sr-copy-status').allInnerTexts().catch(()=>''))});
+    assert.match(uploaded,/^data:image\/jpeg;base64,/);
+    assert.ok(uploaded.length<3*1024*1024*1.37,'после сжатия — не больше 3 МБ');
+    await ctx.close();
+  });
+
   console.log('Компактная главная');
   await check('каталог, подробности и существующая форма заявки', async () => {
     const ctx = await browser.newContext({ viewport: { width: 375, height: 812 } });
