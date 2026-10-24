@@ -15,6 +15,7 @@ import { AccountError, MIN_PASSWORD } from './store.mjs';
 import { COURSES, SSO_COURSES, courseById, LESSON_STATUSES } from './courses.mjs';
 import { openPulse, parseBatch } from './pulse.mjs';
 import { openLanding } from './landing.mjs';
+import { openLandingMedia } from './landing-media.mjs';
 
 const BASE = '/account';
 const COOKIE = 'sr_session';
@@ -30,6 +31,7 @@ const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; font-src '
 export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchImpl = fetch }) {
   const origin = String(env.PUBLIC_ORIGIN || 'http://127.0.0.1:4320').replace(/\/$/, '');
   const landing = openLanding(store.db);
+  const media = openLandingMedia(env.ACCOUNTS_MEDIA_DIR || path.join(path.dirname(path.resolve(env.ACCOUNTS_DB_PATH || '/var/lib/sr-accounts/accounts.sqlite')), 'media'));
   const secure = env.COOKIE_SECURE ? env.COOKIE_SECURE === '1' : origin.startsWith('https://');
   const cookieDomain = env.COOKIE_DOMAIN || '';
   const secret = env.SR_INTERNAL_SECRET || '';
@@ -204,6 +206,14 @@ export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchI
       store.audit(admin.id, 'landing.restore', result.page + '@' + result.revision + '<' + body.to);
       return send(res, 200, result);
     }
+    if (p === '/api/admin/landing/media') {
+      checkWrite(req);
+      const admin = needAdmin(req);
+      const body = await readJson(req, 4.6 * 1024 * 1024);
+      const uploaded = media.upload(body.image);
+      store.audit(admin.id, 'landing.media.upload', uploaded.url);
+      return send(res, 201, uploaded);
+    }
     if (p === '/api/admin/landing') {
       checkWrite(req);
       const admin = needAdmin(req);
@@ -356,6 +366,7 @@ export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchI
     try {
       if (p.startsWith('/internal/')) return await internal(req, res, p);
       if (p === '/pulse') return await acceptPulse(req, res);
+      if (p.startsWith('/media/')) return media.serve(req, res, p.slice('/media/'.length));
       if (p.startsWith('/api/')) return await api(req, res, p);
       if (serveStatic(req, res, p)) return;
       res.writeHead(404); res.end();
