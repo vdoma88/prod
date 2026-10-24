@@ -54,8 +54,8 @@
         }
         if(e.getAttribute('src')!==source)e.setAttribute('src',source);
         e.alt=v.alt;
-        e.style.objectFit=v.fit;
-        e.style.objectPosition=v.focusX+'% '+v.focusY+'%';
+        e.style.objectFit=value?v.fit:orig.fit;
+        e.style.objectPosition=value?(v.focusX+'% '+v.focusY+'%'):orig.position;
       }
       e.style.display=v.hidden?'none':orig.display;
       const offset=v.x||v.y||v.zoom!==100;
