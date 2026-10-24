@@ -73,3 +73,22 @@ th { font-size: .8rem; color: var(--sr-muted); font-weight: 500; }
 .dot.on { background: #2f6b3a; } .dot.idle { background: #c9952d; }
 .group h3 { margin: 0; }
 .card > .group:first-child { border-top: 0; padding-top: 0; }
+
+/* «Ученицы онлайн» — закреплена слева сверху, сворачивается (account.js, onlineView) */
+.online-dock { position: fixed; left: 12px; top: 80px; z-index: 70; width: 300px; max-width: calc(100vw - 24px); }
+.online-dock:not(.is-open) { width: auto; }
+.dock-toggle { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 8px 14px; border: 1px solid var(--sr-line); border-radius: 999px; background: #fffaf3; color: var(--sr-ink); box-shadow: 0 10px 26px rgba(0,0,0,.12); cursor: pointer; text-align: left; font: inherit; }
+.online-dock.is-open .dock-toggle { border-radius: 18px 18px 0 0; box-shadow: none; border-bottom-color: transparent; }
+.dock-toggle .dot { margin-top: 0; }
+.dot.none { background: #c8c2b8; }
+.dock-title { flex: 1; font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--sr-gold-deep); white-space: nowrap; }
+.dock-chevron { font-size: 11px; font-weight: 600; color: var(--sr-muted); white-space: nowrap; }
+.dock-scroll { max-height: calc(100vh - 200px); overflow-y: auto; overscroll-behavior: contain; padding: 0 14px 12px; background: #fffaf3; border: 1px solid var(--sr-line); border-top: 0; border-radius: 0 0 18px 18px; box-shadow: 0 18px 34px rgba(0,0,0,.14); }
+.dock-scroll .online { grid-template-columns: 1fr; }
+.dock-scroll .group:first-child { border-top: 0; }
+@media (max-width: 640px) {
+  .online-dock:not(.is-open) .dock-title { font-size: 0; letter-spacing: 0; }
+  .online-dock:not(.is-open) .dock-title::after { content: attr(data-count); font-size: 13px; }
+  .online-dock:not(.is-open) .dock-toggle { padding: 8px 12px; gap: 6px; }
+}
+@media print { .online-dock { display: none; } }

@@ -103,8 +103,9 @@ function home(me) {
     h('section', null, h('h2', null, staff ? 'Кабинеты курсов' : 'Мои курсы'), h('div', { class: 'courses' }, cards)),
   ];
   if (staff) {
-    const online = h('section');
-    parts.push(h('div', { class: 'pad' }), online);
+    // Пустая метка: панель «Ученицы онлайн» закреплена сбоку (onlineView)
+    const online = h('span', { hidden: '' });
+    parts.push(online);
     onlineView(online);
   }
   if (me.user.role === 'admin') {
@@ -328,11 +329,28 @@ async function lessonsView(box, u, c) {
 }
 
 // ─── Ученицы онлайн на всех курсах (accounts/app.mjs → allOnline) ───
-// Опрос раз в 20 секунд, пока вкладка на виду и панель на странице.
+// Закреплена слева сверху и не уезжает при прокрутке (как в кабинетах
+// курсов, sr-presence.js); сворачивается в строку «Ученицы онлайн · N», выбор
+// запоминается. Опрос раз в 20 секунд, пока вкладка на виду и кабинет открыт
+// (box — пустая метка на странице кабинета).
 
-async function onlineView(box) {
-  let data;
-  try { data = await call('staff/online'); } catch (e) { box.replaceChildren(h('h2', null, 'Ученицы онлайн'), h('p', { class: 'error' }, e.message)); return; }
+const ONLINE_OPEN = 'sr-online-open';
+let onlineDock = null;
+let onlineData = null;
+let onlineOpen = (() => {
+  try { const v = localStorage.getItem(ONLINE_OPEN); if (v === '1' || v === '0') return v === '1'; } catch { /* приватный режим */ }
+  return window.innerWidth >= 1500;
+})();
+
+function placeDock() {
+  if (!onlineDock) return;
+  const head = document.querySelector('header.top');
+  onlineDock.style.top = Math.round((head ? Math.max(0, head.getBoundingClientRect().bottom) : 0) + 8) + 'px';
+}
+
+function paintDock() {
+  if (!onlineDock || !onlineData) return;
+  const data = onlineData;
   const courses = data.courses.filter(c => c.online);
   const total = courses.reduce((n, c) => n + c.online.length, 0);
   const silent = data.courses.filter(c => !c.online).map(c => c.title);
@@ -346,16 +364,41 @@ async function onlineView(box) {
         e.device || e.localTime ? h('span', { class: 'muted small block' }, [e.device, e.localTime && `у неё ${e.localTime}`].filter(Boolean).join(' · ')) : null,
         e.idleMin != null ? h('span', { class: 'small block ' + (idle ? 'status-open' : 'status-done') }, idle ? `без действий ${e.idleMin} мин` : 'активна') : null));
   };
-  box.replaceChildren(
-    h('h2', null, `Ученицы онлайн · ${total}`),
+  const toggle = h('button', { type: 'button', class: 'dock-toggle', 'aria-expanded': String(onlineOpen), 'aria-label': `Ученицы онлайн: ${total}. ${onlineOpen ? 'Свернуть' : 'Развернуть'}` },
+    h('span', { class: 'dot ' + (total ? 'on' : 'none'), 'aria-hidden': 'true' }),
+    h('span', { class: 'dock-title', 'data-count': String(total) }, `Ученицы онлайн · ${total}`),
+    h('span', { class: 'dock-chevron' }, onlineOpen ? 'Свернуть ▴' : '▾'));
+  toggle.addEventListener('click', () => {
+    onlineOpen = !onlineOpen;
+    try { localStorage.setItem(ONLINE_OPEN, onlineOpen ? '1' : '0'); } catch { /* приватный режим */ }
+    paintDock();
+  });
+  onlineDock.classList.toggle('is-open', onlineOpen);
+  onlineDock.replaceChildren(...[toggle, onlineOpen ? h('div', { class: 'dock-scroll' },
     courses.length
-      ? h('div', { class: 'card' }, courses.map(c => h('div', { class: 'group' },
+      ? courses.map(c => h('div', { class: 'group' },
           h('h3', null, `${c.title} · ${c.online.length}`),
-          c.online.length ? h('div', { class: 'online' }, c.online.map(person)) : h('p', { class: 'muted small' }, 'Сейчас никого.'))))
-      : h('p', { class: 'muted' }, 'Курсы пока не сообщают, кто онлайн.'),
-    silent.length ? h('p', { class: 'muted small' }, `Не сообщают: ${silent.join(', ')}.`) : null);
+          c.online.length ? h('div', { class: 'online' }, c.online.map(person)) : h('p', { class: 'muted small' }, 'Сейчас никого.')))
+      : h('p', { class: 'muted small' }, 'Курсы пока не сообщают, кто онлайн.'),
+    // Курс не ответил: не обновлён, не запущен или не знает секрета общего входа
+    silent.length ? h('p', { class: 'muted small' }, `Не сообщают: ${silent.join(', ')}.`) : null) : null].filter(Boolean));
+  placeDock();
+}
+
+async function onlineView(box) {
+  try { onlineData = await call('staff/online'); } catch (e) { onlineData = { error: e.message }; }
+  // Пока ждали ответа, кабинет мог смениться (вышла, открыла другую страницу)
+  if (!box.isConnected) { onlineDock?.remove(); onlineDock = null; return; }
+  if (!onlineDock) {
+    onlineDock = h('aside', { class: 'online-dock', 'aria-label': 'Ученицы онлайн' });
+    document.body.append(onlineDock);
+    addEventListener('scroll', placeDock, { passive: true });
+    addEventListener('resize', placeDock);
+  }
+  if (onlineData.error) onlineDock.replaceChildren(h('p', { class: 'dock-toggle error small' }, 'Ученицы онлайн: ' + onlineData.error));
+  else paintDock();
   setTimeout(function again() {
-    if (!box.isConnected) return;
+    if (!box.isConnected) { onlineDock?.remove(); onlineDock = null; return; }
     if (document.hidden) return setTimeout(again, 20000);
     onlineView(box);
   }, 20000);
