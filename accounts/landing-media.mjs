@@ -32,8 +32,9 @@ export function openLandingMedia(dir) {
     const match = DATA.exec(dataUri);
     if (!match) throw new AccountError(400, 'Нужен JPG, PNG или WebP.');
     const bytes = Buffer.from(match[2], 'base64');
-    if (!bytes.length || bytes.length > MAX_BYTES || bytes.toString('base64') !== match[2]) {
-      throw new AccountError(400, 'Изображение повреждено либо слишком велико.');
+    if (bytes.length > MAX_BYTES) throw new AccountError(413, 'Изображение больше 3 МБ.');
+    if (!bytes.length || bytes.toString('base64') !== match[2]) {
+      throw new AccountError(400, 'Изображение повреждено.');
     }
     const extension = sniff(bytes);
     if (!extension || (match[1] === 'jpeg' ? 'jpg' : match[1]) !== extension) {
