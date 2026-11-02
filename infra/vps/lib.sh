@@ -350,3 +350,11 @@ close_sr_internal() {
   nginx -t && systemctl reload nginx
   ok "nginx: /sr-internal/ закрыт снаружи ($1)"
 }
+
+# server_hours 8 23 — часы по серверу (через запятую), соответствующие этим
+# часам по Москве. Для cron: он считает по часовому поясу сервера.
+server_hours() {
+  local h out=()
+  for h in "$@"; do out+=("$(date -d "TZ=\"Europe/Moscow\" $(TZ=Europe/Moscow date +%F) $h:00" +%-H)"); done
+  (IFS=,; printf '%s' "${out[*]}")
+}

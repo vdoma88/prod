@@ -11,7 +11,8 @@
 # Шифрование и ключ — те же, что у backup-mirror.py (/etc/sr-backup.key,
 # AES-256-CBC, PBKDF2 250 000), рядом .sha256. Курс, которого нет, пропускается.
 # Если настроен /etc/sr-mirror-backup.env (mirror-telegram-setup.sh) — архивы
-# уходят в Telegram тем же ботом. Ночной запуск: строка в /etc/cron.d/sr-mirror-courses.
+# уходят в Telegram тем же ботом. Расписание (8:15 и 23:15 по Москве) ставит
+# install-mirror-backup-cron.sh вместе с копиями Рода, школы и кабинета.
 set -uo pipefail
 [ "$(id -u)" = 0 ] || { echo "Запустите от root"; exit 1; }
 
@@ -68,11 +69,6 @@ course() {
 }
 
 echo "Копии в $OUT"
-# Ночной запуск — один раз ставится сам (03:50, после backup-mirror.py в 03:35)
-if [ ! -f /etc/cron.d/sr-mirror-courses ]; then
-  printf '50 3 * * * root /bin/bash %s >> /var/log/sr-mirror-courses.log 2>&1\n' "$(readlink -f "$0")" > /etc/cron.d/sr-mirror-courses
-  echo "Ночной запуск включён: 03:50, журнал /var/log/sr-mirror-courses.log"
-fi
 course runes /var/lib/runes/runes.sqlite
 course taro /var/lib/polkas/cabinet.db
 
