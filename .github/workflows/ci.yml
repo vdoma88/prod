@@ -17,6 +17,10 @@ jobs:
         run: npm test
       - name: Скрипты VPS (shellcheck)
         run: shellcheck -x -S warning infra/vps/*.sh infra/update.sh
+      - name: Проверка аварийного резервного копирования (Python)
+        run: |
+          python3 -m py_compile infra/vps/backup-mirror.py
+          python3 infra/vps/backup-mirror.py --help
       - name: Браузер
         run: |
           npm i -g playwright@1.56.1
