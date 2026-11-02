@@ -160,6 +160,10 @@ def snapshot(scope, stage, stamp):
         ('/etc/cron.d/sr-mirror-backups', 'etc/cron/sr-mirror-backups', False),
         ('/etc/systemd/system/sr-accounts.service', 'etc/systemd/sr-accounts.service', False),
         ('/etc/systemd/system/rodbot.service', 'etc/systemd/rodbot.service', False)],
+      'legacy': [
+        ('/root/mirror', 'original-recovery/mirror', True),
+        ('/root/flame-backups', 'original-recovery/flame-backups', False),
+        ('/var/www/rodology/server/backups', 'original-recovery/rod-backups', False)],
     }
     (dest / 'manifest.json').write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding='utf8')
     raw = dest / (scope + '.tar.gz')
@@ -274,7 +278,7 @@ def cleanup_old():
 
 def main():
     p = argparse.ArgumentParser(description='Full encrypted backup of recovery VPS')
-    p.add_argument('--scope', choices=('all', 'rod', 'flame', 'hub'), default='all')
+    p.add_argument('--scope', choices=('all', 'rod', 'flame', 'hub', 'legacy'), default='all')
     p.add_argument('--no-telegram', action='store_true')
     args = p.parse_args()
     if os.geteuid():
