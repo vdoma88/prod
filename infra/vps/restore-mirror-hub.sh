@@ -134,7 +134,7 @@ install -m 644 "$DIR/accounts/deploy/sr-accounts.service" /etc/systemd/system/sr
 systemctl daemon-reload
 systemctl enable --now sr-accounts
 systemctl restart sr-accounts
-for i in $(seq 1 20); do
+for ((i=1; i<=20; i++)); do
   if curl -fsS --max-time 2 -o /dev/null http://127.0.0.1:4320/account/; then break; fi
   sleep 1
 done
