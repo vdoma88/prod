@@ -25,7 +25,7 @@ install -d -m 700 /root/sr-backups
 . "$(dirname "$0")/lib.sh"
 HOURS="$(server_hours 8 23)"
 cat > /etc/cron.d/sr-mirror-backups <<CRON
-# Encrypted full backups of Rod, Flame and common hub — 08:00 and 23:00 Moscow time
+# Full backups (plain tar.gz) of Rod, Flame and common hub — 08:00 and 23:00 Moscow time
 # (hours below are server local time).
 SHELL=/bin/bash
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
@@ -35,7 +35,7 @@ chmod 644 /etc/cron.d/sr-mirror-backups
 # Руны и Таро — через 15 минут, тем же ключом и ботом
 if [ -f /var/www/prod/infra/vps/mirror-backup.sh ]; then
   cat > /etc/cron.d/sr-mirror-courses <<CRON
-# Encrypted backups of Runes and Taro — 08:15 and 23:15 Moscow time (server hours below).
+# Backups (plain tar.gz) of Runes and Taro — 08:15 and 23:15 Moscow time (server hours below).
 SHELL=/bin/bash
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 15 $HOURS * * * root /bin/bash /var/www/prod/infra/vps/mirror-backup.sh >> /var/log/sr-mirror-courses.log 2>&1
@@ -46,8 +46,7 @@ fi
 
 echo "Full backups: 08:00 and 23:00 Moscow time (server hours: $HOURS)."
 echo 'Log: /var/log/sr-mirror-backups.log'
-echo 'Encrypted archives: /root/sr-backups/'
-echo 'CRITICAL: copy /etc/sr-backup.key OFF the VPS after first backup.'
+echo 'Archives (tar.gz, no encryption): /root/sr-backups/'
 echo 'Telegram settings are taken from /etc/sr-mirror-backup.env, or a configured Rod/Flame bot.'
 echo 'Older cron jobs are not removed automatically; check warnings below.'
 if [ -e /etc/cron.d/rodology-backup ]; then

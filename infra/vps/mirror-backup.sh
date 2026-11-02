@@ -5,20 +5,17 @@
 #
 # Род, школу и общий кабинет копирует infra/vps/backup-mirror.py (--scope all).
 # Этот скрипт дополняет его двумя курсами, каждый — отдельным архивом, в том
-# же формате и той же папке /root/sr-backups:
-#   runes-ДАТА.tar.gz.enc  база рун (runes.sqlite, целостная копия)
-#   taro-ДАТА.tar.gz.enc   база Таро (cabinet.db, целостная копия)
-# Шифрование и ключ — те же, что у backup-mirror.py (/etc/sr-backup.key,
-# AES-256-CBC, PBKDF2 250 000), рядом .sha256. Курс, которого нет, пропускается.
+# же виде и той же папке /root/sr-backups — обычные архивы, без шифрования:
+#   runes-ДАТА.tar.gz  база рун (runes.sqlite, целостная копия)
+#   taro-ДАТА.tar.gz   база Таро (cabinet.db, целостная копия)
+# Рядом .sha256. Курс, которого нет, пропускается. Хранятся последние 14.
 # Если настроен /etc/sr-mirror-backup.env (mirror-telegram-setup.sh) — архивы
 # уходят в Telegram тем же ботом. Расписание (8:15 и 23:15 по Москве) ставит
 # install-mirror-backup-cron.sh вместе с копиями Рода, школы и кабинета.
 set -uo pipefail
 [ "$(id -u)" = 0 ] || { echo "Запустите от root"; exit 1; }
 
-KEY=/etc/sr-backup.key
 OUT=/root/sr-backups
-[ -s "$KEY" ] || { echo "Нет ключа $KEY — сначала: python3 /var/www/prod/infra/vps/backup-mirror.py --scope all"; exit 1; }
 
 STAMP="$(date +%Y%m%d-%H%M%S)"
 umask 077
@@ -53,24 +50,27 @@ sqlite_copy() {
     db.close();' "$1" "$2"
 }
 
-# course имя файл_базы — архив, шифрование, контрольная сумма
+# course имя файл_базы название — архив, контрольная сумма, отправка, старые копии
 course() {
-  local name="$1" db="$2" file="$OUT/$1-$STAMP.tar.gz.enc"
+  local name="$1" db="$2" file="$OUT/$1-$STAMP.tar.gz"
   if [ ! -f "$db" ]; then echo "  – $name: нет $db"; return; fi
   mkdir -p "$WORK/$name"
   if ! sqlite_copy "$db" "$WORK/$name/$(basename "$db")"; then echo "  ✗ $name: копия базы не прошла"; FAIL=1; return; fi
-  if tar -czf - -C "$WORK" "$name" | openssl enc -aes-256-cbc -pbkdf2 -iter 250000 -salt -pass "file:$KEY" -out "$file"; then
+  if tar -czf "$file" -C "$WORK" "$name"; then
     sha256sum "$file" | awk '{print $1}' > "$file.sha256"
     echo "  ✓ $name: $file ($(du -h "$file" | cut -f1))"
-    tg_send "$file" "$name $STAMP, sha256 $(cat "$file.sha256")"
+    tg_send "$file" "$3 — резервная копия $STAMP. SHA256: $(cat "$file.sha256")"
+    # Последние 14 копий курса, остальные удалить
+    find "$OUT" -maxdepth 1 -name "$name-*.tar.gz" -printf '%T@ %p\n' | sort -rn | tail -n +15 | cut -d' ' -f2- \
+      | while read -r old; do rm -f "$old" "$old.sha256"; done
   else
     rm -f "$file"; echo "  ✗ $name: архив не создан"; FAIL=1
   fi
 }
 
 echo "Копии в $OUT"
-course runes /var/lib/runes/runes.sqlite
-course taro /var/lib/polkas/cabinet.db
+course runes /var/lib/runes/runes.sqlite "Руны"
+course taro /var/lib/polkas/cabinet.db "Таро"
 
 IP="$(curl -4 -fsS --max-time 10 https://api.ipify.org || hostname -I | awk '{print $1}')"
 echo
