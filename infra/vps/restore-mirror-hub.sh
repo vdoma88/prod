@@ -74,6 +74,30 @@ for path in root.rglob('*'):
     if old != new:
         path.write_bytes(new)
         count += 1
+# Do not promise single sign-on on this emergency VPS: the original
+# accounts.sqlite has not been restored and Rod still uses its own login.
+# Only mirror build output is changed; canonical site source stays intact.
+course_page = root / 'courses.html'
+html = course_page.read_text(encoding='utf-8')
+html = html.replace(
+    'Один вход для «Связи с Родом», «Карты как зеркала» и «Рун»: ваша почта и пароль, который вы задали по ссылке от Екатерины. После входа там видны все открытые вам курсы.',
+    'Аварийное зеркало: «Связь с Родом» и «Язык Пламени» пока используют отдельные логины. Общий кабинет восстановлен для администратора; доступ учениц через него подключим после проверки учётных записей.'
+)
+html = html.replace(
+    'Вход — через общий кабинет «Сила Рода».',
+    'На аварийном зеркале вход по логину и паролю «Связи с Родом».',
+    1
+)
+html = html.replace(
+    'Вход — через общий кабинет «Сила Рода».',
+    'Кабинет карт будет восстановлен после Рода и свечной школы.',
+    1
+)
+html = html.replace(
+    'Вход — через общий кабинет «Сила Рода», уроки открывает Екатерина.',
+    'Кабинет рун будет восстановлен в последнюю очередь.'
+)
+course_page.write_text(html, encoding='utf-8')
 (root/'robots.txt').write_text('User-agent: *\nDisallow: /\n', encoding='utf-8')
 print(f'Mirror URLs rewritten in {count} files; mirror excluded from search indexing.')
 PY
