@@ -29,9 +29,9 @@ mkdir -p /root/mirror
 
 log "Preflight: $HUB"
 # Never change the vhosts or services for working mirrors.
-[ -f /etc/nginx/sites-enabled/mirror ] || fail 'Existing mirror nginx site is missing; first recover Rod and Flame.'
-systemctl is-active --quiet rodology || fail 'Rod service is not active.'
-systemctl is-active --quiet flame-school || fail 'Flame service is not active.'
+[ -f /etc/nginx/sites-enabled/mirror ] || log 'WARNING: mirror nginx config is missing; deploy the landing independently.'
+systemctl is-active --quiet rodology || log 'WARNING: Rod is not active yet; recover it after the landing.'
+systemctl is-active --quiet flame-school || log 'WARNING: Flame is not active yet; recover it after the landing.'
 [ ! -e /etc/nginx/sites-enabled/belayarod.ru ] || fail 'Canonical belayarod.ru nginx site exists: this helper is only for the emergency sslip.io host.'
 
 log 'Fetch vdoma88/prod, main'
@@ -195,16 +195,23 @@ nginx -t && systemctl reload nginx
 
 log 'Smoke test - verify EACH vhost separately (including SNI)'
 check() {
-  local host="$1" path="$2" code
+  local host="$1" path="$2" importance="${3:-required}" code
   code="$(curl --silent --show-error --max-time 12 --resolve "$host:443:127.0.0.1" -o /dev/null -w '%{http_code}' "https://$host$path" || true)"
   printf '  %-46s %s\n' "https://$host$path" "$code"
-  case "$code" in 2??|3??) ;; *) fail "$host$path is not responding. Check the nginx vhost and app logs." ;; esac
+  case "$code" in
+    2??|3??) ;;
+    *) if [ "$importance" = required ]; then
+         fail "$host$path is not responding. Check the nginx vhost and app logs."
+       else
+         log "WARNING: $host$path is not responding; recover this course next."
+       fi ;;
+  esac
 }
 check "$HUB" '/'
 check "$HUB" '/courses.html'
 check "$HUB" '/account/'
-check "$ROD" '/'
-check "$FLAME" '/'
+check "$ROD" '/' optional
+check "$FLAME" '/' optional
 
 if [ -n "${ADMIN_EMAIL:-}" ]; then
   log 'Create or recover mirror administrator'
