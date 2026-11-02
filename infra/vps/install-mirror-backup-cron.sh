@@ -11,6 +11,14 @@ command -v pg_dump >/dev/null || { echo 'pg_dump missing' >&2; exit 1; }
 command -v pg_restore >/dev/null || { echo 'pg_restore missing' >&2; exit 1; }
 command -v runuser >/dev/null || { echo 'runuser missing' >&2; exit 1; }
 
+python3 -m py_compile "$SCRIPT"
+if ! command -v cron >/dev/null 2>&1; then
+  echo 'cron is not installed. Installing the system scheduler.'
+  apt-get update -qq
+  apt-get install -y -qq cron
+fi
+systemctl enable --now cron
+systemctl is-active --quiet cron || { echo 'cron is not running' >&2; exit 1; }
 install -d -m 700 /root/sr-backups
 cat > /etc/cron.d/sr-mirror-backups <<'CRON'
 # Encrypted full backups of Rod, Flame and common hub, 03:35 server local time.
