@@ -41,6 +41,8 @@ echo "Копии в $OUT"
 # --- Язык Пламени ---
 if sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='flame_db'" 2>/dev/null | grep -q 1; then
   mkdir -p "$WORK/plamya"
+  # Файл пишет root (скрипт под root), postgres только выдаёт дамп
+  # shellcheck disable=SC2024
   if sudo -u postgres pg_dump flame_db > "$WORK/plamya/flame_db.sql"; then
     [ -d /var/www/flame-app/public/uploads ] && cp -r /var/www/flame-app/public/uploads "$WORK/plamya/uploads"
     pack plamya
@@ -50,6 +52,8 @@ else skip plamya "базы flame_db нет"; fi
 # --- Связь с Родом ---
 if sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='rodology'" 2>/dev/null | grep -q 1; then
   mkdir -p "$WORK/rod"
+  # Файл пишет root (скрипт под root), postgres только выдаёт дамп
+  # shellcheck disable=SC2024
   if sudo -u postgres pg_dump --no-owner --no-privileges rodology > "$WORK/rod/rodology.sql"; then
     [ -d /var/www/rodology/server/storage/uploads ] && cp -r /var/www/rodology/server/storage/uploads "$WORK/rod/uploads"
     pack rod
