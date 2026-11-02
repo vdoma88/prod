@@ -176,7 +176,7 @@ def snapshot(scope, stage, stamp):
             add(t, src, logical, required)
     with tarfile.open(raw, 'r:gz') as t:
         entries = t.getnames()
-        if 'manifest.json' not in entries or not any(n.startswith('snapshots/') for n in entries):
+        if 'manifest.json' not in entries or (scope != 'legacy' and not any(n.startswith('snapshots/') for n in entries)) or (scope == 'legacy' and not any(n.startswith('original-recovery/') for n in entries)):
             fail('Snapshot failed archive verification')
     return raw, meta
 
