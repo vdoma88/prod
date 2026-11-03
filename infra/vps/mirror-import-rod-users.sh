@@ -25,12 +25,15 @@ DB_OK="$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='ro
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 chmod 755 "$WORK"
 USERS="$WORK/rod-users.json"
+# Файлы пишет и читает root (скрипт под root); sudo — только для psql и node
+# shellcheck disable=SC2024
 sudo -u postgres psql -d rodology -tAc \
   "SELECT COALESCE(json_agg(json_build_object('email', lower(email), 'name', name, 'role', role::text)), '[]') FROM \"User\" WHERE email IS NOT NULL AND email <> ''" > "$USERS"
 chmod 644 "$USERS"
 NOMAIL="$(sudo -u postgres psql -d rodology -tAc "SELECT count(*) FROM \"User\" WHERE email IS NULL OR email = ''")"
 
 get() { sed -n "s/^$1=//p" "$ENV_FILE" | tail -1; }
+# shellcheck disable=SC2024
 sudo -u sraccounts env ACCOUNTS_DB_PATH="$(get ACCOUNTS_DB_PATH)" PUBLIC_ORIGIN="$(get PUBLIC_ORIGIN)" ACCOUNT_RESET_SECRET="$(get ACCOUNT_RESET_SECRET)" \
   node --disable-warning=ExperimentalWarning "$REPO/accounts/cli.mjs" import-rod < "$USERS"
 [ "$NOMAIL" = 0 ] || echo "Без почты (только логин) — $NOMAIL: в общий вход не заведены, входят в Род как раньше."
