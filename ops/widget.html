@@ -1,0 +1,70 @@
+<!-- Пульт «Силы Рода»: состояние сервера в сообщении Telegram (ops/README.md). Данные — chatData от бота (ops/status.mjs, packStatus). -->
+<style>
+:root{--ok:light-dark(#1f9d4a,#3cc56b);--bad:var(--tg-theme-destructive-text-color);--h:var(--tg-theme-hint-color);--bg2:var(--tg-theme-secondary-bg-color)}
+body{margin:0;padding:12px 14px;font:14px/1.3 system-ui,sans-serif;font-variant-numeric:tabular-nums}
+.hd{display:flex;align-items:center;gap:8px}
+.hd b{flex:1;font-size:16px}
+.st{padding:3px 9px;border-radius:10px;font-size:12px;font-weight:600;color:#fff;background:var(--ok)}
+.st.bad{background:var(--bad)}
+.tm{color:var(--h);font-size:12px;margin-top:2px}
+h4{margin:12px 0 6px;font-size:12px;font-weight:600;color:var(--h);text-transform:uppercase;letter-spacing:.04em}
+.ch{display:flex;flex-wrap:wrap;gap:5px}
+.ch span{padding:3px 8px;border-radius:9px;background:var(--bg2);font-size:13px}
+.ch span::before,.bk i{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;background:var(--ok)}
+.ch .x::before,.bk .x i{background:var(--bad)}
+.ch .x{color:var(--bad)}
+.bk div{display:flex;align-items:center;padding:2px 0}
+.bk div span{flex:1}
+.bk em{font-style:normal;color:var(--h)}
+.bk .x em{color:var(--bad)}
+.qs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.qs div{padding:7px 8px;border-radius:10px;background:var(--bg2)}
+.qs b{display:block;font-size:20px}
+.qs span{font-size:11px;color:var(--h)}
+.qs .n b{color:var(--tg-theme-link-color)}
+.mt{margin-top:8px;font-size:12px;color:var(--h)}
+.bt{display:flex;gap:6px;margin-top:10px}
+.bt button,.bt a{flex:1;padding:8px 4px;border:0;border-radius:9px;font:600 13px system-ui,sans-serif;text-align:center;text-decoration:none;background:var(--bg2);color:var(--tg-theme-link-color)}
+.bt button{background:var(--tg-theme-button-color);color:var(--tg-theme-button-text-color)}
+.bt button[disabled]{opacity:.6}
+.nd .bd{display:none}
+</style>
+<div class="hd"><b>Пульт · Сила Рода</b><span class="st" id="st">…</span></div>
+<div class="tm" id="tm">Ждём данные от бота</div>
+<div class="bd">
+<h4>Службы и сайты</h4><div class="ch" id="sv"></div>
+<h4>Резервные копии</h4><div class="bk" id="bk"></div>
+<h4>Ждут проверки</h4><div class="qs" id="qs"></div>
+<div class="mt" id="mt"></div>
+</div>
+<div class="bt"><button id="rf">Обновить</button><a id="l1">Род</a><a id="l2">Школа</a><a id="l3">Кабинет</a></div>
+<script>
+const T=window.TelegramWidget,$=i=>document.getElementById(i),
+J=s=>{try{return s?JSON.parse(s):null}catch(e){return null}},
+E=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.textContent=h;return e},
+ago=h=>h==null?'нет копии':h<1?'меньше часа':Math.round(h)+' ч назад',
+cnt=n=>n==null?'—':String(n);
+let S=null;
+function draw(d){
+  if(!d||!Array.isArray(d.s)){document.body.classList.add('nd');return}
+  document.body.classList.remove('nd');S=d;
+  const st=$('st');st.textContent=d.a?'Тревог: '+d.a:'Всё в порядке';st.className='st'+(d.a?' bad':'');
+  $('tm').textContent='Обновлено в '+(d.t||'?')+' (МСК)';
+  const sv=$('sv');sv.textContent='';for(const[n,ok]of d.s)sv.append(E('span',ok?'':'x',n));
+  const bk=$('bk');bk.textContent='';
+  for(const[n,h,ok]of d.b||[]){const r=E('div',ok?'':'x');r.append(E('i'),E('span','',n),E('em','',ago(h)));bk.append(r)}
+  const q=d.q||[],qs=$('qs');qs.textContent='';
+  [['Род: шаги'],['ДЗ школы'],['Отливки']].forEach(([t],i)=>{const c=E('div',q[i]?'n':'');c.append(E('b','',cnt(q[i])),E('span','',t));qs.append(c)});
+  const m=d.m||[];$('mt').textContent='Диск '+cnt(m[0])+'% · память '+cnt(m[1])+'% · нагрузка '+cnt(m[2])+'%';
+  const dm=String(d.d||'belayarod.ru').replace(/[^a-z0-9.-]/gi,'');
+  $('l1').href='https://rod.'+dm+'/admin';$('l2').href='https://plamya.'+dm+'/';$('l3').href='https://'+dm+'/account/';
+}
+function ask(tap){
+  if(!T||!T.request)return;const b=$('rf');b.disabled=true;b.textContent='…';
+  T.request('refresh').then(a=>{const d=J(a&&a.result);if(d)draw(d);tap&&T.HapticFeedback&&T.HapticFeedback.notificationOccurred&&T.HapticFeedback.notificationOccurred('success')},()=>{})
+   .finally(()=>{b.disabled=false;b.textContent='Обновить'});
+}
+$('rf').addEventListener('click',()=>ask(true));
+draw(T?J(T.chatData):null);
+if(T){T.onEvent('chatDataChanged',()=>draw(J(T.chatData)));if(T.chatType==='private'&&!T.isPreview)ask(false);T.ready&&T.ready()}
+</script>
