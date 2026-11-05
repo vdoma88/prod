@@ -84,6 +84,25 @@ EOF
   # Один процесс на бота: бот копий только отправляет, getUpdates больше никто не читает
 fi
 
+log "Кто онлайн: секрет служебных адресов"
+# Школа отдаёт список учениц онлайн по секрету общего входа; на вход в школу
+# он не влияет. Род — только когда он подключён к общему входу (ROD_LOCAL_LOGIN=1
+# оставляет вход по своим паролям): это отдельное решение, здесь не делается.
+SECRET="$(get /etc/sr-accounts.env SR_INTERNAL_SECRET)"
+FLAME_ENV=/var/www/flame-app/.env.local
+if [ -n "$SECRET" ] && [ -f "$FLAME_ENV" ] && ! grep -q '^SR_INTERNAL_SECRET=.' "$FLAME_ENV"; then
+  cp -p "$FLAME_ENV" "$FLAME_ENV.bak-$(date +%Y%m%d-%H%M%S)"
+  sed -i '/^SR_INTERNAL_SECRET=/d' "$FLAME_ENV"
+  echo "SR_INTERNAL_SECRET=$SECRET" >> "$FLAME_ENV"
+  systemctl restart flame-school && ok "школа: список онлайн включён (перезапущена)"
+else
+  ok "школа: $( [ -n "$SECRET" ] && grep -q '^SR_INTERNAL_SECRET=.' "$FLAME_ENV" 2>/dev/null && echo уже подключена || echo 'нет секрета общего входа — онлайн не показывается')"
+fi
+grep -q '^SR_INTERNAL_SECRET=.' /var/www/rodology/server/.env 2>/dev/null \
+  && ok "Род: подключён к общему входу — онлайн показывается" \
+  || ok "Род: не подключён к общему входу — на пульте онлайн Рода «—»"
+unset SECRET
+
 log "Служба sr-ops"
 install -d -m 700 /var/lib/sr-ops
 install -m 644 "$REPO/ops/deploy/sr-ops.service" /etc/systemd/system/sr-ops.service

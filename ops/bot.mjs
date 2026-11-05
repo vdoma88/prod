@@ -152,7 +152,11 @@ async function main() {
   const html = fs.readFileSync(path.join(HERE, 'widget.html'), 'utf8');
   const domain = env.OPS_DOMAIN || 'belayarod.ru';
   const log = (s) => console.log(s);
-  const bot = createOpsBot({ api, collect: () => collectStatus({ domain }), html, admins, state, save, log });
+  // Секрет служебных адресов курсов — тот же, что у общего входа (кто онлайн)
+  const internalSecret = (() => {
+    try { return (/^SR_INTERNAL_SECRET=(.*)$/m.exec(fs.readFileSync('/etc/sr-accounts.env', 'utf8')) || [])[1]?.trim() || ''; } catch { return ''; }
+  })();
+  const bot = createOpsBot({ api, collect: () => collectStatus({ domain, internalSecret }), html, admins, state, save, log });
 
   const me = await api('getMe');
   console.log(`Пульт: @${me.username}, администраторов ${admins.length}, домен ${domain}`);

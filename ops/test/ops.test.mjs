@@ -8,7 +8,7 @@ import { createOpsBot } from '../bot.mjs';
 const NOW = Date.parse('2026-11-05T09:00:00Z');
 const H = 36e5;
 
-function fakeHost({ down = [], missing = [], files = {}, counts = {}, codes = {} } = {}) {
+function fakeHost({ down = [], missing = [], files = {}, counts = {}, codes = {}, online = { plamya: [], rod: null } } = {}) {
   const runImpl = async (cmd, args) => {
     if (cmd === 'systemctl') {
       const unit = args[1];
@@ -22,8 +22,13 @@ function fakeHost({ down = [], missing = [], files = {}, counts = {}, codes = {}
     }
     return null;
   };
-  const fetchImpl = async (url) => {
+  const fetchImpl = async (url, init = {}) => {
     const host = new URL(url).host;
+    if (url.includes('/sr-internal/online')) {
+      if (init.headers?.['X-SR-Secret'] !== 'inner') return { ok: false, status: 404 };
+      const list = online[host.endsWith(':3000') ? 'plamya' : 'rod'];
+      return list === null ? { ok: false, status: 404 } : { ok: true, status: 200, json: async () => ({ online: list.map((name) => ({ name })) }) };
+    }
     if (codes[host] === 0) throw new Error('ECONNREFUSED');
     return { status: codes[host] ?? 200 };
   };
@@ -32,7 +37,7 @@ function fakeHost({ down = [], missing = [], files = {}, counts = {}, codes = {}
     readdir: () => Object.keys(files), stat: (p) => ({ mtimeMs: files[p.split('/').pop()], size: 100 }),
     readFile: (f) => (f.endsWith('.env.local') ? 'DATABASE_URL=postgres://flame_user:x@127.0.0.1:5432/flame_recovery_20261101\n' : 'MemTotal: 4000000 kB\nMemAvailable: 1000000 kB\n'),
     disk: 'Filesystem 1024-blocks Used Available Capacity Mounted on\n/dev/vda1 41000000 12000000 29000000 30% /',
-    meminfo: 'MemTotal: 4000000 kB\nMemAvailable: 1000000 kB\n', loadavg: [0.5, 0, 0], cpus: 2,
+    meminfo: 'MemTotal: 4000000 kB\nMemAvailable: 1000000 kB\n', loadavg: [0.5, 0, 0], cpus: 2, internalSecret: 'inner',
   };
 }
 
@@ -165,4 +170,14 @@ test('бот: /status — сводка текстом; виджет не при�
   await bot.onUpdate({ message: { text: '/pult', chat: { id: 1, type: 'private' }, from: { id: 1 } } });
   assert.deepEqual(calls.map((c) => c[0]), ['sendWidget', 'sendMessage']);
   assert.match(calls[1][1].text, /^Пульт-виджет пока недоступен \(sendWidget: Not Found: method not found\)\. Сводка текстом:\n\n🔴 Тревог: 1/);
+});
+
+test('онлайн: школа и Род по служебному адресу с секретом; Род без секрета — прочерк', async () => {
+  const st = await collectStatus(fakeHost({ files: freshFiles, online: { plamya: ['Анна Иванова', 'Мария'], rod: null } }));
+  assert.deepEqual(st.online, { plamya: ['Анна', 'Мария'], rod: null });
+  assert.deepEqual(JSON.parse(packStatus(st)).o, [2, null]);
+  const { statusText } = await import('../status.mjs');
+  assert.match(statusText(st), /\nОнлайн: школа 2 \(Анна, Мария\) · Род —\n/);
+  const none = await collectStatus({ ...fakeHost({ files: freshFiles }), internalSecret: '' });
+  assert.deepEqual(none.online, { plamya: null, rod: null }, 'без секрета никого не спрашиваем');
 });
