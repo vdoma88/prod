@@ -23,6 +23,7 @@ h4{margin:12px 0 6px;font-size:12px;font-weight:600;color:var(--h);text-transfor
 .qs span{font-size:11px;color:var(--h)}
 .qs .n b{color:var(--tg-theme-link-color)}
 .mt{margin-top:8px;font-size:12px;color:var(--h)}
+#on{font-size:13px;color:inherit}
 .bt{display:flex;gap:6px;margin-top:10px}
 .bt button,.bt a{flex:1;padding:8px 4px;border:0;border-radius:9px;font:600 13px system-ui,sans-serif;text-align:center;text-decoration:none;background:var(--bg2);color:var(--tg-theme-link-color)}
 .bt button{background:var(--tg-theme-button-color);color:var(--tg-theme-button-text-color)}
@@ -35,7 +36,7 @@ h4{margin:12px 0 6px;font-size:12px;font-weight:600;color:var(--h);text-transfor
 <h4>Службы и сайты</h4><div class="ch" id="sv"></div>
 <h4>Резервные копии</h4><div class="bk" id="bk"></div>
 <h4>Ждут проверки</h4><div class="qs" id="qs"></div>
-<div class="mt" id="mt"></div>
+<div class="mt" id="on"></div><div class="mt" id="mt"></div>
 </div>
 <div class="bt"><button id="rf">Обновить</button><a id="l1">Род</a><a id="l2">Школа</a><a id="l3">Кабинет</a></div>
 <script>
@@ -55,6 +56,7 @@ function draw(d){
   for(const[n,h,ok]of d.b||[]){const r=E('div',ok?'':'x');r.append(E('i'),E('span','',n),E('em','',ago(h)));bk.append(r)}
   const q=d.q||[],qs=$('qs');qs.textContent='';
   [['Род: шаги'],['ДЗ школы'],['Отливки']].forEach(([t],i)=>{const c=E('div',q[i]?'n':'');c.append(E('b','',cnt(q[i])),E('span','',t));qs.append(c)});
+  const o=d.o||[];$('on').textContent='Сейчас онлайн: школа '+cnt(o[0])+' · Род '+cnt(o[1]);
   const m=d.m||[];$('mt').textContent='Диск '+cnt(m[0])+'% · память '+cnt(m[1])+'% · нагрузка '+cnt(m[2])+'%';
   const dm=String(d.d||'belayarod.ru').replace(/[^a-z0-9.-]/gi,'');
   $('l1').href='https://rod.'+dm+'/admin';$('l2').href='https://plamya.'+dm+'/';$('l3').href='https://'+dm+'/account/';

@@ -78,6 +78,24 @@ async function pgCount(db, sql, runImpl) {
   return out != null && /^\d+$/.test(out) ? Number(out) : null;
 }
 
+/**
+ * Ученицы онлайн по служебному адресу курса на этом сервере (тот же, что
+ * опрашивает общий вход): число и имена; null — курс не отвечает или секрет
+ * ему не выдан (Род отдаёт список только при SR_INTERNAL_SECRET в своём .env).
+ */
+async function onlineOf(url, secret, fetchImpl) {
+  if (!secret) return null;
+  try {
+    const res = await fetchImpl(url, { headers: { 'X-SR-Secret': secret }, signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return null;
+    const body = await res.json();
+    if (!Array.isArray(body?.online)) return null;
+    return body.online.map((x) => String(x?.name || '').trim().split(/\s+/)[0]).filter(Boolean);
+  } catch {
+    return null;
+  }
+}
+
 async function httpCode(url, fetchImpl) {
   try {
     const res = await fetchImpl(url, { method: 'GET', redirect: 'manual', signal: AbortSignal.timeout(8000) });
@@ -96,7 +114,7 @@ export async function collectStatus({
   backupDir = '/root/sr-backups', domain = 'belayarod.ru',
   flameEnv = '/var/www/flame-app/.env.local', readFile = fs.readFileSync,
   readdir = fs.readdirSync, stat = fs.statSync, loadavg = os.loadavg(), cpus = os.cpus().length,
-  meminfo = null, disk = null,
+  meminfo = null, disk = null, internalSecret = '',
 } = {}) {
   const services = [];
   for (const [name, unit] of SERVICES) {
@@ -128,6 +146,11 @@ export async function collectStatus({
     casting: await pgCount(flameDb, `SELECT count(*) FROM casting_requests WHERE status = 'new'`, runImpl),
   };
 
+  const online = {
+    plamya: await onlineOf('http://127.0.0.1:3000/sr-internal/online', internalSecret, fetchImpl),
+    rod: await onlineOf('http://127.0.0.1:5000/sr-internal/online', internalSecret, fetchImpl),
+  };
+
   const df = disk ?? await runImpl('df', ['-P', '/']);
   const diskPct = df ? Number((/(\d+)%\s+\/\s*$/m.exec(df) || [])[1]) || null : null;
   const mi = meminfo ?? (() => { try { return readFile('/proc/meminfo', 'utf8'); } catch { return ''; } })();
@@ -135,7 +158,7 @@ export async function collectStatus({
   const memPct = kb('MemTotal') ? Math.round((1 - kb('MemAvailable') / kb('MemTotal')) * 100) : null;
 
   return {
-    at: now, domain, services, sites, backups, queues,
+    at: now, domain, services, sites, backups, queues, online,
     disk: diskPct, mem: memPct, load: Math.round((loadavg[0] / Math.max(1, cpus)) * 100),
   };
 }
@@ -148,6 +171,7 @@ export const mskTime = (ms) => new Date(ms + 3 * 36e5).toISOString().slice(11, 1
  *   t — время опроса (МСК), d — домен для ссылок,
  *   s — [[имя, 1|0]] службы и сайты, b — [[имя, часов|null, 1|0]] копии,
  *   q — [Род на проверке, ДЗ школы, отливки] (null — не узнать),
+ *   o — [онлайн в школе, в Роде] (null — курс не сказал),
  *   m — [диск %, память %, нагрузка %], a — сколько всего тревог.
  */
 export function packStatus(st) {
@@ -159,7 +183,7 @@ export function packStatus(st) {
   const m = [st.disk, st.mem, st.load];
   const alarms = s.filter((x) => !x[1]).length + b.filter((x) => !x[2]).length
     + (st.disk != null && st.disk >= 90 ? 1 : 0) + (st.mem != null && st.mem >= 95 ? 1 : 0);
-  const packed = { t: mskTime(st.at), d: st.domain, s, b, q: [st.queues.rod, st.queues.homework, st.queues.casting], m, a: alarms };
+  const packed = { t: mskTime(st.at), d: st.domain, s, b, q: [st.queues.rod, st.queues.homework, st.queues.casting], o: [st.online?.plamya?.length ?? null, st.online?.rod?.length ?? null], m, a: alarms };
   let text = JSON.stringify(packed);
   // На всякий случай: длинные имена укорачиваем, пока не влезет
   while (Buffer.byteLength(text) > 1024 && packed.s.some((x) => x[0].length > 4)) {
@@ -186,6 +210,7 @@ export function statusText(st) {
   const alarms = alarmsOf(st);
   const q = st.queues;
   const n = (v) => (v == null ? '—' : String(v));
+  const who = (list) => (list == null ? '—' : list.length ? `${list.length} (${list.slice(0, 5).join(', ')}${list.length > 5 ? '…' : ''})` : '0');
   return [
     `${alarms.length ? `🔴 Тревог: ${alarms.length}` : '🟢 Всё в порядке'} · ${mskTime(st.at)} МСК`,
     '',
@@ -193,6 +218,7 @@ export function statusText(st) {
     'Сайты: ' + st.sites.map((x) => `${dot(x.ok)} ${x.name}`).join('  '),
     'Копии: ' + st.backups.map((x) => `${dot(x.ok)} ${x.name} ${x.hours == null ? 'нет' : `${Math.round(x.hours)} ч`}`).join('  '),
     `Ждут проверки: Род ${n(q.rod)} · ДЗ школы ${n(q.homework)} · отливки ${n(q.casting)}`,
+    `Онлайн: школа ${who(st.online?.plamya)} · Род ${who(st.online?.rod)}`,
     `Диск ${n(st.disk)}% · память ${n(st.mem)}% · нагрузка ${n(st.load)}%`,
     ...(alarms.length ? ['', ...alarms.map((a) => `• ${a}`)] : []),
   ].join('\n');
