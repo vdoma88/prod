@@ -166,15 +166,24 @@ async function main() {
   setInterval(loop, every);
 
   let offset = state.offset || 0;
+  let webhookWarned = false;
   for (;;) {
     let updates = [];
     try {
       updates = await api('getUpdates', { offset, timeout: 30, allowed_updates: ['message', 'widget_query'] }, { timeoutMs: 45000 });
     } catch (e) {
+      // У бота настроен вебхук — Telegram шлёт команды туда, а не сюда
+      if (/webhook/i.test(e.message)) {
+        if (!webhookWarned) log(`Команды не доходят: у бота настроен вебхук (${e.message}). Тревоги и обновление пульта работают; для /pult и /status нужен отдельный бот или снятый вебхук.`);
+        webhookWarned = true;
+        await new Promise((r) => setTimeout(r, 60000));
+        continue;
+      }
       log(e.message);
       await new Promise((r) => setTimeout(r, 5000));
       continue;
     }
+    webhookWarned = false;
     for (const u of updates) {
       offset = u.update_id + 1;
       await bot.onUpdate(u).catch((e) => log(`обновление ${u.update_id}: ${e.message}`));

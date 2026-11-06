@@ -81,7 +81,7 @@ test('всё в порядке: ни одной тревоги, состояни
 
 test('тревоги: упавшая служба, недоступный сайт, старая и пропавшая копии, полный диск', async () => {
   const files = { ...freshFiles, 'flame-20261105T080000Z.tar.gz': NOW - 30 * H };
-  delete files['taro-20261105-081500.tar.gz'];
+  delete files['runes-20261105-081500.tar.gz'];
   const host = fakeHost({ down: ['rodology'], missing: ['polkas'], files, codes: { 'rod.belayarod.ru': 502 } });
   host.disk = '/dev/vda1 1 1 1 93% /';
   const st = await collectStatus(host);
@@ -89,7 +89,7 @@ test('тревоги: упавшая служба, недоступный сай
   const a = alarmsOf(st);
   assert.deepEqual(a, [
     'служба «Род» не работает', 'сайт «Род» отвечает 502',
-    'копия «Школа» старая: 30 ч', 'нет копии «Таро»', 'диск занят на 93%',
+    'копия «Школа» старая: 30 ч', 'нет копии «Руны»', 'диск занят на 93%',
   ]);
   assert.equal(JSON.parse(packStatus(st)).a, 5);
   assert.deepEqual(st.queues, { rod: null, homework: null, casting: null }, 'нет базы — прочерк, не ноль');
@@ -180,4 +180,13 @@ test('онлайн: школа и Род по служебному адресу 
   assert.match(statusText(st), /\nОнлайн: школа 2 \(Анна, Мария\) · Род —\n/);
   const none = await collectStatus({ ...fakeHost({ files: freshFiles }), internalSecret: '' });
   assert.deepEqual(none.online, { plamya: null, rod: null }, 'без секрета никого не спрашиваем');
+});
+
+test('копии: курса нет на сервере — его копий не ждём и не тревожимся', async () => {
+  const files = { ...freshFiles };
+  delete files['runes-20261105-081500.tar.gz'];
+  delete files['taro-20261105-081500.tar.gz'];
+  const st = await collectStatus(fakeHost({ files, missing: ['runes', 'polkas'] }));
+  assert.deepEqual(st.backups.map((b) => b.name), ['Род', 'Школа', 'Кабинет']);
+  assert.deepEqual(alarmsOf(st), []);
 });
