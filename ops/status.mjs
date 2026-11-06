@@ -21,13 +21,13 @@ export const SERVICES = [
   ['База', 'postgresql'],
 ];
 
-/** Резервные копии: имя на пульте → префикс архива в /root/sr-backups. */
+/** Резервные копии: имя на пульте → префикс архива в /root/sr-backups → служба курса (нет службы — копий не ждём). */
 export const BACKUPS = [
-  ['Род', 'rod-'],
-  ['Школа', 'flame-'],
-  ['Кабинет', 'hub-'],
-  ['Руны', 'runes-'],
-  ['Таро', 'taro-'],
+  ['Род', 'rod-', 'rodology'],
+  ['Школа', 'flame-', 'flame-school'],
+  ['Кабинет', 'hub-', 'sr-accounts'],
+  ['Руны', 'runes-', 'runes'],
+  ['Таро', 'taro-', 'polkas'],
 ];
 
 /** Копия старше этого — уже тревога (копии идут в 8:00 и 23:00 МСК: промежуток до 15 ч). */
@@ -134,7 +134,9 @@ export async function collectStatus({
     sites.push({ name, code, ok: code >= 200 && code < 400 });
   }
 
-  const backups = BACKUPS.map(([name, prefix]) => {
+  // Копии ждём только у курсов, что стоят на этом сервере
+  const installed = new Set(services.map((x) => x.unit));
+  const backups = BACKUPS.filter(([, , unit]) => installed.has(unit)).map(([name, prefix]) => {
     const b = latestBackup(backupDir, prefix, { now, readdir, stat });
     return { name, hours: b ? b.hours : null, ok: !!b && b.hours <= BACKUP_STALE_HOURS };
   });
