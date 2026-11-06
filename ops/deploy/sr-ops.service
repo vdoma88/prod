@@ -1,0 +1,23 @@
+[Unit]
+Description=Сила Рода — пульт в Telegram (состояние сервера)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+# root — только чтение: systemctl is-active, psql от имени postgres (runuser),
+# список копий в /root/sr-backups. Пишет лишь своё состояние в /var/lib/sr-ops.
+User=root
+WorkingDirectory=/var/www/prod
+EnvironmentFile=/etc/sr-ops.env
+ExecStart=/usr/bin/node /var/www/prod/ops/bot.mjs
+Restart=always
+RestartSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/sr-ops
+
+[Install]
+WantedBy=multi-user.target

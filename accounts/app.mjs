@@ -37,6 +37,32 @@ export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchI
   const secret = env.SR_INTERNAL_SECRET || '';
   const trustProxy = env.TRUST_PROXY === '1';
   const internalBase = (c) => env[`COURSE_${c.id.toUpperCase()}_INTERNAL`] || c.internal;
+
+  // Аварийное зеркало (ноябрь 2026): база общего входа потерялась вместе с
+  // сервером, а пароли учениц остались в базе «Связи с Родом» (bcrypt).
+  // Перенести их напрямую нельзя — хеш не обращается. С ROD_PASSWORD_FALLBACK=1
+  // вход тому, у кого здесь ещё нет пароля, сверяется с Родом на этом же
+  // сервере (/api/auth/login); подошёл — пароль сохраняется здесь, и дальше
+  // Род уже не спрашивается. Учётки заводит `cli.mjs import-rod`.
+  async function rodPasswordFallback(login, password) {
+    if (env.ROD_PASSWORD_FALLBACK !== '1' || typeof password !== 'string' || !password || password.length > 200) return null;
+    const known = store.userByEmail(String(login || ''));
+    if (!known || !known.active || known.hasPassword) return null;
+    const rod = COURSES.find(c => c.id === 'rod');
+    try {
+      const res = await fetchImpl(internalBase(rod) + '/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login: known.email, password }), signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) return null;
+    } catch {
+      return null;
+    }
+    // Короткий пароль Рода (там минимум 8) здесь не сохранить — вход пускаем, пароль спросим потом
+    if (password.length >= MIN_PASSWORD) store.setPassword(known.id, password);
+    store.audit(known.id, 'login.rod-password', known.id);
+    return known;
+  }
   const publicUrl = (c) => env[`COURSE_${c.id.toUpperCase()}_URL`] || c.url;
   const attempts = new Map();
   const pulseHits = new Map();
@@ -231,7 +257,7 @@ export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchI
       const login = b.login ?? b.email;
       const key = clientIp(req) + ':' + String(login || '').toLowerCase();
       if (limited(key)) throw new AccountError(429, 'Слишком много попыток. Подождите 15 минут.');
-      const u = store.checkPassword(login, b.password);
+      const u = store.checkPassword(login, b.password) || await rodPasswordFallback(login, b.password);
       if (!u) { attempts.get(key).push(Date.now()); throw new AccountError(401, 'Неверный логин или пароль.'); }
       attempts.delete(key);
       const s = store.createSession(u.id);

@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""Encrypted on-demand and scheduled backups for the recovery VPS.
-Scope: Rod DB + ALL existing media; Flame ACTIVE DB + ALL media;
-hub SQLite + visual editor media + bot DB + service configuration.
-No backups or user content are uploaded to GitHub.
+"""Резервные копии запасного сервера — обычные архивы tar.gz, без шифрования
+(ноябрь 2026: копии идут в личный Telegram владельца, к данным нужен
+свободный доступ — открываются любым архиватором).
+Состав: Род — база + все вложения; школа — АКТИВНАЯ база + все фото;
+кабинет — SQLite общего входа, медиатека редактора, база бота, сборка сайта.
+Секретов (.env, токенов, хешей паролей PostgreSQL) в архивах нет: при
+восстановлении их создают заново скрипты infra/vps и flame-app/deploy.
+В GitHub ни архивы, ни данные не попадают.
 """
 import argparse
-import base64
 from datetime import datetime, timezone
 import fcntl
 import hashlib
@@ -23,7 +26,6 @@ from urllib.request import Request, urlopen
 import uuid
 
 ROOT = Path('/root/sr-backups')
-KEY = Path('/etc/sr-backup.key')
 CHUNK = 35 * 1024 * 1024
 KEEP = 14
 
@@ -130,9 +132,6 @@ def snapshot(scope, stage, stamp):
         meta['active_db'] = db
         meta['media_count'] = files_in(Path('/var/www/flame-app/public/uploads'))
     elif scope == 'hub':
-        with (dest / 'postgres-roles.sql').open('wb') as out:
-            run(['runuser', '-u', 'postgres', '--', 'pg_dumpall', '--globals-only'],
-                stdout=out, stderr=subprocess.DEVNULL)
         sqlite_copy(Path('/var/lib/sr-accounts/accounts.sqlite'), dest / 'accounts.sqlite')
         bot = env(Path('/etc/rodbot.env'))
         bot_db = Path(bot.get('BOT_DB_PATH', '/var/lib/rodbot/bot.sqlite'))
@@ -144,17 +143,13 @@ def snapshot(scope, stage, stamp):
       'rod': [
         ('/var/www/rodology/server/storage/uploads', 'rod/storage/uploads', True),
         ('/var/www/rodology/server/public/content', 'rod/server/public/content', False),
-        ('/var/www/rodology/server/.env', 'rod/server/.env', True),
         ('/etc/systemd/system/rodology.service', 'etc/systemd/rodology.service', False)],
       'flame': [
         ('/var/www/flame-app/public/uploads', 'flame/public/uploads', True),
-        ('/var/www/flame-app/.env.local', 'flame/.env.local', True),
         ('/etc/systemd/system/flame-school.service', 'etc/systemd/flame-school.service', False)],
       'hub': [
         ('/var/lib/sr-accounts/media', 'hub/media', True),
         ('/var/www/prod/dist', 'hub/dist', True),
-        ('/etc/sr-accounts.env', 'etc/sr-accounts.env', True),
-        ('/etc/rodbot.env', 'etc/rodbot.env', False),
         ('/etc/nginx/sites-available/mirror', 'etc/nginx/mirror', False),
         ('/etc/nginx/sites-available/mirror-hub', 'etc/nginx/mirror-hub', False),
         ('/etc/cron.d/sr-mirror-backups', 'etc/cron/sr-mirror-backups', False),
@@ -180,31 +175,12 @@ def snapshot(scope, stage, stamp):
             fail('Snapshot failed archive verification')
     return raw, meta
 
-def ensure_key():
-    if not KEY.exists():
-        fd = os.open(KEY, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-        with os.fdopen(fd, 'wb') as f:
-            f.write(base64.urlsafe_b64encode(os.urandom(48)) + b'\n')
-        print('CRITICAL: New /etc/sr-backup.key created. Save its contents OFF the VPS in a secure place.')
-    if KEY.stat().st_mode & 0o077:
-        fail('Backup encryption key must have permissions 0600')
-    return KEY
-
 def digest(path):
     h = hashlib.sha256()
     with path.open('rb') as f:
         for block in iter(lambda: f.read(1024*1024), b''):
             h.update(block)
     return h.hexdigest()
-
-def encrypt(raw, output):
-    k = ensure_key()
-    run(['openssl', 'enc', '-aes-256-cbc', '-pbkdf2', '-iter', '250000',
-         '-salt', '-in', str(raw), '-out', str(output), '-pass', f'file:{k}'],
-        stdout=subprocess.DEVNULL)
-    if output.stat().st_size < 100:
-        fail('Empty encrypted archive')
-    return digest(output)
 
 def tg_settings():
     explicit = env(Path('/etc/sr-mirror-backup.env'))
@@ -220,21 +196,30 @@ def tg_settings():
             return token, chat
     return '', ''
 
-def send_telegram(encrypted, scope, sha):
+LABELS = {'rod': 'Связь с Родом', 'flame': 'Язык Пламени', 'hub': 'Общий кабинет и бот', 'legacy': 'Исходные копии восстановления'}
+
+def send_telegram(archive, scope, sha):
     token, chat = tg_settings()
     if not token or not chat:
         print(f'  WARNING {scope}: Telegram bot/chat not configured. LOCAL backup only.')
         return 'not_configured'
-    count = max(1, (encrypted.stat().st_size + CHUNK - 1) // CHUNK)
+    count = max(1, (archive.stat().st_size + CHUNK - 1) // CHUNK)
     if count > 100:
-        print(f'  WARNING {scope}: encrypted archive too large for Telegram chunking ({count} parts)')
+        print(f'  WARNING {scope}: archive too large for Telegram chunking ({count} parts)')
         return 'too_large'
     boundary = '----sr-backup-' + uuid.uuid4().hex
-    with encrypted.open('rb') as f:
+    label = LABELS.get(scope, scope)
+    with archive.open('rb') as f:
         for n in range(count):
             chunk = f.read(CHUNK)
-            name = f'{encrypted.name}.part{n+1:03d}-of-{count:03d}'
-            caption = f'Encrypted {scope} recovery {n+1}/{count}. Full SHA256: {sha}. Save encryption key OFF server.'
+            if count == 1:
+                name = archive.name
+                caption = f'{label} — резервная копия. SHA256: {sha}'
+            else:
+                name = f'{archive.name}.part{n+1:03d}-of-{count:03d}'
+                caption = (f'{label} — резервная копия, часть {n+1} из {count}. '
+                           f'Склеить по порядку: cat {archive.name}.part* > {archive.name} '
+                           f'(Windows: copy /b часть1+часть2 {archive.name}). SHA256 целого: {sha}')
             body = b''.join([
                 f'--{boundary}\r\nContent-Disposition: form-data; name="chat_id"\r\n\r\n{chat}\r\n'.encode(),
                 f'--{boundary}\r\nContent-Disposition: form-data; name="caption"\r\n\r\n{caption}\r\n'.encode(),
@@ -251,15 +236,16 @@ def send_telegram(encrypted, scope, sha):
             except Exception as e:
                 print(f'  WARNING {scope}: Telegram upload failed at chunk {n+1}/{count}: {type(e).__name__} (details withheld)')
                 return 'failed'
-    print(f'  Telegram delivered {scope}: {count} encrypted file(s)')
+    print(f'  Telegram delivered {scope}: {count} file(s)')
     return 'sent'
 
 def create(scope, tmp, stamp, telegram=True):
     raw, meta = snapshot(scope, tmp, stamp)
-    enc = tmp / (scope + '.enc')
-    sha = encrypt(raw, enc)
-    target = ROOT / f'{scope}-{stamp.replace("-", "").replace(":", "")}.tar.gz.enc'
-    enc.replace(target)
+    if raw.stat().st_size < 100:
+        fail('Empty archive')
+    target = ROOT / f'{scope}-{stamp.replace("-", "").replace(":", "")}.tar.gz'
+    raw.replace(target)
+    sha = digest(target)
     target.chmod(0o600)
     checksum = target.with_name(target.name + '.sha256')
     checksum.write_text(f'{sha}  {target.name}\n', encoding='ascii')
@@ -271,13 +257,13 @@ def create(scope, tmp, stamp, telegram=True):
 
 def cleanup_old():
     for scope in ('rod', 'flame', 'hub'):
-        found = sorted(ROOT.glob(f'{scope}-*.tar.gz.enc'), key=lambda x: x.stat().st_mtime, reverse=True)
+        found = sorted(ROOT.glob(f'{scope}-*.tar.gz'), key=lambda x: x.stat().st_mtime, reverse=True)
         for old in found[KEEP:]:
             old.unlink()
             old.with_name(old.name + '.sha256').unlink(missing_ok=True)
 
 def main():
-    p = argparse.ArgumentParser(description='Full encrypted backup of recovery VPS')
+    p = argparse.ArgumentParser(description='Full backup of recovery VPS (plain tar.gz)')
     p.add_argument('--scope', choices=('all', 'rod', 'flame', 'hub', 'legacy'), default='all')
     p.add_argument('--no-telegram', action='store_true')
     args = p.parse_args()
@@ -309,7 +295,7 @@ def main():
         if not args.no_telegram and any(status != 'sent' for _, status in statuses):
             print('WARNING: All local backups exist but offsite Telegram delivery was incomplete.', file=sys.stderr)
             return 2
-        print('SUCCESS: all selected encrypted backup archives saved locally')
+        print('SUCCESS: all selected backup archives saved locally')
     return 0
 
 if __name__ == '__main__':
