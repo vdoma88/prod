@@ -9,6 +9,8 @@
 #       Telegram откроет виджеты всем (Bot API 10.4), без переустановки.
 #   2 — отдельный бот в тестовой среде Telegram (бета Bot API с виджетами):
 #       чтобы увидеть виджет уже сейчас. Токен вставляется, на экране не виден.
+#   3 — другой бот в обычном Telegram: отдельный бот для пульта (у бота копий
+#       бывает вебхук — тогда команды ему не доходят, ops-bot-webhook.sh).
 # Пишет /etc/sr-ops.env (только root), ставит и запускает службу sr-ops.
 # Повторный запуск — обновление: настройки не спрашивает, если они есть
 # (заново: RECONFIGURE=1).
@@ -43,11 +45,12 @@ if [ ! -f "$ENV_FILE" ] || [ "${RECONFIGURE:-0}" = 1 ]; then
   echo "Какого бота взять для пульта?"
   echo "  1 — бот резервных копий (обычный Telegram; виджет появится, когда его запустят)"
   echo "  2 — тестовый бот в тестовой среде Telegram (виджет виден уже сейчас)"
+  echo "  3 — другой бот в обычном Telegram (например, отдельный бот для пульта)"
   read -r -p "Ваш выбор [1]: " MODE
   MODE="${MODE:-1}"
-  if [ "$MODE" = 2 ]; then
-    BASE=https://api.telegram.org/beta; TEST=1
-    echo "Токен тестового бота (@BotFather в тестовой среде). Вставьте и нажмите Enter, на экране не виден."
+  if [ "$MODE" = 2 ] || [ "$MODE" = 3 ]; then
+    if [ "$MODE" = 2 ]; then BASE=https://api.telegram.org/beta; TEST=1; else BASE=https://api.telegram.org; TEST=0; fi
+    echo "Токен бота (@BotFather$( [ "$MODE" = 2 ] && printf ' в тестовой среде')). Вставьте и нажмите Enter, на экране не виден."
     read -r -s -p "Токен: " TOKEN; echo
   else
     BASE=https://api.telegram.org; TEST=0
