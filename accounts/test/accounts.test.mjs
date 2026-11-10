@@ -349,3 +349,37 @@ test('ученицы онлайн: одна панель на все курсы'
   assert.equal((await ask('wrong')).status, 401);
   assert.equal((await (await ask('inner-secret')).json()).courses.length, 4);
 });
+
+test('зеркало: пароль из «Связи с Родом» при первом входе переносится сюда', async (t) => {
+  const ROD_PASS = 'rod-password-1';
+  const rod = (url, body) => (url.endsWith('/api/auth/login') && body.login === 'anna@b.ru' && body.password === ROD_PASS
+    ? [200, { token: 'rod-jwt' }] : [401, { error: 'Неверная почта (логин) или пароль' }]);
+  const s = await server({ env: { ROD_PASSWORD_FALLBACK: '1', COURSE_ROD_INTERNAL: 'http://rod.test' }, courses: { rod } });
+  t.after(s.close);
+  const anna = s.store.createUser({ email: 'anna@b.ru', name: 'Анна' });
+
+  assert.equal((await s.req('/account/api/login', { body: { email: 'anna@b.ru', password: 'чужой-пароль' } })).status, 401);
+  const ok = await s.req('/account/api/login', { body: { email: 'Anna@b.ru', password: ROD_PASS } });
+  assert.equal(ok.status, 200);
+  assert.equal(ok.data.user.name, 'Анна');
+  assert.equal(s.store.user(anna.id).hasPassword, true, 'пароль сохранён в общем входе');
+  const rodCalls = s.calls.filter(c => c.url === 'http://rod.test/api/auth/login').length;
+  assert.equal(rodCalls, 2);
+
+  s.logout();
+  assert.equal((await s.req('/account/api/login', { body: { email: 'anna@b.ru', password: ROD_PASS } })).status, 200);
+  assert.equal(s.calls.filter(c => c.url === 'http://rod.test/api/auth/login').length, rodCalls, 'второй вход — без Рода');
+
+  // У кого пароль уже есть, Род не спрашивается: чужой пароль Рода не подменит здешний
+  s.logout();
+  assert.equal((await s.req('/account/api/login', { body: { email: 'kate@b.ru', password: ROD_PASS } })).status, 401);
+  assert.equal(s.calls.filter(c => c.url === 'http://rod.test/api/auth/login').length, rodCalls);
+});
+
+test('без ROD_PASSWORD_FALLBACK Род при входе не спрашивается', async (t) => {
+  const s = await server({ env: { COURSE_ROD_INTERNAL: 'http://rod.test' }, courses: { rod: () => [200, {}] } });
+  t.after(s.close);
+  s.store.createUser({ email: 'anna@b.ru', name: 'Анна' });
+  assert.equal((await s.req('/account/api/login', { body: { email: 'anna@b.ru', password: 'любой-пароль-1' } })).status, 401);
+  assert.equal(s.calls.length, 0);
+});

@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# Срочная копия рун и Таро на запасном сервере (ноябрь 2026).
+#
+#   bash /var/www/prod/infra/vps/mirror-backup.sh
+#
+# Род, школу и общий кабинет копирует infra/vps/backup-mirror.py (--scope all).
+# Этот скрипт дополняет его двумя курсами, каждый — отдельным архивом, в том
+# же виде и той же папке /root/sr-backups — обычные архивы, без шифрования:
+#   runes-ДАТА.tar.gz  база рун (runes.sqlite, целостная копия)
+#   taro-ДАТА.tar.gz   база Таро (cabinet.db, целостная копия)
+# Рядом .sha256. Курс, которого нет, пропускается. Хранятся последние 14.
+# Если настроен /etc/sr-mirror-backup.env (mirror-telegram-setup.sh) — архивы
+# уходят в Telegram тем же ботом. Расписание (8:15 и 23:15 по Москве) ставит
+# install-mirror-backup-cron.sh вместе с копиями Рода, школы и кабинета.
+set -uo pipefail
+[ "$(id -u)" = 0 ] || { echo "Запустите от root"; exit 1; }
+
+OUT=/root/sr-backups
+
+STAMP="$(date +%Y%m%d-%H%M%S)"
+umask 077
+mkdir -p "$OUT"
+WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
+FAIL=0
+
+# Отправка в Telegram: токен — в файле настроек curl, не в командной строке
+TG_ENV=/etc/sr-mirror-backup.env
+tg_send() { # файл подпись
+  [ -f "$TG_ENV" ] || return 0
+  local token chat cfg
+  token="$(grep -E '^TELEGRAM_BOT_TOKEN=' "$TG_ENV" | cut -d= -f2-)"
+  chat="$(grep -E '^TELEGRAM_CHAT_ID=' "$TG_ENV" | cut -d= -f2-)"
+  [ -n "$token" ] && [ -n "$chat" ] || return 0
+  cfg="$(mktemp)"; chmod 600 "$cfg"
+  printf 'url = "https://api.telegram.org/bot%s/sendDocument"\n' "$token" > "$cfg"
+  if curl -sS --max-time 300 -K "$cfg" -F "chat_id=$chat" -F "caption=$2" -F "document=@$1" | grep -q '"ok":true'; then
+    echo "    Telegram: отправлено"
+  else
+    echo "    Telegram: не отправлено (копия осталась на сервере)"; FAIL=1
+  fi
+  rm -f "$cfg"
+}
+
+# sqlite_copy источник цель — целостная копия базы sqlite при работающей службе
+sqlite_copy() {
+  node --disable-warning=ExperimentalWarning -e '
+    const { DatabaseSync } = require("node:sqlite");
+    const db = new DatabaseSync(process.argv[1], { readOnly: true });
+    db.exec("VACUUM INTO \x27" + process.argv[2].replace(/\x27/g, "\x27\x27") + "\x27");
+    db.close();' "$1" "$2"
+}
+
+# course имя файл_базы название — архив, контрольная сумма, отправка, старые копии
+course() {
+  local name="$1" db="$2" file="$OUT/$1-$STAMP.tar.gz"
+  if [ ! -f "$db" ]; then echo "  – $name: нет $db"; return; fi
+  mkdir -p "$WORK/$name"
+  if ! sqlite_copy "$db" "$WORK/$name/$(basename "$db")"; then echo "  ✗ $name: копия базы не прошла"; FAIL=1; return; fi
+  if tar -czf "$file" -C "$WORK" "$name"; then
+    sha256sum "$file" | awk '{print $1}' > "$file.sha256"
+    echo "  ✓ $name: $file ($(du -h "$file" | cut -f1))"
+    tg_send "$file" "$3 — резервная копия $STAMP. SHA256: $(cat "$file.sha256")"
+    # Последние 14 копий курса, остальные удалить
+    find "$OUT" -maxdepth 1 -name "$name-*.tar.gz" -printf '%T@ %p\n' | sort -rn | tail -n +15 | cut -d' ' -f2- \
+      | while read -r old; do rm -f "$old" "$old.sha256"; done
+  else
+    rm -f "$file"; echo "  ✗ $name: архив не создан"; FAIL=1
+  fi
+}
+
+echo "Копии в $OUT"
+course runes /var/lib/runes/runes.sqlite "Руны"
+course taro /var/lib/polkas/cabinet.db "Таро"
+
+IP="$(curl -4 -fsS --max-time 10 https://api.ipify.org || hostname -I | awk '{print $1}')"
+echo
+echo "Готово$([ "$FAIL" = 1 ] && echo ', но с ошибками — см. ✗ выше')."
+echo "Забрать все копии на компьютер (PowerShell, не на сервере):"
+echo "  scp -r root@$IP:$OUT ."
+exit "$FAIL"
