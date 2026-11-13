@@ -190,3 +190,25 @@ test('копии: курса нет на сервере — его копий н
   assert.deepEqual(st.backups.map((b) => b.name), ['Род', 'Школа', 'Кабинет']);
   assert.deepEqual(alarmsOf(st), []);
 });
+
+test('бот: при запуске пульт сам приходит администратору, у которого его нет, и только раз', async () => {
+  const st = await collectStatus(fakeHost({ files: freshFiles }));
+  const { bot, calls, state } = fakeBot(st);
+  await bot.ensureDashboards();
+  assert.deepEqual(calls.map((c) => [c[0], c[1].chat_id]), [['sendWidget', 117535475]]);
+  assert.equal(state.dashboards['117535475'], 77);
+  calls.length = 0;
+  await bot.ensureDashboards();
+  assert.deepEqual(calls, [], 'пульт уже есть — второй не шлём');
+});
+
+test('бот: Telegram не принял виджет при запуске — без текста и без падения', async () => {
+  const st = await collectStatus(fakeHost({ files: freshFiles }));
+  const calls = [];
+  const api = async (method, params) => { calls.push(method); if (method === 'sendWidget') throw new Error('sendWidget: Not Found'); return true; };
+  const state = {};
+  const bot = createOpsBot({ api, collect: async () => st, html: '', admins: [1], state });
+  await bot.ensureDashboards();
+  assert.deepEqual(calls, ['sendWidget']);
+  assert.deepEqual(state.dashboards, {});
+});
