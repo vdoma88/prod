@@ -15,6 +15,9 @@
 // Команды (только администраторам, в личном чате с ботом):
 //   /pult    — пульт-виджет; если Telegram виджет не принял — та же сводка текстом
 //   /status  — сводка текстом (работает в любом Telegram, виджеты не нужны)
+// При запуске служба сама присылает пульт администратору, у которого его нет:
+// новый пульт — systemctl restart sr-ops (старый перестанет обновляться,
+// если удалить его в Telegram).
 // Тревоги и «снова в порядке» приходят текстом всегда.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -134,7 +137,19 @@ export function createOpsBot({ api, collect, html, admins, state, save = () => {
     return { packed, alarms: now };
   }
 
-  return { onUpdate, tick, sendDashboard };
+  /**
+   * Пульт тем администраторам, у кого его ещё нет — без команды /pult: так
+   * пульт появляется, даже когда команды до бота не доходят (у бота вебхук).
+   * Telegram, не знающий виджетов, — без повторов и без текста: только запись в журнал.
+   */
+  async function ensureDashboards() {
+    for (const id of admins) {
+      if (state.dashboards[String(id)]) continue;
+      try { await sendDashboard(id); } catch (e) { log(`пульт для ${id} не отправлен: ${e.message}`); }
+    }
+  }
+
+  return { onUpdate, tick, sendDashboard, ensureDashboards };
 }
 
 // ─── Служба ───
@@ -160,6 +175,7 @@ async function main() {
 
   const me = await api('getMe');
   console.log(`Пульт: @${me.username}, администраторов ${admins.length}, домен ${domain}`);
+  await bot.ensureDashboards();
   const every = Math.max(1, Number(env.OPS_INTERVAL_MIN) || 5) * 60000;
   const loop = () => bot.tick().catch((e) => log(`обновление: ${e.message}`));
   loop();
