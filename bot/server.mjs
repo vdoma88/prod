@@ -22,7 +22,7 @@ const NOTIFY_SECRET = env.NOTIFY_SECRET || '';
 const TICK_MS = 60 * 1000;
 
 if (!env.TELEGRAM_BOT_TOKEN) console.error('TELEGRAM_BOT_TOKEN не задан — бот не сможет отвечать');
-if (!SECRET) console.error('WEBHOOK_SECRET не задан — вебхук примет запрос от кого угодно');
+if (!SECRET) console.error('WEBHOOK_SECRET не задан — вебхук закрыт, бот не получает сообщений (infra/vps/14-bot.sh заводит секрет)');
 
 const store = openStore(env.BOT_DB_PATH || 'bot.sqlite');
 for (const id of (env.ADMIN_CHAT_IDS || '').split(',').map(s => Number(s.trim())).filter(Boolean)) {
@@ -38,7 +38,8 @@ const equal = (given, expected) => {
   const b = Buffer.from(expected);
   return a.length === b.length && timingSafeEqual(a, b);
 };
-const sameSecret = (given) => !SECRET || equal(given, SECRET);
+// Без секрета вебхук закрыт: иначе любой мог бы прислать боту поддельное обновление.
+const sameSecret = (given) => !!SECRET && equal(given, SECRET);
 const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 
 function readBody(req, limit, done) {
@@ -151,10 +152,10 @@ setInterval(async () => {
 
 server.listen(PORT, HOST, async () => {
   console.log(`Бот слушает http://${HOST}:${PORT}${PATH}`);
-  if (env.PUBLIC_URL && env.TELEGRAM_BOT_TOKEN) {
+  if (env.PUBLIC_URL && env.TELEGRAM_BOT_TOKEN && SECRET) {
     const res = await tg('setWebhook', {
       url: env.PUBLIC_URL,
-      secret_token: SECRET || undefined,
+      secret_token: SECRET,
       allowed_updates: ['message', 'callback_query'],
     });
     console.log(res.ok ? `Вебхук: ${env.PUBLIC_URL}` : `Вебхук не установлен: ${res.description}`);

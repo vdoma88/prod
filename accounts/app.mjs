@@ -119,10 +119,23 @@ export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchI
   function clientIp(req) {
     return (trustProxy && String(req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || '').split(',')[0].trim()) || req.socket.remoteAddress || 'ip';
   }
-  function limited(key) {
-    const now = Date.now(), fresh = (attempts.get(key) || []).filter(t => now - t < 15 * 60e3);
-    attempts.set(key, fresh);
-    return fresh.length >= 8;
+  // Неудачные входы за 15 минут: 8 с одного адреса на логин и 30 на логин с
+  // любых адресов (подбор пароля к одной учётке с многих адресов).
+  const LOGIN_WINDOW = 15 * 60e3, PER_IP = 8, PER_LOGIN = 30;
+  function recent(key, now) {
+    const fresh = (attempts.get(key) || []).filter(t => now - t < LOGIN_WINDOW);
+    if (fresh.length) attempts.set(key, fresh); else attempts.delete(key);
+    return fresh;
+  }
+  function limited(key, loginKey) {
+    const now = Date.now();
+    return recent(key, now).length >= PER_IP || recent(loginKey, now).length >= PER_LOGIN;
+  }
+  function failed(key, loginKey) {
+    const now = Date.now();
+    for (const k of [key, loginKey]) attempts.set(k, [...recent(k, now), now]);
+    // Карта не растёт без конца: изредка выбрасываем всё старше окна
+    if (attempts.size > 5000) for (const k of [...attempts.keys()]) recent(k, now);
   }
 
   // Телеметрия: sendBeacon не умеет ставить заголовки, поэтому без X-SR.
@@ -255,10 +268,11 @@ export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchI
       checkWrite(req);
       const b = await readJson(req);
       const login = b.login ?? b.email;
-      const key = clientIp(req) + ':' + String(login || '').toLowerCase();
-      if (limited(key)) throw new AccountError(429, 'Слишком много попыток. Подождите 15 минут.');
+      const loginKey = 'login:' + String(login || '').toLowerCase().trim();
+      const key = clientIp(req) + ':' + loginKey;
+      if (limited(key, loginKey)) throw new AccountError(429, 'Слишком много попыток. Подождите 15 минут.');
       const u = store.checkPassword(login, b.password) || await rodPasswordFallback(login, b.password);
-      if (!u) { attempts.get(key).push(Date.now()); throw new AccountError(401, 'Неверный логин или пароль.'); }
+      if (!u) { failed(key, loginKey); throw new AccountError(401, 'Неверный логин или пароль.'); }
       attempts.delete(key);
       const s = store.createSession(u.id);
       store.audit(u.id, 'login', u.id);

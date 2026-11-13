@@ -204,6 +204,32 @@ test('адрес /notify: без секрета выключен, с чужим 
   });
 });
 
+test('вебхук: без WEBHOOK_SECRET закрыт, с секретом — только с верным заголовком', async () => {
+  const { spawn } = await import('node:child_process');
+  const { once } = await import('node:events');
+  const port = 44000 + Math.floor(Math.random() * 1000);
+  const run = async (envExtra, fn) => {
+    const child = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', new URL('../server.mjs', import.meta.url).pathname], {
+      env: { ...process.env, PORT: String(port), BOT_DB_PATH: ':memory:', TELEGRAM_BOT_TOKEN: '', PUBLIC_URL: '', ...envExtra },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    await once(child.stdout, 'data');
+    try { await fn(); } finally { child.kill(); await once(child, 'exit'); }
+  };
+  const hook = (secret) => fetch(`http://127.0.0.1:${port}/tg/rod-bot`, {
+    method: 'POST', headers: { 'content-type': 'application/json', ...(secret ? { 'x-telegram-bot-api-secret-token': secret } : {}) },
+    body: JSON.stringify({ update_id: 1 }),
+  });
+  await run({ WEBHOOK_SECRET: '' }, async () => {
+    assert.equal((await hook()).status, 401);
+    assert.equal((await hook('any')).status, 401);
+  });
+  await run({ WEBHOOK_SECRET: 'right' }, async () => {
+    assert.equal((await hook('wrong')).status, 401);
+    assert.equal((await hook('right')).status, 200);
+  });
+});
+
 test('сводка сайта: экранируется, ссылка только на belayarod.ru, ночью без звука', async () => {
   const { bot, sent } = setup({ start: '2026-10-01T07:00:00Z' }); // 10:00 МСК
   await linkAdmin(bot);

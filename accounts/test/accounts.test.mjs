@@ -184,6 +184,18 @@ test('перебор паролей: после 8 ошибок — пауза', 
   assert.equal((await s.req('/account/api/login', { body: { email: 'kate@b.ru', password: PASS } })).status, 429);
 });
 
+test('перебор паролей с многих адресов: после 30 ошибок на логин — пауза и для нового адреса', async (t) => {
+  const s = await server({ env: { TRUST_PROXY: '1' } }); t.after(s.close);
+  const from = (i) => ({ 'X-Real-IP': `10.0.${Math.floor(i / 7)}.1` }); // по 7 попыток с адреса — ниже лимита на адрес
+  for (let i = 0; i < 30; i++) {
+    assert.equal((await s.req('/account/api/login', { body: { email: 'kate@b.ru', password: 'x' + i }, headers: from(i) })).status, 401);
+  }
+  assert.equal((await s.req('/account/api/login', { body: { email: 'kate@b.ru', password: PASS }, headers: { 'X-Real-IP': '10.9.9.9' } })).status, 429);
+  // Другой логин не задет
+  s.store.setPassword(s.store.createUser({ email: 'anna@b.ru', name: 'Анна' }).id, PASS);
+  assert.equal((await s.req('/account/api/login', { body: { email: 'anna@b.ru', password: PASS }, headers: { 'X-Real-IP': '10.9.9.9' } })).status, 200);
+});
+
 test('админ заводит ученицу, открывает курсы, ученица задаёт пароль по ссылке', async (t) => {
   const s = await server(); t.after(s.close);
   await s.req('/account/api/login', { body: { email: 'kate@b.ru', password: PASS } });
