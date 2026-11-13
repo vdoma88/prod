@@ -85,10 +85,9 @@ export function createOpsBot({ api, collect, html, admins, state, save = () => {
       const m = u.message;
       const cmd = String(m.text || '').split(/[\s@]/)[0];
       if (m.chat?.type !== 'private' || !['/start', '/pult', '/status'].includes(cmd)) return;
-      if (!isAdmin(m.from?.id)) {
-        await api('sendMessage', { chat_id: m.chat.id, text: 'Это служебный бот «Силы Рода».' });
-        return;
-      }
+      // Чужим — ни слова: если токен когда-нибудь окажется у бота для клиентов,
+      // пульт не должен им отвечать
+      if (!isAdmin(m.from?.id)) return;
       if (cmd === '/status') {
         const { st } = await snapshot();
         await api('sendMessage', { chat_id: m.chat.id, text: statusText(st) });

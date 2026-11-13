@@ -4,7 +4,13 @@
 #   bash /var/www/prod/infra/vps/install-ops-widget.sh
 #
 # Спрашивает, какого бота взять:
-#   1 — бот резервных копий из /etc/sr-mirror-backup.env (обычный Telegram).
+# Пульт читает команды через getUpdates, поэтому ему нужен СВОЙ бот: у бота с
+# вебхуком (бот заявок лендинга, бот школы) команды уходят по вебхуку, а если
+# вебхук снять — сообщения клиентов начнёт получать пульт. Установщик такой
+# токен не примет.
+#
+#   1 — бот резервных копий из /etc/sr-mirror-backup.env (обычный Telegram), если
+#       это не бот лендинга или школы.
 #       Сразу работают /status и тревоги текстом; пульт-виджет — когда
 #       Telegram откроет виджеты всем (Bot API 10.4), без переустановки.
 #   2 — отдельный бот в тестовой среде Telegram (бета Bot API с виджетами):
@@ -39,15 +45,25 @@ check_bot() {
   printf '%s' "$name"
 }
 
+# check_webhook токен адрес тест — адрес вебхука бота или пусто
+check_webhook() {
+  local cfg path_test=""
+  [ "$3" = 1 ] && path_test="/test"
+  cfg="$(mktemp)"; chmod 600 "$cfg"
+  printf 'url = "%s/bot%s%s/getWebhookInfo"\n' "${2%/}" "$1" "$path_test" > "$cfg"
+  curl -sS --max-time 20 -K "$cfg" | sed -n 's/.*"url":"\([^"]*\)".*/\1/p' || true
+  rm -f "$cfg"
+}
+
 if [ ! -f "$ENV_FILE" ] || [ "${RECONFIGURE:-0}" = 1 ]; then
   log "Настройка пульта"
   ADMINS="$(get "$BACKUP_ENV" TELEGRAM_CHAT_ID)"
   echo "Какого бота взять для пульта?"
-  echo "  1 — бот резервных копий (обычный Telegram; виджет появится, когда его запустят)"
-  echo "  2 — тестовый бот в тестовой среде Telegram (виджет виден уже сейчас)"
-  echo "  3 — другой бот в обычном Telegram (например, отдельный бот для пульта)"
-  read -r -p "Ваш выбор [1]: " MODE
-  MODE="${MODE:-1}"
+  echo "  3 — отдельный бот для пульта (советую: @BotFather → /newbot)"
+  echo "  1 — бот резервных копий (только если это не бот заявок лендинга)"
+  echo "  2 — тестовый бот в тестовой среде Telegram"
+  read -r -p "Ваш выбор [3]: " MODE
+  MODE="${MODE:-3}"
   if [ "$MODE" = 2 ] || [ "$MODE" = 3 ]; then
     if [ "$MODE" = 2 ]; then BASE=https://api.telegram.org/beta; TEST=1; else BASE=https://api.telegram.org; TEST=0; fi
     echo "Токен бота (@BotFather$( [ "$MODE" = 2 ] && printf ' в тестовой среде')). Вставьте и нажмите Enter, на экране не виден."
@@ -62,6 +78,12 @@ if [ ! -f "$ENV_FILE" ] || [ "${RECONFIGURE:-0}" = 1 ]; then
   BOT="$(check_bot "$TOKEN" "$BASE" "$TEST")"
   [ -n "$BOT" ] || die "Telegram не принял токен"
   ok "бот @$BOT"
+  # Не бот заявок и не бот школы: у них вебхук, и команды пульту не дойдут
+  for OTHER in "$(get /etc/rodbot.env TELEGRAM_BOT_TOKEN)" "$(get /var/www/flame-app/.env.local TELEGRAM_BOT_TOKEN | tr -d '\"')"; do
+    [ -n "$OTHER" ] && [ "$OTHER" = "$TOKEN" ] && die "@$BOT — это бот заявок лендинга или бот школы. Для пульта нужен отдельный бот: @BotFather → /newbot, вариант 3."
+  done
+  HOOK="$(check_webhook "$TOKEN" "$BASE" "$TEST")"
+  [ -z "$HOOK" ] || die "у @$BOT есть вебхук ($HOOK) — им пользуется другая служба. Для пульта нужен отдельный бот: @BotFather → /newbot, вариант 3."
 
   read -r -p "Telegram ID администраторов через запятую${ADMINS:+ [$ADMINS]}: " IDS
   IDS="${IDS:-$ADMINS}"
