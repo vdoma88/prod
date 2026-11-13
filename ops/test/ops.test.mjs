@@ -121,7 +121,7 @@ test('бот: пульт только администратору, «Обнов
   const st = await collectStatus(fakeHost({ files: freshFiles }));
   const { bot, calls, state } = fakeBot(st);
   await bot.onUpdate({ message: { text: '/pult', chat: { id: 5, type: 'private' }, from: { id: 5 } } });
-  assert.deepEqual(calls.map((c) => c[0]), ['sendMessage'], 'чужому — отказ, без пульта');
+  assert.deepEqual(calls, [], 'чужому — молчание, без пульта');
   calls.length = 0;
   await bot.onUpdate({ message: { text: '/pult', chat: { id: 117535475, type: 'private' }, from: { id: 117535475 } } });
   assert.equal(calls[0][0], 'sendWidget');
