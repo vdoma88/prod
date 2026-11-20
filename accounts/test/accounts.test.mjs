@@ -364,8 +364,10 @@ test('ученицы онлайн: одна панель на все курсы'
 
 test('зеркало: пароль из «Связи с Родом» при первом входе переносится сюда', async (t) => {
   const ROD_PASS = 'rod-password-1';
-  const rod = (url, body) => (url.endsWith('/api/auth/login') && body.login === 'anna@b.ru' && body.password === ROD_PASS
-    ? [200, { token: 'rod-jwt' }] : [401, { error: 'Неверная почта (логин) или пароль' }]);
+  const CHECK = 'http://rod.test/sr-internal/password-check';
+  // Род подключён к общему входу: свой вход выключен (403), сверка — по секрету
+  const rod = (url, body) => url === CHECK ? [200, { ok: body.email === 'anna@b.ru' && body.password === ROD_PASS }]
+    : [403, { error: 'Вход — через общий кабинет «Сила Рода»' }];
   const s = await server({ env: { ROD_PASSWORD_FALLBACK: '1', COURSE_ROD_INTERNAL: 'http://rod.test' }, courses: { rod } });
   t.after(s.close);
   const anna = s.store.createUser({ email: 'anna@b.ru', name: 'Анна' });
@@ -375,17 +377,30 @@ test('зеркало: пароль из «Связи с Родом» при пе
   assert.equal(ok.status, 200);
   assert.equal(ok.data.user.name, 'Анна');
   assert.equal(s.store.user(anna.id).hasPassword, true, 'пароль сохранён в общем входе');
-  const rodCalls = s.calls.filter(c => c.url === 'http://rod.test/api/auth/login').length;
-  assert.equal(rodCalls, 2);
+  const checks = s.calls.filter(c => c.url === CHECK);
+  assert.equal(checks.length, 2);
+  assert.ok(checks.every(c => c.secret === 'inner-secret'), 'сверка — только с секретом');
+  assert.equal(s.calls.filter(c => c.url.endsWith('/api/auth/login')).length, 0, 'выключенный вход Рода не спрашивается');
 
   s.logout();
   assert.equal((await s.req('/account/api/login', { body: { email: 'anna@b.ru', password: ROD_PASS } })).status, 200);
-  assert.equal(s.calls.filter(c => c.url === 'http://rod.test/api/auth/login').length, rodCalls, 'второй вход — без Рода');
+  assert.equal(s.calls.filter(c => c.url === CHECK).length, 2, 'второй вход — без Рода');
 
   // У кого пароль уже есть, Род не спрашивается: чужой пароль Рода не подменит здешний
   s.logout();
   assert.equal((await s.req('/account/api/login', { body: { email: 'kate@b.ru', password: ROD_PASS } })).status, 401);
-  assert.equal(s.calls.filter(c => c.url === 'http://rod.test/api/auth/login').length, rodCalls);
+  assert.equal(s.calls.filter(c => c.url === CHECK).length, 2);
+});
+
+test('зеркало: старый Род без адреса сверки — прежний путь через его вход', async (t) => {
+  const ROD_PASS = 'rod-password-1';
+  const rod = (url, body) => url.endsWith('/api/auth/login') && body.login === 'anna@b.ru' && body.password === ROD_PASS
+    ? [200, { token: 'rod-jwt' }] : url.endsWith('/api/auth/login') ? [401, { error: 'нет' }] : [404, 'страница приложения'];
+  const s = await server({ env: { ROD_PASSWORD_FALLBACK: '1', COURSE_ROD_INTERNAL: 'http://rod.test' }, courses: { rod } });
+  t.after(s.close);
+  s.store.createUser({ email: 'anna@b.ru', name: 'Анна' });
+  assert.equal((await s.req('/account/api/login', { body: { email: 'anna@b.ru', password: 'чужой-пароль' } })).status, 401);
+  assert.equal((await s.req('/account/api/login', { body: { email: 'anna@b.ru', password: ROD_PASS } })).status, 200);
 });
 
 test('без ROD_PASSWORD_FALLBACK Род при входе не спрашивается', async (t) => {

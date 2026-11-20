@@ -42,22 +42,30 @@ export function createApp({ store, pulse = openPulse(store.db), env = {}, fetchI
   // сервером, а пароли учениц остались в базе «Связи с Родом» (bcrypt).
   // Перенести их напрямую нельзя — хеш не обращается. С ROD_PASSWORD_FALLBACK=1
   // вход тому, у кого здесь ещё нет пароля, сверяется с Родом на этом же
-  // сервере (/api/auth/login); подошёл — пароль сохраняется здесь, и дальше
+  // сервере (rodPasswordOk); подошёл — пароль сохраняется здесь, и дальше
   // Род уже не спрашивается. Учётки заводит `cli.mjs import-rod`.
+  //
+  // Сверка — внутренний адрес Рода /sr-internal/password-check (с секретом).
+  // Его /api/auth/login не годится: Род подключён к общему входу, и свой вход
+  // у него выключен — отвечал 403 на любой пароль, и зеркало не пускало никого,
+  // включая администратора. Старый Род без этого адреса (404) — прежний путь.
+  async function rodPasswordOk(email, password) {
+    const base = internalBase(COURSES.find(c => c.id === 'rod'));
+    const post = (p, body, headers = {}) => fetchImpl(base + p, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify(body), signal: AbortSignal.timeout(8000),
+    }).catch(() => null);
+    const res = secret ? await post('/sr-internal/password-check', { email, password }, { 'X-SR-Secret': secret }) : null;
+    if (res && res.status !== 404 && /json/.test(res.headers.get('content-type') || '')) {
+      return res.ok && (await res.json().catch(() => ({}))).ok === true;
+    }
+    return !!(await post('/api/auth/login', { login: email, password }))?.ok;
+  }
   async function rodPasswordFallback(login, password) {
     if (env.ROD_PASSWORD_FALLBACK !== '1' || typeof password !== 'string' || !password || password.length > 200) return null;
     const known = store.userByEmail(String(login || ''));
     if (!known || !known.active || known.hasPassword) return null;
-    const rod = COURSES.find(c => c.id === 'rod');
-    try {
-      const res = await fetchImpl(internalBase(rod) + '/api/auth/login', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ login: known.email, password }), signal: AbortSignal.timeout(8000),
-      });
-      if (!res.ok) return null;
-    } catch {
-      return null;
-    }
+    if (!await rodPasswordOk(known.email, password)) return null;
     // Короткий пароль Рода (там минимум 8) здесь не сохранить — вход пускаем, пароль спросим потом
     if (password.length >= MIN_PASSWORD) store.setPassword(known.id, password);
     store.audit(known.id, 'login.rod-password', known.id);

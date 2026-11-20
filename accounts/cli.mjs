@@ -1,12 +1,15 @@
 // Консоль общего входа (на сервере — от пользователя службы):
 //   node accounts/cli.mjs create-admin почта "Имя"   — первый администратор + ссылка для пароля
 //   node accounts/cli.mjs reset-link почта            — новая ссылка для пароля
+//   node accounts/cli.mjs set-password почта ["Имя"] < пароль — задать пароль сразу (первая строка ввода);
+//       нет такой почты — заводится администратор. Обёртка со скрытым вводом:
+//       infra/vps/accounts-password.sh. Прежние входы и ссылка сбрасываются.
 //   node accounts/cli.mjs pulse [дней]                — телеметрия лендинга (по умолчанию 7 дней)
 //   node accounts/cli.mjs import-rod < users.json     — учётки из «Связи с Родом» (зеркало, ноябрь 2026):
 //       [{"email","name","role":"ADMIN"|"CLIENT"}]; заводит недостающих, открывает им курс rod.
 //       Пароль не переносится — его при первом входе сверяет Род (ROD_PASSWORD_FALLBACK=1, app.mjs).
 // Берёт ACCOUNTS_DB_PATH и PUBLIC_ORIGIN, что и служба.
-import { openStore } from './store.mjs';
+import { openStore, MIN_PASSWORD } from './store.mjs';
 import { openPulse, summaryText } from './pulse.mjs';
 
 const [cmd, email, name] = process.argv.slice(2);
@@ -18,6 +21,16 @@ try {
     const u = store.userByEmail(email) || store.createUser({ email, name, role: 'admin' }, 'cli');
     if (u.role !== 'admin') store.updateUser(u.id, { role: 'admin' }, 'cli');
     console.log(`Администратор: ${u.email}\nСсылка для пароля (72 часа, один раз):\n  ${link(u.id)}`);
+  } else if (cmd === 'set-password' && email) {
+    const { readFileSync } = await import('node:fs');
+    const password = (readFileSync(0, 'utf8').split(/\r?\n/)[0] || '');
+    if (password.length < MIN_PASSWORD) throw new Error(`Пароль — не короче ${MIN_PASSWORD} знаков.`);
+    let u = store.userByEmail(email);
+    if (!u) u = store.createUser({ email, name: name || 'Администратор', role: 'admin' }, 'cli');
+    if (!u.active) u = store.updateUser(u.id, { active: true }, 'cli');
+    store.setPassword(u.id, password);
+    store.audit('cli', 'password.set', u.id);
+    console.log(`Пароль задан: ${u.email} (${u.role}). Входите на ${origin}/account/`);
   } else if (cmd === 'reset-link' && email) {
     const u = store.userByEmail(email);
     if (!u) throw new Error('Нет такой почты.');
@@ -40,7 +53,7 @@ try {
   } else if (cmd === 'pulse') {
     console.log(summaryText(openPulse(store.db).summary(Math.min(30, Math.max(1, Number(email) || 7)))));
   } else {
-    console.log('node accounts/cli.mjs create-admin почта "Имя"\nnode accounts/cli.mjs reset-link почта\nnode accounts/cli.mjs pulse [дней]\nnode accounts/cli.mjs import-rod < users.json');
+    console.log('node accounts/cli.mjs create-admin почта "Имя"\nnode accounts/cli.mjs reset-link почта\nnode accounts/cli.mjs set-password почта ["Имя"] < пароль\nnode accounts/cli.mjs pulse [дней]\nnode accounts/cli.mjs import-rod < users.json');
     process.exitCode = 2;
   }
 } catch (e) {
