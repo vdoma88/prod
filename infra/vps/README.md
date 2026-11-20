@@ -161,6 +161,7 @@ sudo bash /var/www/flame-app/deploy/sila-roda.sh plamya-cert
 | `restore-mirror-hub.sh`, `restore-mirror-admin.sh` | лендинг и общий кабинет на адресе sslip.io, администратор | новый сервер без домена |
 | `restore-mirror-flame-db.sh` | переключение школы на восстановленную базу | восстановление школы из копии |
 | `mirror-courses.sh` | руны и Таро на адресах sslip.io | новый сервер без домена |
+| `accounts-password.sh` | пароль в общем кабинете с сервера (почта; нет — заводит администратора) | забыли пароль, не пускает |
 | `mirror-import-rod-users.sh` | ученицы Рода → общий кабинет, вход по паролям Рода | после потери базы кабинета |
 | `switch-to-domain.sh` | сервер с адресов sslip.io → belayarod.ru | после смены IP сервера |
 | `audit-mirror-rod-files.sh` | сверка вложений Рода с базой | после восстановления Рода |
