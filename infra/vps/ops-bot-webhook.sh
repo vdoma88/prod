@@ -53,7 +53,17 @@ case "$PATHPART" in
   *) OWNER="неизвестная служба"; UNIT="" ;;
 esac
 echo "  Похоже на:        $OWNER ($HOST)"
-if [ -n "$UNIT" ] && systemctl is-active --quiet "$UNIT" 2>/dev/null; then
+# Бот заявок лендинга и бот школы: их вебхук не снимаем никогда — даже если
+# служба сейчас не запущена, по нему приходят сообщения клиентов и учениц.
+if [ -n "$UNIT" ] && ! systemctl is-active --quiet "$UNIT" 2>/dev/null; then
+  echo
+  warn "это $OWNER, но служба $UNIT здесь не запущена — сообщения клиентов не доходят."
+  [ "$UNIT" = rodbot ] && echo "  Поставьте бота лендинга: bash $(pwd)/14-bot.sh (токен — этого же бота)."
+  echo "  Вебхук не снимаю. Для пульта нужен отдельный бот: @BotFather → /newbot,"
+  echo "  затем RECONFIGURE=1 bash $(pwd)/install-ops-widget.sh, вариант 3."
+  exit 0
+fi
+if [ -n "$UNIT" ]; then
   echo
   warn "служба $UNIT на этом сервере работает и, видимо, принимает этот вебхук."
   echo "  Снимать вебхук нельзя — сломается $OWNER. Для пульта заведите отдельного бота:"
