@@ -6,7 +6,7 @@
 
 | Адрес | Что | Репозиторий |
 |---|---|---|
-| belayarod.ru | Лендинг, «Мои курсы», `/brand/` | этот |
+| belayarod.ru | Лендинг, «Мои курсы», `/brand/`, матрица `/matrix/` | этот |
 | plamya.belayarod.ru | Школа «Язык Пламени» | vdoma88/flame-app |
 | rod.belayarod.ru | «Связь с Родом» · Родовая карта пути | vdoma88/terapy |
 | taro.belayarod.ru | Карты Таро | vdoma88/tarot |
@@ -54,6 +54,10 @@ npm run sync-brand -- ../runes-belaya/src/brand   # раздать бренд п
 
 `test:e2e` использует Playwright, установленный глобально (`npm i -g playwright`).
 Если его нет, проверка пропускается с сообщением.
+
+Открытая матрица на `/matrix/` рассчитывается в браузере. Исходники и
+команды её пересборки находятся в [`matrix/`](matrix/README.md); собранные
+файлы в `site/matrix/` входят в обычное обновление сайта.
 
 ## Список курсов
 
