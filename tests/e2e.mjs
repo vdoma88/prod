@@ -34,7 +34,7 @@ const check = async (label, fn) => {
 };
 
 try {
-  const pages = readdirSync(SITE).filter(n => n.endsWith('.html')).concat('brand/preview.html');
+  const pages = readdirSync(SITE).filter(n => n.endsWith('.html')).concat('brand/preview.html', 'matrix/index.html');
   for (const [width, height, label] of [[1440, 900, 'компьютер'], [375, 812, 'телефон']]) {
     console.log(`Страницы — ${label} ${width}px`);
     const context = await browser.newContext({ viewport: { width, height } });
@@ -58,6 +58,33 @@ try {
       });
     }
     await context.close();
+  }
+
+  console.log('Нумерологическая матрица');
+  for (const [width, height, label] of [[1440, 900, 'компьютер'], [375, 812, 'телефон']]) {
+    await check(`прямая ссылка и расчёт без входа — ${label}`, async () => {
+      const ctx = await browser.newContext({ viewport: { width, height } });
+      const p = await ctx.newPage();
+      const sent = [];
+      p.on('request', request => { if (request.method() !== 'GET') sent.push(request.url()); });
+      const response = await p.goto(`${origin}/matrix/`, { waitUntil: 'load' });
+      assert.equal(response.status(), 200);
+      assert.equal(await p.getByRole('heading', { name: 'Нумерологическая матрица' }).isVisible(), true);
+      await p.getByLabel('Дата рождения').fill('29/02/2021');
+      await p.getByRole('button', { name: 'Рассчитать матрицу' }).click();
+      assert.match(await p.getByRole('alert').innerText(), /дат/i);
+      await p.getByLabel('Дата рождения').fill('29/11/1985');
+      await p.getByRole('button', { name: 'Рассчитать матрицу' }).click();
+      assert.equal(await p.getByRole('heading', { name: 'Ваша матрица' }).isVisible(), true);
+      const numbers = await p.locator('p').filter({ hasText: 'Доп. числа:' }).first().innerText();
+      assert.match(numbers.replace(/\s/g, ''), /36\.9\.32\.5/);
+      await p.getByRole('button', { name: 'Отчёт и PDF', exact: true }).click();
+      assert.equal(await p.getByRole('dialog', { name: 'Отчёт по матрице' }).isVisible(), true);
+      assert.equal(await p.getByRole('button', { name: /Сохранить в PDF/ }).isVisible(), true);
+      assert.equal(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), 0);
+      assert.deepEqual(sent, []);
+      await ctx.close();
+    });
   }
 
   console.log('Редактор фотографий и объектов');

@@ -1,0 +1,645 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --safe-top:    env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left:   env(safe-area-inset-left, 0px);
+    --safe-right:  env(safe-area-inset-right, 0px);
+    /* Облик лендинга belayarod.ru: бумага, чернила, золото (бренд «Сила Рода»,
+       public/brand/tokens.css). Своё у приложения только тон фона — его даёт
+       data-sr-product="rod" на <html> через --sr-bg-1..3. */
+    --page-bg: var(--sr-bg-2, #f2e7d8);
+    --page-bg-2: var(--sr-bg-3, #e6d4bf);
+    --page-text: #33251d;
+    --page-muted: #776557;
+    --surface: rgba(255, 250, 244, 0.82);
+    --surface-strong: rgba(255, 250, 244, 0.96);
+    --surface-border: rgba(120, 79, 37, 0.16);
+    --accent-cyan: #b87a34;
+    --accent-cyan-soft: rgba(184, 122, 52, 0.12);
+    --accent-violet: #9a6a3a;
+    --accent-amber: #d7ae70;
+    --shadow-soft: 0 20px 70px rgba(71, 46, 25, 0.10);
+    --focus-ring: #b87a34;
+    --focus-ring-soft: rgba(184, 122, 52, 0.22);
+    --svg-root: #9a6a3a;
+    --svg-branch: #b87a34;
+    --svg-leaf: #d7ae70;
+    --svg-bloom: #c58b43;
+  }
+
+  html { scroll-behavior: smooth; height: 100%; }
+
+  /* Видимый фокус для клавиатуры — WCAG 2.4.7. Раньше во всём проекте было
+     ровно одно правило :focus (у .input), а `focus:outline-none` стоял на
+     множестве элементов: пройти интерфейс с клавиатуры было невозможно.
+     :focus-visible не показывает рамку при клике мышью, только при табе. */
+  :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+  /* Явно гасим наследие «focus:outline-none» там, где фокус пришёл с клавиатуры. */
+  :where(a, button, input, textarea, select):focus-visible { box-shadow: 0 0 0 4px var(--focus-ring-soft); }
+
+  /* Убираем серую вспышку при тапе на iOS — вместо неё есть :active-состояния. */
+  a, button, [role="button"] { -webkit-tap-highlight-color: transparent; }
+
+  /* Минимальная цель нажатия 44×44 CSS-px — рекомендация Apple HIG
+     и WCAG 2.5.8 (Target Size, Minimum). */
+  button, [role="button"], a[href] { touch-action: manipulation; }
+  body {
+    @apply font-body antialiased;
+    color: var(--page-text);
+    background-color: var(--page-bg);
+    background-image: var(--sr-page);
+    background-attachment: fixed;
+    min-height: 100%;
+    overscroll-behavior: none;
+    /* iOS Safari считает 100vh по высоте БЕЗ адресной строки, поэтому нижняя
+       часть экрана уезжает под неё. 100dvh отслеживает реальную высоту;
+       строка выше — фолбэк для браузеров без поддержки dvh. */
+    min-height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  h1,h2,h3,h4,h5,h6 { @apply font-display; font-weight: 500; letter-spacing: -0.02em; }
+
+  /* 16px — чтобы iOS Safari не зумил страницу при фокусе на поле.
+     appearance: none только для текстовых полей: на чекбоксах и радио он
+     убирал всю отрисовку, и они становились невидимыми по всему приложению. */
+  input, textarea, select { font-size: 16px; }
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),
+  textarea, select {
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: 16px;
+  }
+  input[type=checkbox], input[type=radio] { accent-color: theme('colors.gold.500'); cursor: pointer; }
+}
+
+@layer components {
+
+  .app-shell {
+    position: relative;
+    min-height: 100vh;
+    min-height: 100dvh; /* см. комментарий у body — iOS Safari и 100vh */
+    isolation: isolate;
+    /* Фон — градиент лендинга в тоне «Рода» (--sr-page из tokens.css) */
+    background: var(--sr-page);
+    background-attachment: fixed;
+  }
+
+  .glass-panel {
+    border: 1px solid var(--surface-border);
+    background: var(--sr-glass, rgba(255, 250, 244, 0.82));
+    box-shadow: 0 10px 34px rgba(70, 45, 24, 0.07);
+    backdrop-filter: blur(18px);
+  }
+
+  .app-sidebar {
+    border-right: 1px solid var(--surface-border);
+    background: var(--sr-glass, rgba(255, 250, 244, 0.82));
+    box-shadow: 10px 0 34px rgba(70, 45, 24, 0.05);
+    backdrop-filter: blur(18px);
+  }
+
+  .brand-mark {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1px solid #d7b177;
+    color: #a66b2d;
+  }
+
+  .nav-link-modern {
+    position: relative;
+    overflow: hidden;
+  }
+  .nav-link-modern::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    border-radius: 999px;
+    background: var(--sr-gold, #b87a34);
+    opacity: 0;
+    transition: opacity .2s ease;
+  }
+  .nav-link-modern.is-active::before { opacity: 1; }
+
+  .page-frame {
+    width: min(100%, 1180px);
+    margin-inline: auto;
+  }
+  /* Колонка для чтения в кабинете ученицы: текст шага, анкета, история,
+     профиль, чат. На широком экране без неё строка шага выходила в 150+
+     знаков, кнопки — по метру, а у каждой страницы была своя ширина. */
+  .page-frame--read { width: min(100%, 52rem); }
+  .safe-bottom { padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
+  .safe-top { padding-top: env(safe-area-inset-top); }
+  .ios-safe-top { padding-top: env(safe-area-inset-top); }
+  .ios-safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-7 rounded-full font-body font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    /* Золотая «пилюля» лендинга */
+    color: #fff9ef;
+    border: 1px solid #e1bb7f;
+    background: linear-gradient(180deg, #c58b43, #a86427);
+    box-shadow: 0 8px 24px rgba(146, 86, 25, 0.18);
+    letter-spacing: 0.04em;
+    font-size: 15px;
+    min-height: 48px;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 30px rgba(146, 86, 25, 0.26); }
+  .btn-primary:active { transform: translateY(0); filter: brightness(0.95); }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-7 rounded-full font-body font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    color: #8b5a2e;
+    border: 1px solid #d5ad76;
+    background: #fffaf3;
+    letter-spacing: 0.04em;
+    font-size: 15px;
+    min-height: 48px;
+  }
+  .btn-secondary:hover { border-color: #c58b43; background: #fdf3e6; }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 rounded-full font-semibold transition-all duration-150;
+    color: #776557;
+    font-size: 14px;
+    min-height: 44px;
+  }
+  .btn-ghost:hover { background: rgba(184,122,52,0.08); color: #33251d; }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-7 rounded-full text-white font-body font-semibold transition-all duration-150;
+    background: linear-gradient(180deg, #c0503c, #9b3526);
+    font-size: 15px;
+    min-height: 48px;
+  }
+
+  .card {
+    border-radius: 28px;
+    border: 1px solid var(--surface-border);
+    /* Панель лендинга */
+    background: var(--sr-panel, linear-gradient(145deg, rgba(255,253,249,0.92), rgba(248,239,229,0.84)));
+    box-shadow: var(--shadow-soft);
+  }
+
+  .input {
+    @apply w-full px-4 rounded-[1rem] font-body placeholder:text-ink-faint focus:outline-none transition-all duration-150;
+    border: 1px solid rgba(120, 79, 37, 0.22);
+    background: #fffdf9;
+    color: #33251d;
+    font-size: 16px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .input:focus {
+    border-color: #c58b43;
+    box-shadow: 0 0 0 3px rgba(184, 122, 52, 0.14);
+  }
+  .label { @apply block text-sm font-semibold text-ink-soft mb-1.5; }
+
+  .badge { @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold; background: rgba(184,122,52,0.08); color: #6e4524; border: 1px solid rgba(120,79,37,0.14); }
+  .badge-active { @apply badge bg-emerald-600/10 text-emerald-800; }
+  .badge-pending { @apply badge bg-amber-500/15 text-amber-800; }
+  .badge-revision { @apply badge bg-rose-500/10 text-rose-800; }
+  .badge-completed { @apply badge bg-gold-400/20 text-gold-800; }
+  .badge-locked { @apply badge bg-ink/[0.06] text-ink-muted; }
+  .badge-repeat { @apply badge bg-gold-300/20 text-gold-700; }
+
+  .bubble-out {
+    @apply rounded-3xl rounded-br-md px-4 py-2.5 max-w-[82%] leading-relaxed shadow-md;
+    color: #fff9ef;
+    background: linear-gradient(180deg, #c58b43, #a86427);
+    font-size: 15px;
+  }
+  .bubble-in {
+    @apply text-ink rounded-3xl rounded-bl-md px-4 py-2.5 max-w-[82%] leading-relaxed;
+    border: 1px solid rgba(120, 79, 37, 0.14);
+    background: #fffaf4;
+    box-shadow: 0 4px 12px rgba(71, 46, 25, 0.06);
+    font-size: 15px;
+  }
+
+  /* Каркас кабинета как в «Языке Пламени» (components/layout/CabinetShell.jsx) */
+  .cab-top {
+    background: rgba(255, 250, 244, 0.9);
+    border-bottom: 1px solid var(--surface-border);
+    backdrop-filter: blur(12px);
+    padding-top: env(safe-area-inset-top);
+  }
+  .cab-chip {
+    @apply items-center rounded-xl px-3 py-2 text-xs font-semibold text-ink-muted;
+    border: 1px solid var(--surface-border);
+    background: rgba(255, 250, 244, 0.7);
+  }
+  /* Подразделы: переключатели переносятся на новую строку, не обрезаются */
+  .cab-subnav {
+    @apply mb-6 flex flex-wrap gap-1.5 rounded-[22px] p-1.5;
+    border: 1px solid var(--surface-border);
+    background: rgba(255, 250, 244, 0.7);
+  }
+  .cab-subnav a {
+    @apply inline-flex items-center justify-center gap-2 flex-auto whitespace-nowrap rounded-2xl px-4 py-2.5 text-center text-sm font-semibold text-ink-muted transition-colors;
+  }
+  .cab-subnav a:hover { @apply text-gold-700 bg-gold-400/10; }
+  .cab-subnav a.is-active { color: #fff9ef; background: linear-gradient(180deg, #c58b43, #a86427); box-shadow: 0 6px 16px rgba(184, 122, 52, 0.3); }
+  /* Нижняя «пилюля»: подпись только у активного раздела, у остальных — в title */
+  .cab-tabbar { padding: 0 16px max(16px, var(--safe-bottom)); pointer-events: none; }
+  .cab-tabbar-in {
+    pointer-events: auto;
+    @apply mx-auto flex max-w-md items-stretch gap-1 rounded-full p-2;
+    border: 1px solid rgba(184, 122, 52, 0.22);
+    background: rgba(255, 250, 244, 0.88);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 10px 30px rgba(71, 46, 25, 0.12);
+  }
+  .cab-tab {
+    @apply relative flex flex-1 basis-0 items-center justify-center gap-2 h-[46px] min-w-[46px] rounded-full text-ink-muted transition-colors;
+  }
+  .cab-tab:hover { @apply text-gold-700 bg-gold-400/10; }
+  .cab-tab.is-active { flex: 0 0 auto; padding: 0 16px; color: #fff9ef; background: linear-gradient(180deg, #c58b43, #a86427); box-shadow: 0 6px 16px rgba(184, 122, 52, 0.32); }
+  @media print { .cab-top, .cab-tabbar, .cab-subnav { display: none; } }
+  /* Айдентика лендинга (components/ui/Brand.jsx): знак Рода красным, как в
+     шапке belayarod.ru; папоротник и дуб — едва заметно на фоне. */
+  .cab-sign { color: #c93f27; }
+  .brand-backdrop { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; color: #b87a34; }
+  .brand-backdrop-fern { position: absolute; left: -40px; bottom: 30px; width: 300px; height: 600px; opacity: .22; transform: rotate(12deg); }
+  .brand-backdrop-oak { position: absolute; right: -30px; top: 90px; width: 320px; height: 400px; opacity: .2; transform: rotate(-16deg); }
+  @media (max-width: 640px) {
+    .brand-backdrop-fern { width: 190px; height: 380px; left: -44px; bottom: 80px; }
+    .brand-backdrop-oak { width: 200px; height: 250px; right: -50px; top: 70px; }
+  }
+  /* Заголовок страницы — с узором из ромбов знака под ним */
+  .cab-main h1.font-display::after {
+    content: ""; display: block; width: 144px; height: 18px; margin-top: 12px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 12'%3E%3Cg fill='none' stroke='%23c58b43' stroke-width='1.2'%3E%3Cpath d='M2 6h30M64 6h30M38 6l4-4 4 4-4 4zM50 6l4-4 4 4-4 4z'/%3E%3Cpath d='M44 6l4-4 4 4-4 4z' fill='%23c93f27' stroke='%23c93f27'/%3E%3C/g%3E%3C/svg%3E") no-repeat left center / contain;
+  }
+  .cab-main .text-center h1.font-display::after { margin-inline: auto; background-position: center; }
+  /* Профиль ученицы (components/profile/ProfileParts.jsx): яркая шапка,
+     плитки перехода, карточки курсов и заметная кнопка «Все мои курсы». */
+  .profile-hero {
+    position: relative; overflow: hidden; border-radius: 28px; padding: 24px;
+    color: #fff; background: radial-gradient(circle at 85% 10%, #e9a25b 0, transparent 45%), linear-gradient(135deg, #b8742f 0%, #9a4f26 55%, #7a2f1c 100%);
+    box-shadow: 0 18px 44px rgba(122, 47, 28, 0.28);
+  }
+  .profile-hero-sign { position: absolute; right: -10px; top: -14px; width: 140px; height: 186px; color: rgba(255, 233, 205, 0.18); }
+  .profile-avatar {
+    display: grid; place-items: center; width: 64px; height: 64px; flex-shrink: 0; border-radius: 999px;
+    font: 600 30px/1 "Cormorant Garamond", Georgia, serif; color: #7a2f1c;
+    background: linear-gradient(180deg, #fff6e8, #f6d9b0); box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35);
+  }
+  .profile-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
+    font-size: 12px; font-weight: 600; color: #fff7ec; background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.22);
+  }
+  .quick-tile {
+    position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 16px;
+    border-radius: 22px; border: 1px solid var(--surface-border); background: rgba(255, 250, 244, 0.9);
+    box-shadow: 0 8px 22px rgba(71, 46, 25, 0.08); transition: transform .2s, box-shadow .2s, border-color .2s;
+  }
+  .quick-tile:hover { transform: translateY(-2px); border-color: rgba(197, 139, 67, 0.5); box-shadow: 0 14px 30px rgba(71, 46, 25, 0.14); }
+  .course-tile {
+    position: relative; display: flex; flex-direction: column; gap: 6px; padding: 18px; overflow: hidden;
+    border-radius: 22px; border: 1px solid var(--surface-border); background: rgba(255, 250, 244, 0.92);
+    box-shadow: 0 10px 26px rgba(71, 46, 25, 0.09);
+  }
+  .course-tile::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 5px; background: var(--accent); }
+  .course-tile-icon {
+    display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 4px; border-radius: 14px; color: #fff;
+    background: var(--accent); box-shadow: 0 8px 18px rgba(71, 46, 25, 0.18);
+  }
+  .course-open {
+    display: inline-flex; align-items: center; gap: 4px; padding: 9px 16px; border-radius: 999px;
+    font-size: 13px; font-weight: 700; color: #fff; background: var(--accent); box-shadow: 0 6px 16px rgba(71, 46, 25, 0.2);
+    transition: filter .2s, transform .2s;
+  }
+  .course-open:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .course-about {
+    display: inline-flex; align-items: center; padding: 9px 14px; border-radius: 999px;
+    font-size: 13px; font-weight: 700; color: var(--accent); border: 1.5px solid var(--accent); background: transparent;
+  }
+  .course-about:hover { background: rgba(255, 255, 255, 0.7); }
+  .all-courses {
+    display: flex; align-items: center; gap: 14px; width: 100%; padding: 18px 22px; border-radius: 24px;
+    color: #fff7ec; background: radial-gradient(circle at 90% 0, rgba(201, 63, 39, 0.55) 0, transparent 55%), linear-gradient(135deg, #3d2a1f 0%, #241a14 100%);
+    border: 1px solid rgba(225, 187, 127, 0.45); box-shadow: 0 16px 36px rgba(36, 26, 20, 0.3);
+    transition: transform .2s, box-shadow .2s;
+  }
+  .all-courses:hover { transform: translateY(-2px); box-shadow: 0 20px 44px rgba(36, 26, 20, 0.38); }
+  /* По ширине окна, а не md: — md в телефонном виде не срабатывает */
+  .cab-view-btn { display: none; }
+  @media (min-width: 768px) { .cab-view-btn { display: inline-flex; } }
+  /* Сохранение в редакторе: компактная «пилюля» справа над нижним меню
+     (на широком экране — справа от него), а не полоса во всю ширину. */
+  .save-pill {
+    @apply fixed right-3 z-30 flex max-w-[calc(100%-1.5rem)] items-center gap-1 rounded-full p-1.5;
+    bottom: calc(88px + var(--safe-bottom));
+    border: 1px solid var(--surface-border);
+    background: rgba(255, 250, 244, 0.96);
+    box-shadow: 0 10px 30px rgba(71, 46, 25, 0.14);
+    backdrop-filter: blur(16px);
+  }
+  @media (min-width: 1100px) { html:not([data-view="mobile"]) .save-pill { right: 24px; bottom: max(16px, var(--safe-bottom)); } }
+
+  .scroll-list { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 z-40;
+    background: rgba(255, 250, 244, 0.9);
+    border-top: 1px solid var(--surface-border);
+    box-shadow: 0 -10px 34px rgba(70, 45, 24, 0.07);
+    backdrop-filter: blur(18px);
+    padding-top: 10px;
+    padding-bottom: max(12px, var(--safe-bottom));
+  }
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(120,79,37,0.28); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(120,79,37,0.45); }
+
+.prose-step h2 { @apply font-display text-3xl text-ink mb-3 mt-6; }
+.prose-step h3 { @apply font-display text-xl text-gold-700 mb-2 mt-5; }
+.prose-step p { font-size: 15px; @apply text-ink-soft leading-relaxed mb-3; }
+.prose-step ul { @apply list-disc pl-5 mb-3 space-y-1.5 text-ink-soft; font-size: 15px; }
+.prose-step ol { @apply list-decimal pl-5 mb-3 space-y-1.5 text-ink-soft; font-size: 15px; }
+.prose-step table { @apply w-full text-sm border-collapse mb-4 rounded-2xl overflow-hidden; }
+.prose-step th { @apply bg-paper-sand/40 text-ink font-semibold px-3 py-2.5 text-left border border-ink/15; }
+.prose-step td { @apply px-3 py-2.5 border border-ink/15 text-ink-soft align-top; }
+.prose-step a { @apply text-gold-700 underline; }
+.prose-step hr { @apply border-ink/15 my-5; }
+/* Фото: строка ![подпись|раскладка](/адрес) в разметке (lib/stepMarkup.ts). */
+.prose-step figure { margin: 8px 0 16px; }
+.prose-step figure img { display: block; width: 100%; height: auto; border-radius: 16px; }
+.prose-step figcaption { @apply text-ink-muted text-center; font-size: 13px; margin-top: 6px; }
+.prose-step figure.img-small { max-width: 280px; margin-left: auto; margin-right: auto; }
+.prose-step figure.img-left { float: left; width: 44%; margin: 4px 18px 10px 0; }
+.prose-step figure.img-right { float: right; width: 44%; margin: 4px 0 10px 18px; }
+.prose-step figure.img-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 8px; }
+.prose-step figure.img-row img { aspect-ratio: 1; object-fit: cover; border-radius: 12px; }
+.prose-step figure.img-row figcaption { grid-column: 1 / -1; }
+/* Обтекание не тянется в следующий раздел */
+.prose-step h2, .prose-step h3, .prose-step hr, .prose-step table, .prose-step blockquote, .prose-step .video,
+.prose-step figure:not(.img-left):not(.img-right) { clear: both; }
+.prose-step::after { content: ''; display: block; clear: both; }
+/* На узком экране обтекать нечем: фото встаёт во всю ширину */
+@media (max-width: 420px) { .prose-step figure.img-left, .prose-step figure.img-right { float: none; width: auto; margin: 8px 0 16px; } }
+.prose-step blockquote { @apply border-l-4 rounded-r-2xl px-5 py-3 my-4; border-color: rgba(184,122,52,0.45); background: rgba(184,122,52,0.06); }
+.prose-step blockquote p:last-child { margin-bottom: 0; }
+/* Длинный раздел под катом (lib/foldLong.js): заголовок + «Развернуть» */
+.prose-step details.fold { @apply my-4 rounded-2xl border border-ink/[0.1] bg-ink/[0.02]; clear: both; }
+.prose-step details.fold > summary { @apply flex items-center justify-between gap-3 cursor-pointer select-none px-4 py-3; list-style: none; min-height: 48px; }
+.prose-step details.fold > summary::-webkit-details-marker { display: none; }
+.prose-step details.fold > summary::after { content: attr(data-open) ' ▾'; @apply shrink-0 text-xs font-semibold text-gold-700 whitespace-nowrap; }
+.prose-step details.fold[open] > summary::after { content: attr(data-close) ' ▴'; }
+.prose-step details.fold > summary:focus-visible { outline: 2px solid rgba(184,122,52,0.6); outline-offset: 2px; border-radius: 16px; }
+.prose-step .fold-title { @apply font-display text-ink leading-snug; }
+.prose-step .fold-h2 .fold-title { font-size: 22px; }
+.prose-step .fold-h3 .fold-title { @apply text-gold-700; font-size: 19px; }
+.prose-step .fold-prayer .fold-title { font-size: 17px; }
+.prose-step .fold-body { @apply px-4 pb-2; }
+.prose-step .fold-body > .prayer-block:first-child { margin-top: 0; }
+@media print { .prose-step details.fold > .fold-body { display: block; } }
+.prose-step .video { position: relative; aspect-ratio: 16 / 9; margin: 8px 0 16px; border-radius: 16px; overflow: hidden; background: #241a14; }
+.prose-step .video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.prose-step code { @apply text-gold-700 rounded px-1; background: rgba(119,101,87,0.12); font-family: inherit; }
+.prose-step u { text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.prose-step s { opacity: .65; }
+.prose-step .ta-center { text-align: center; }
+.prose-step .ta-right { text-align: right; }
+/* Фото материалов в таблице шага. */
+.prose-step td img { display: block; width: 72px; height: 72px; max-width: none; object-fit: contain; border-radius: 8px; background: #fff; }
+/* Широкая таблица на телефоне прокручивается, а не выезжает за карточку. */
+@media (max-width: 640px) { .prose-step table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; } }
+/* Таблица с фото (материалы в шаге 0) на телефоне — карточками: фото слева,
+   название и пояснение справа. Три колонки в 390px сжимали текст в столбик. */
+@media (max-width: 640px) {
+  .prose-step table:has(td > img) { display: block; overflow: visible; border: 1px solid rgb(0 0 0 / 0.12); }
+  .prose-step table:has(td > img) tbody { display: block; }
+  .prose-step table:has(td > img) tr:has(> th) { display: none; }
+  .prose-step tr:has(> td > img) { display: grid; grid-template-columns: 72px 1fr; column-gap: 12px; row-gap: 4px; padding: 12px; }
+  .prose-step tr:has(> td > img) + tr { border-top: 1px solid rgb(0 0 0 / 0.08); }
+  .prose-step tr:has(> td > img) > td { border: 0; padding: 0; }
+  .prose-step tr:has(> td > img) > td:first-child { grid-row: span 2; }
+  .prose-step tr:has(> td > img) > td:empty { display: none; }
+}
+
+.prayer-block { @apply border-l-4 rounded-r-3xl px-5 py-4 my-4 font-display text-ink leading-relaxed italic; background: rgba(184, 122, 52, 0.08); border-color: rgba(184,122,52,0.5); font-size: 18px; }
+
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes bounceDot { 0%,80%,100% { transform: scale(0) } 40% { transform: scale(1) } }
+@keyframes pulseSoft { 0%,100% { opacity: 1 } 50% { opacity: .55 } }
+@keyframes lineDraw { from { stroke-dashoffset: 1000 } to { stroke-dashoffset: 0 } }
+@keyframes orbFloat {
+  0%   { transform: translate(0, 0) scale(1); }
+  25%  { transform: translate(20px, -30px) scale(1.1); }
+  50%  { transform: translate(-10px, -60px) scale(0.9); }
+  75%  { transform: translate(-30px, -20px) scale(1.05); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+.animate-fade-in { animation: fadeIn .3s ease-out; }
+.animate-slide-up { animation: slideUp .35s ease-out; }
+.animate-pulse-soft { animation: pulseSoft 2s ease-in-out infinite; }
+
+/* ── Анимации страницы входа (раньше — framer-motion) ─────────────────────
+   Сдвиг и масштаб — отдельными свойствами translate/scale, а не transform:
+   так они не перебивают Tailwind-классы -translate-x-1/2 на тех же блоках. */
+.reveal { opacity: 0; transition: opacity .6s ease-out, translate .6s ease-out, scale .6s ease-out; }
+.reveal-up { translate: 0 24px; }
+.reveal-left { translate: -24px 0; }
+.reveal-right { translate: 24px 0; }
+.reveal-zoom { scale: .94; }
+.reveal.is-shown { opacity: 1; translate: none; scale: none; }
+
+@keyframes enterUp { from { opacity: 0; translate: 0 40px } to { opacity: 1; translate: none } }
+@keyframes enterDown { from { opacity: 0; translate: 0 -16px } to { opacity: 1; translate: none } }
+@keyframes enterFromRight { from { opacity: 0; translate: 30px 0 } to { opacity: 1; translate: none } }
+.enter-up { animation: enterUp .8s ease-out both; }
+.enter-down { animation: enterDown .6s ease-out both; }
+.enter-from-right { animation: enterFromRight .8s ease-out .4s both; }
+
+/* Дерево в первом экране: линии прорисовываются (pathLength="1" у <line>),
+   узлы и звезда мягко пульсируют. */
+@keyframes treeDraw { from { stroke-dashoffset: 1; opacity: 0 } to { stroke-dashoffset: 0; opacity: 1 } }
+@keyframes treeGlow { 0%,100% { opacity: .2 } 50% { opacity: .5 } }
+@keyframes treeNode { 0%,100% { scale: 1; opacity: .6 } 50% { scale: 1.4; opacity: 1 } }
+@keyframes treeStar { 0%,100% { scale: 1; opacity: .7 } 50% { scale: 1.2; opacity: 1 } }
+.tree-line { stroke-dasharray: 1; animation: treeDraw 1.5s ease-out both; }
+.tree-glow { animation: treeGlow 3s ease-in-out infinite; }
+.tree-node, .tree-star { transform-box: fill-box; transform-origin: center; }
+.tree-node { animation: treeNode 3s ease-in-out infinite backwards; }
+.tree-star { animation: treeStar 4s ease-in-out 3.5s infinite backwards; }
+
+.typing-dot { display: inline-block; width: 8px; height: 8px; background: #c58b43; border-radius: 50%; animation: bounceDot 1.4s infinite ease-in-out both; }
+.typing-dot:nth-child(1) { animation-delay: -.32s; }
+.typing-dot:nth-child(2) { animation-delay: -.16s; }
+
+/* ── Уважение к системной настройке «уменьшить движение» ──────────────────
+   WCAG 2.3.3. В интерфейсе есть бесконечные анимации (орбиты на лендинге,
+   pulse-soft, точки набора текста) — для пользователей с вестибулярными
+   расстройствами они болезненны, а на iPhone это ещё и включённый по
+   умолчанию режим экономии батареи у части пользователей.
+   Анимации не выключаются полностью, а сводятся к одному кадру: элементы
+   остаются в конечном состоянии, поэтому ничего не пропадает с экрана. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  html { scroll-behavior: auto; }
+}
+
+/* ── Печать схемы рода ────────────────────────────────────────────────────
+   Схему по методике распечатывают и на шаге 8 сжигают. На бумагу уходит
+   только светлая копия: тёмная заливка приложения нечитаема в печати и
+   расходует краску.
+
+   Копия выносится порталом прямо в <body> (components/genogram/
+   GenogramPrintable.jsx), поэтому в печати достаточно погасить #root
+   целиком. Через visibility так сделать нельзя: скрытый контент продолжает
+   занимать место, и перед схемой печатались бы пустые страницы. */
+.genogram-printable { display: none; }
+
+@media print {
+  #root { display: none !important; }
+
+  .genogram-printable {
+    display: block;
+    width: 100%;
+  }
+  .genogram-printable svg { max-width: 100%; height: auto; }
+
+  body {
+    background: #fff !important;
+    background-image: none !important;
+    color: #0f172a;
+    padding: 0;
+    margin: 0;
+  }
+  @page { margin: 12mm; }
+}
+
+/* Цвет текста и маркера из разметки {c:…}/{h:…} (lib/editorPalette.ts).
+   Вне .prose-step — те же классы красят и подсветку в редакторе. */
+mark { background: rgba(215,174,112,0.38); color: inherit; border-radius: 3px; padding: 0 2px; }
+/* Размер текста из разметки {s:…} (lib/editorPalette.ts, FONT_SIZES) */
+.fs-sm { font-size: 0.85em; } .fs-lg { font-size: 1.2em; } .fs-xl { font-size: 1.45em; line-height: 1.3; } .fs-xxl { font-size: 1.8em; line-height: 1.2; }
+.tc-gold { color: #9f6429; } .tc-flame { color: #c04828; } .tc-earth { color: #9a6a3a; } .tc-plum { color: #744153; }
+.tc-olive { color: #76603d; } .tc-muted { color: #776557; } .tc-green { color: #3f6b46; } .tc-red { color: #a3392b; }
+.hl-gold { background: rgba(215,174,112,0.38); } .hl-rose { background: rgba(227,169,154,0.40); }
+.hl-sage { background: rgba(181,199,163,0.48); } .hl-sky { background: rgba(169,191,208,0.48); }
+
+/* ── Поле редактора с подсветкой разметки (components/editor/MarkupField) ──
+   Слой и textarea обязаны совпадать знак в знак: шрифт, кегль, межстрочный,
+   отступы, рамка и перенос — общие, в .mk-field. В подсветке нельзя менять
+   ширину букв: жирный показан толстым подчёркиванием, курсив — пунктирным. */
+.mk-field {
+  margin: 0; padding: 12px 16px; border: 1px solid transparent; border-radius: 16px;
+  font-family: Manrope, system-ui, -apple-system, sans-serif; font-size: 15px; line-height: 1.7;
+  letter-spacing: normal; white-space: pre-wrap; overflow-wrap: break-word; word-break: normal; tab-size: 4;
+}
+.mk-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; color: #33251d; background: #fffdf9; }
+.mk-input {
+  position: relative; width: 100%; flex: 1 1 auto; resize: vertical; min-height: 320px;
+  background: transparent; color: transparent; caret-color: #9f6429; border-color: rgba(120, 79, 37, 0.22);
+}
+.mk-input::placeholder { color: #9a8676; }
+.mk-input:focus { outline: none; border-color: #c58b43; box-shadow: 0 0 0 3px rgba(184, 122, 52, 0.14); }
+.mk-input::selection { background: rgba(184, 122, 52, 0.25); }
+.mk-dim { opacity: .38; }
+.mk-b { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.mk-i { text-decoration: underline dotted; text-underline-offset: 3px; }
+.mk-u { text-decoration: underline; text-underline-offset: 3px; }
+.mk-size { text-decoration: underline wavy; text-decoration-color: #b87a34; text-underline-offset: 4px; }
+.mk-s { text-decoration: line-through; opacity: .6; }
+.mk-mark { background: rgba(215,174,112,0.38); }
+.mk-code { background: rgba(119,101,87,0.13); color: #8b5a2e; }
+.mk-link { color: #8b5a2e; text-decoration: underline; text-underline-offset: 3px; }
+.mk-head { background: rgba(184,122,52,0.13); color: #33251d; }
+.mk-table { color: #5d4a3c; background: rgba(120,79,37,0.05); }
+.mk-block { color: #8b5a2e; background: rgba(184,122,52,0.09); }
+
+/* ── Вид «как на телефоне» на широком экране (src/lib/viewMode.js) ─────────
+   Кабинет — узкой колонкой по центру. transform делает колонку опорой для
+   position: fixed — нижнее меню, шапка и окна остаются внутри «телефона»,
+   а не растягиваются на весь монитор. */
+html[data-view="mobile"] #root {
+  max-width: 430px;
+  margin-inline: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-shadow: 0 0 0 1px rgba(120, 79, 37, .12), 0 20px 70px rgba(71, 46, 25, .14);
+}
+/* Закреплённое на экране (нижнее меню, окна, полоса сохранения) — в ширину
+   «телефона», а не монитора. Страница прокручивается как обычно. */
+html[data-view="mobile"] #root .bottom-nav,
+html[data-view="mobile"] #root .fixed.inset-0,
+html[data-view="mobile"] #root .fixed.inset-x-0 {
+  left: max(0px, calc(50% - 215px));
+  right: max(0px, calc(50% - 215px));
+}
+html[data-view="mobile"] #root .fixed.inset-x-3 {
+  left: max(12px, calc(50% - 203px));
+  right: max(12px, calc(50% - 203px));
+}
+/* Те же перестройки, что на настоящем телефоне по ширине окна */
+html[data-view="mobile"] .prose-step table { display: block; overflow-x: auto; }
+html[data-view="mobile"] .prose-step table:has(td > img) { display: block; overflow: visible; border: 1px solid rgb(0 0 0 / 0.12); }
+html[data-view="mobile"] .prose-step table:has(td > img) tbody { display: block; }
+html[data-view="mobile"] .prose-step table:has(td > img) tr:has(> th) { display: none; }
+html[data-view="mobile"] .prose-step tr:has(> td > img) { display: grid; grid-template-columns: 72px 1fr; column-gap: 12px; row-gap: 4px; padding: 12px; }
+html[data-view="mobile"] .prose-step tr:has(> td > img) + tr { border-top: 1px solid rgb(0 0 0 / 0.08); }
+html[data-view="mobile"] .prose-step tr:has(> td > img) > td { border: 0; padding: 0; }
+html[data-view="mobile"] .prose-step tr:has(> td > img) > td:first-child { grid-row: span 2; }
+html[data-view="mobile"] .prose-step tr:has(> td > img) > td:empty { display: none; }
+
+/* Кнопка «Вид для компьютера» — слева от «телефона», только на широком окне */
+.view-float { display: none; }
+/* В кабинете кнопка вида — в шапке; плавающая нужна только вне него */
+body:has(.cab-top) .view-float { display: none !important; }
+@media (min-width: 768px) {
+  html[data-view="mobile"] .view-float {
+    display: inline-flex;
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 60;
+  }
+}
+
+/* Число матрицы с толкованием по клику (pages/admin/client-card/MatrixExplain.jsx) */
+.num-explain {
+  color: inherit; font: inherit; cursor: pointer; border-radius: 6px; padding: 0 2px;
+  text-decoration: underline dotted rgba(159,100,41,0.55); text-underline-offset: 4px;
+  transition: background-color .15s;
+}
+.num-explain:hover, .num-explain:focus-visible { background: rgba(215,174,112,0.28); outline: none; }
+
+/* Отчёт по матрице для печати/PDF (MatrixReport.jsx): копия в <body>,
+   #root в печати гаснет (см. правило для схемы рода выше). */
+.matrix-printable { display: none; }
+@media print {
+  .matrix-printable { display: block; width: 100%; }
+  .matrix-printable, .matrix-printable * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  /* Разрыв страницы — между строками, а не посреди строки; заголовок не отрывается от текста */
+  .matrix-printable tr, .matrix-printable li, .matrix-printable .chakra-row { break-inside: avoid; }
+  .matrix-printable h3 { break-after: avoid; }
+}
